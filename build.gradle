@@ -1,0 +1,90 @@
+plugins {
+	id 'java'
+	id 'org.springframework.boot' version '3.2.3'
+	id 'io.spring.dependency-management' version '1.1.4'
+}
+
+group = 'kyung'
+version = '0.0.1-SNAPSHOT'
+
+// Java 설정
+java {
+	toolchain {
+		languageVersion = JavaLanguageVersion.of(17)
+	}
+}
+
+// 컴파일러 설정
+configurations {
+	compileOnly {
+		extendsFrom annotationProcessor
+	}
+}
+
+repositories {
+	mavenCentral()
+}
+
+ext {
+	// Spring Boot 3.2.x 호환 범위의 Springdoc 버전
+	springdocVersion = '2.3.0'
+
+	// JWT 구현용
+	// 0.12.x는 현재 많이 쓰이지만, 더 낮고 예제/자료가 많은 0.11.5 사용
+	jjwtVersion = '0.11.5'
+}
+
+dependencies {
+	// REST API 서버 개발
+	implementation 'org.springframework.boot:spring-boot-starter-web'
+
+	// 인증/인가, 권한 검증
+	implementation 'org.springframework.boot:spring-boot-starter-security'
+
+	// Request DTO 검증: @NotBlank, @Email, @Size 등
+	implementation 'org.springframework.boot:spring-boot-starter-validation'
+
+	// JPA / Hibernate ORM
+	// Hibernate 버전은 Spring Boot 3.2.3 BOM이 관리
+	implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
+
+	// Swagger / OpenAPI 문서화
+	implementation "org.springdoc:springdoc-openapi-starter-webmvc-ui:${springdocVersion}"
+
+	// JWT 토큰 생성/검증
+	implementation "io.jsonwebtoken:jjwt-api:${jjwtVersion}"
+	runtimeOnly "io.jsonwebtoken:jjwt-impl:${jjwtVersion}"
+	runtimeOnly "io.jsonwebtoken:jjwt-jackson:${jjwtVersion}"
+
+	// MySQL JDBC Driver -> Spring Boot 3.2.3 BOM이 결정
+	runtimeOnly 'com.mysql:mysql-connector-j'
+
+	// Lombok: Getter, Builder, RequiredArgsConstructor 등 반복 코드 감소
+	compileOnly 'org.projectlombok:lombok'
+	annotationProcessor 'org.projectlombok:lombok'
+
+	// application.yml 설정 자동완성 메타데이터 생성
+	annotationProcessor 'org.springframework.boot:spring-boot-configuration-processor'
+
+	// 로컬 개발 편의 기능: 자동 재시작 등
+	developmentOnly 'org.springframework.boot:spring-boot-devtools'
+
+	// JUnit 5, Mockito, AssertJ, Spring Test, MockMvc 등
+	testImplementation 'org.springframework.boot:spring-boot-starter-test'
+
+	// Spring Security 테스트: @WithMockUser 등
+	testImplementation 'org.springframework.security:spring-security-test'
+
+	// JUnit Platform Launcher
+	testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+}
+
+
+tasks.named('test') {
+	useJUnitPlatform()
+}
+
+// 일반 jar 생성 비활성화 (bootJar만 생성)
+tasks.named('jar') {
+	enabled = false
+}

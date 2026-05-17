@@ -1,0 +1,89 @@
+spring:
+  application:
+    name: kyung-backend
+
+#  profiles:
+#    active: local
+#
+#  datasource:
+#    url: jdbc:mysql://localhost:3306/kyung_backend?serverTimezone=Asia/Seoul&characterEncoding=UTF-8
+#    username: your_mysql_username
+#    password: your_mysql_password
+#    driver-class-name: com.mysql.cj.jdbc.Driver
+#
+#  jpa:
+#    hibernate:
+#      ddl-auto: update
+#    open-in-view: false
+#    show-sql: true
+#    properties:
+#      hibernate:
+#        dialect: org.hibernate.dialect.MySQLDialect
+#        format_sql: true
+#        use_sql_comments: true
+#
+#  servlet:
+#    multipart:
+#      max-file-size: 30MB
+#      max-request-size: 100MB
+#
+#server:
+#  port: 8080
+#
+#springdoc:
+#  swagger-ui:
+#    path: /swagger
+#    enabled: true
+#  api-docs:
+#    path: /v3/api-docs
+#    enabled: true
+#  cache:
+#    disabled: true
+#
+#jwt:
+#  secret: your-jwt-secret-key-must-be-at-least-32-bytes
+#  access-expiration-ms: 3600000
+#  refresh-expiration-ms: 1209600000
+#
+#security:
+#  cors:
+#    allowed-origins:
+#      - http://localhost:3000
+#      - http://localhost:5173
+#    allowed-methods:
+#      - GET
+#      - POST
+#      - PUT
+#      - PATCH
+#      - DELETE
+#      - OPTIONS
+#    allowed-headers:
+#      - "*"
+#    allow-credentials: true
+#
+#file:
+#  upload:
+#    max-size: 30MB
+#    allowed-extensions:
+#      - jpg
+#      - jpeg
+#      - png
+#      - pdf
+#
+#logging:
+#  level:
+#    root: info
+#    org.springframework.security: info
+#    org.hibernate.SQL: debug
+#    org.hibernate.orm.jdbc.bind: trace
+#
+# 추후 AWS S3 업로드 기능 구현 시 추가 예정
+#cloud:
+#  aws:
+#    s3:
+#      bucket: your-s3-bucket-name
+#    credentials:
+#      access-key: your-aws-access-key
+#      secret-key: your-aws-secret-key
+#    region:
+#      static: ap-northeast-2
