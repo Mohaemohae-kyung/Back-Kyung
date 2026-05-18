@@ -70,4 +70,21 @@ public class CommunityPost extends BaseEntity {
         this.status = status;
         this.viewCount = 0L;
     }
+
+    public void updatePost(ServiceCategory category, Location location, String boardType, String title, String content) {
+        this.category = category;
+        this.location = location;
+        this.boardType = boardType;
+        this.title = title;
+        this.content = content;
+    }
+
+    public void incrementViewCount() {
+        this.viewCount += 1;
+    }
+
+    public void softDelete() {
+        this.status = "DELETED";
+        this.deletedAt = LocalDateTime.now();
+    }
 }
