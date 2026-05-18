@@ -4,12 +4,15 @@ import jakarta.validation.constraints.NotBlank;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
+import java.util.List;
+
 @Getter
 @NoArgsConstructor
 public class PostCreateRequest {
 
     private Long categoryId;
     private Long locationId;
+    private List<Long> imageFileIds;
 
     @NotBlank(message = "게시판 타입은 필수입니다.")
     private String boardType;

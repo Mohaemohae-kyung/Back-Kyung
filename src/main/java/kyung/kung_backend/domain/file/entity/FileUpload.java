@@ -50,4 +50,11 @@ public class FileUpload extends BaseCreatedEntity {
 
     @Column(name = "STATUS", nullable = false, length = 20)
     private String status;
+
+
+    public void updateTarget(String targetType, Long targetId) {
+        this.targetType = targetType;
+        this.targetId = targetId;
+    }
 }
+
