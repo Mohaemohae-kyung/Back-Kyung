@@ -56,8 +56,9 @@ dependencies {
 	runtimeOnly "io.jsonwebtoken:jjwt-impl:${jjwtVersion}"
 	runtimeOnly "io.jsonwebtoken:jjwt-jackson:${jjwtVersion}"
 
-	// MySQL JDBC Driver -> Spring Boot 3.2.3 BOM이 결정
-	runtimeOnly 'com.mysql:mysql-connector-j'
+	// Oracle JDBC Driver
+	// Oracle DB 연결용
+	runtimeOnly 'com.oracle.database.jdbc:ojdbc11'
 
 	// Lombok: Getter, Builder, RequiredArgsConstructor 등 반복 코드 감소
 	compileOnly 'org.projectlombok:lombok'
