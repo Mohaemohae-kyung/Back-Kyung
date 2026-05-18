@@ -24,16 +24,18 @@ import java.util.List;
 @Transactional(readOnly = true)
 public class ServiceRequestService {
 
+    private static final String ROLE_ADMIN = "ADMIN";
+
     private final ServiceRequestRepository serviceRequestRepository;
-    private final UserRepository userRepository;
     private final ExpertServiceRepository expertServiceRepository;
+    private final UserRepository userRepository;
 
     @Transactional
     public ServiceRequestResponse createServiceRequest(
-            Long userId,
+            User loginUser,
             ServiceRequestCreateRequest request
     ) {
-        User user = findUser(userId);
+        User user = findLoginUser(loginUser);
         ExpertService expertService = findExpertService(request.getExpertServiceId());
 
         ServiceCategory category = expertService.getCategory();
@@ -55,35 +57,37 @@ public class ServiceRequestService {
         return ServiceRequestResponse.from(savedServiceRequest);
     }
 
-    public List<ServiceRequestResponse> getMyServiceRequests(Long userId) {
-        findUser(userId);
+    public List<ServiceRequestResponse> getMyServiceRequests(User loginUser) {
+        User user = findLoginUser(loginUser);
 
-        return serviceRequestRepository.findAllByUserUserIdAndDeletedAtIsNullOrderByCreatedAtDesc(userId)
+        return serviceRequestRepository.findAllByUserUserIdAndDeletedAtIsNullOrderByCreatedAtDesc(user.getUserId())
                 .stream()
                 .map(ServiceRequestResponse::from)
                 .toList();
     }
 
     public ServiceRequestResponse getServiceRequestDetail(
-            Long userId,
+            User loginUser,
             Long requestId
     ) {
+        User user = findLoginUser(loginUser);
         ServiceRequest serviceRequest = findServiceRequest(requestId);
 
-        validateOwner(userId, serviceRequest);
+        validateOwnerOrAdmin(user, serviceRequest);
 
         return ServiceRequestResponse.from(serviceRequest);
     }
 
     @Transactional
     public ServiceRequestResponse updateServiceRequest(
-            Long userId,
+            User loginUser,
             Long requestId,
             ServiceRequestUpdateRequest request
     ) {
+        User user = findLoginUser(loginUser);
         ServiceRequest serviceRequest = findServiceRequest(requestId);
 
-        validateOwner(userId, serviceRequest);
+        validateOwner(user, serviceRequest);
         validateUpdatable(serviceRequest);
 
         serviceRequest.update(
@@ -98,12 +102,13 @@ public class ServiceRequestService {
 
     @Transactional
     public ServiceRequestResponse cancelServiceRequest(
-            Long userId,
+            User loginUser,
             Long requestId
     ) {
+        User user = findLoginUser(loginUser);
         ServiceRequest serviceRequest = findServiceRequest(requestId);
 
-        validateOwner(userId, serviceRequest);
+        validateOwner(user, serviceRequest);
         validateCancelable(serviceRequest);
 
         serviceRequest.cancel();
@@ -111,9 +116,13 @@ public class ServiceRequestService {
         return ServiceRequestResponse.from(serviceRequest);
     }
 
-    private User findUser(Long userId) {
-        return userRepository.findById(userId)
-                .orElseThrow(() -> GeneralException.of(ErrorCode.NOT_FOUND));
+    private User findLoginUser(User loginUser) {
+        if (loginUser == null || loginUser.getUserId() == null) {
+            throw GeneralException.of(ErrorCode.UNAUTHORIZED);
+        }
+
+        return userRepository.findById(loginUser.getUserId())
+                .orElseThrow(() -> GeneralException.of(ErrorCode.UNAUTHORIZED));
     }
 
     private ExpertService findExpertService(Long expertServiceId) {
@@ -127,12 +136,27 @@ public class ServiceRequestService {
     }
 
     private void validateOwner(
-            Long userId,
+            User user,
             ServiceRequest serviceRequest
     ) {
-        if (!serviceRequest.getUser().getUserId().equals(userId)) {
+        if (!serviceRequest.getUser().getUserId().equals(user.getUserId())) {
             throw GeneralException.of(ErrorCode.FORBIDDEN);
         }
+    }
+
+    private void validateOwnerOrAdmin(
+            User user,
+            ServiceRequest serviceRequest
+    ) {
+        if (isAdmin(user)) {
+            return;
+        }
+
+        validateOwner(user, serviceRequest);
+    }
+
+    private boolean isAdmin(User user) {
+        return ROLE_ADMIN.equals(user.getRole());
     }
 
     private void validateUpdatable(ServiceRequest serviceRequest) {
