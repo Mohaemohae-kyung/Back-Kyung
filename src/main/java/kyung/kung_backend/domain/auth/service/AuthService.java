@@ -79,8 +79,8 @@ public class AuthService {
 
         if ("DELETED".equals(user.getStatus())) {
             throw new ResponseStatusException(
-                    ErrorCode.INVALID_LOGIN.getHttpStatus(),
-                    "탈퇴한 회원입니다."
+                    ErrorCode.DELETED_USER.getHttpStatus(),
+                    ErrorCode.DELETED_USER.getMessage()
             );
         }
 
@@ -88,6 +88,8 @@ public class AuthService {
 
         String accessToken = jwtProvider.createAccessToken(user);
         String refreshToken = jwtProvider.createRefreshToken(user);
+
+        user.updateRefreshToken(refreshToken);
 
         return LoginResponse.of(user, accessToken, refreshToken);
     }
@@ -118,9 +120,29 @@ public class AuthService {
             );
         }
 
+        if (user.getRefreshToken() == null || !user.getRefreshToken().equals(refreshToken)) {
+            throw new ResponseStatusException(
+                    ErrorCode.UNAUTHORIZED.getHttpStatus(),
+                    "Refresh Token이 일치하지 않습니다."
+            );
+        }
+
         String newAccessToken = jwtProvider.createAccessToken(user);
         String newRefreshToken = jwtProvider.createRefreshToken(user);
 
+        user.updateRefreshToken(newRefreshToken);
+
         return ReissueResponse.of(newAccessToken, newRefreshToken);
+    }
+
+    @Transactional
+    public void logout(User user) {
+        User findUser = userRepository.findById(user.getUserId())
+                .orElseThrow(() -> new ResponseStatusException(
+                        ErrorCode.UNAUTHORIZED.getHttpStatus(),
+                        "사용자를 찾을 수 없습니다."
+                ));
+
+        findUser.clearRefreshToken();
     }
 }

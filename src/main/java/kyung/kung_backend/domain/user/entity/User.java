@@ -51,6 +51,9 @@ public class User extends BaseEntity {
     @Column(name = "DELETED_AT")
     private LocalDateTime deletedAt;
 
+    @Column(name = "REFRESH_TOKEN", length = 500)
+    private String refreshToken;
+
     public static User createUser(String email, String encodedPassword, String name, String nickname, String phone) {
         User user = new User();
         user.email = email;
@@ -70,5 +73,13 @@ public class User extends BaseEntity {
 
     public void updateLastLoginAt() {
         this.lastLoginAt = LocalDateTime.now();
+    }
+
+    public void updateRefreshToken(String refreshToken) {
+        this.refreshToken = refreshToken;
+    }
+
+    public void clearRefreshToken() {
+        this.refreshToken = null;
     }
 }

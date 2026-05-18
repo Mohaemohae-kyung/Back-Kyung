@@ -16,6 +16,7 @@ public enum ErrorCode implements BaseCode {
     DUPLICATE_EMAIL(HttpStatus.CONFLICT, "USER_409_1", "이미 사용 중인 이메일입니다."),
     DUPLICATE_PHONE(HttpStatus.CONFLICT, "USER_409_2", "이미 사용 중인 전화번호입니다."),
     INVALID_LOGIN(HttpStatus.UNAUTHORIZED, "AUTH_401_1", "아이디 또는 비밀번호가 올바르지 않습니다."),
+    DELETED_USER(HttpStatus.UNAUTHORIZED, "AUTH_401_2", "탈퇴한 회원입니다."),
     INTERNAL_SERVER_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "COMMON_500", "서버 내부 오류가 발생했습니다.");
 
     private final HttpStatus httpStatus;

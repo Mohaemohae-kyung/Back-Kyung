@@ -8,12 +8,14 @@ import kyung.kung_backend.domain.auth.dto.LoginResponse;
 import kyung.kung_backend.domain.auth.dto.ReissueRequest;
 import kyung.kung_backend.domain.auth.dto.ReissueResponse;
 import kyung.kung_backend.domain.auth.service.AuthService;
+import kyung.kung_backend.domain.user.entity.User;
 import kyung.kung_backend.global.response.ApiResponse;
 import kyung.kung_backend.global.response.SuccessCode;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 
 
 @RestController
@@ -52,6 +54,17 @@ public class AuthController {
 
         return ResponseEntity.ok(
                 ApiResponse.onSuccess(SuccessCode.OK, response)
+        );
+    }
+
+    @PostMapping("/logout")
+    public ResponseEntity<ApiResponse<String>> logout(
+            @AuthenticationPrincipal User user
+    ) {
+        authService.logout(user);
+
+        return ResponseEntity.ok(
+                ApiResponse.onSuccess(SuccessCode.OK, "로그아웃이 완료되었습니다.")
         );
     }
 }
