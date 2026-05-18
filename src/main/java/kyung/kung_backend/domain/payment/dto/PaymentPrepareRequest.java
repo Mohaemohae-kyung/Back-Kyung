@@ -12,11 +12,11 @@ import lombok.NoArgsConstructor;
  * 사용 흐름:
  * 1. 클라이언트가 Swagger 또는 프론트엔드에서 POST /api/payments/prepare 요청 Body로 이 객체 구조의 JSON을 보냅니다.
  * 2. PaymentController.prepare()가 @RequestBody로 이 값을 받습니다.
- * 3. PaymentController는 이 DTO를 PaymentService.prepare()로 넘깁니다.
+ * 3. PaymentController는 로그인 User와 이 DTO를 PaymentService.prepare()로 넘깁니다.
  * 4. PaymentService는 bookingId를 기준으로 결제 대상과 금액을 계산합니다.
  *
- * 현재는 prepare 스켈레톤 단계이므로 로그인 사용자 정보는 받지 않습니다.
- * 이후 인증 기능이 연결되면 요청 Body가 아니라 SecurityContext에서 로그인 사용자를 꺼내 검증하는 방식으로 확장합니다.
+ * 로그인 사용자 정보는 요청 Body로 받지 않습니다.
+ * main 브랜치의 JWT 인증 구조에 맞춰 @AuthenticationPrincipal User로 전달받습니다.
  */
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)

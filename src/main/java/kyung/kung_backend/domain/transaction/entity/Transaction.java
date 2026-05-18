@@ -76,9 +76,9 @@ public class Transaction extends BaseEntity {
      * - prepare API는 서비스 예약 결제를 대상으로 하므로 booking을 우선 연결합니다.
      *
      * 참고:
-     * - matchId만 들어온 경우에는 아직 Booking이 없을 수 있어 booking이 null일 수 있습니다.
-     * - 이 경우 추후 정책에 따라 "결제 전 Booking을 반드시 생성"하도록 바꾸거나,
-     *   Transaction에 Match 연결 필드를 추가하는 방식으로 확장할 수 있습니다.
+     * - 현재 prepare API는 bookingId를 필수로 사용하므로 booking은 null이면 안 됩니다.
+     * - 추후 matchId만으로 결제를 시작하는 정책을 선택한다면,
+     *   결제 전 Booking을 먼저 생성하거나 Transaction에 Match 연결 필드를 추가해야 합니다.
      */
     public static Transaction prepareServiceBookingPayment(
             Booking booking,

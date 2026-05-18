@@ -7,12 +7,13 @@ import kyung.kung_backend.domain.match.repository.MatchRepository;
 import kyung.kung_backend.domain.payment.dto.PaymentPrepareRequest;
 import kyung.kung_backend.domain.payment.dto.PaymentPrepareResponse;
 import kyung.kung_backend.domain.payment.entity.Payment;
-import kyung.kung_backend.domain.payment.exception.PaymentErrorCode;
-import kyung.kung_backend.domain.payment.exception.PaymentException;
 import kyung.kung_backend.domain.payment.repository.PaymentRepository;
 import kyung.kung_backend.domain.transaction.entity.Transaction;
 import kyung.kung_backend.domain.transaction.repository.TransactionRepository;
 import kyung.kung_backend.domain.user.entity.User;
+import kyung.kung_backend.domain.user.repository.UserRepository;
+import kyung.kung_backend.global.exception.GeneralException;
+import kyung.kung_backend.global.response.ErrorCode;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -36,8 +37,8 @@ import java.util.UUID;
  * 현재 구현 범위:
  * - issue #4 중 "결제 준비 API"의 스켈레톤입니다.
  * - 실제 PG 결제 승인(confirm), 환불, 관리자 환불 승인 로직은 아직 구현하지 않습니다.
- * - 인증 기능이 아직 없으므로 로그인 사용자 검증은 TODO로 남기고,
- *   현재는 Booking 또는 Match에 연결된 요청자(User)를 구매자로 사용합니다.
+ * - main 브랜치의 JWT 인증 구조에 맞춰 Controller에서 전달된 로그인 User를 검증합니다.
+ * - 로그인 User와 Booking.user가 다르면 결제 준비를 막습니다.
  */
 @Service
 @RequiredArgsConstructor
@@ -52,37 +53,44 @@ public class PaymentService {
     private final TransactionRepository transactionRepository;
     private final BookingRepository bookingRepository;
     private final MatchRepository matchRepository;
+    private final UserRepository userRepository;
 
     /**
      * 결제 준비 API의 핵심 로직입니다.
      *
      * 어떤 일을 하는지:
-     * 1. 요청 DTO에서 bookingId 또는 matchId를 확인합니다.
-     * 2. 결제 대상 Booking/Match를 조회합니다.
-     * 3. Match의 proposedPrice를 결제 금액으로 사용합니다.
-     * 4. 서버 주문번호(orderId)를 생성합니다.
-     * 5. Transaction을 READY 상태로 저장합니다.
-     * 6. Payment를 READY 상태로 저장합니다.
-     * 7. Swagger/클라이언트가 확인할 수 있도록 PaymentPrepareResponse를 반환합니다.
+     * 1. 로그인 사용자가 유효한지 확인합니다.
+     * 2. 요청 DTO에서 결제수단과 bookingId를 검증합니다.
+     * 3. 결제 대상 Booking/Match를 조회합니다.
+     * 4. 로그인 사용자가 예약 소유자인지 검증합니다.
+     * 5. 이미 결제 준비된 예약인지 확인합니다.
+     * 6. Match.proposedPrice를 결제 금액으로 사용합니다.
+     * 7. 서버 주문번호(orderId)를 생성합니다.
+     * 8. Transaction을 READY 상태로 저장합니다.
+     * 9. Payment를 READY 상태로 저장합니다.
+     * 10. Swagger/클라이언트가 확인할 수 있도록 PaymentPrepareResponse를 반환합니다.
      *
      * 어디서 불리는지:
      * - PaymentController.prepare()에서 호출됩니다.
      *
      * 이후 확장 지점:
-     * - 로그인 사용자와 Booking/Match의 구매자가 같은지 검증
      * - 쿠폰/할인 금액 반영
+     * - PG사별 결제 준비용 추가 응답값 생성
+     * - 결제 가능 예약 상태 검증
      */
     @Transactional
-    public PaymentPrepareResponse prepare(PaymentPrepareRequest request) {
+    public PaymentPrepareResponse prepare(User loginUser, PaymentPrepareRequest request) {
+        User user = findLoginUser(loginUser);
         validatePaymentMethod(request.getPaymentMethod());
         PaymentTarget target = resolvePaymentTarget(request);
+        validateBookingOwner(user, target.booking());
         validatePaymentNotPrepared(target.booking());
         BigDecimal amount = resolvePaymentAmount(target.match());
         String orderId = generateUniqueOrderId();
 
         Transaction transaction = Transaction.prepareServiceBookingPayment(
                 target.booking(),
-                target.buyer(),
+                user,
                 target.seller(),
                 amount,
                 TRANSACTION_STATUS_READY
@@ -91,7 +99,7 @@ public class PaymentService {
 
         Payment payment = Payment.prepare(
                 savedTransaction,
-                target.buyer(),
+                user,
                 orderId,
                 request.getPaymentMethod(),
                 amount,
@@ -121,11 +129,11 @@ public class PaymentService {
      */
     private PaymentTarget resolvePaymentTarget(PaymentPrepareRequest request) {
         if (!request.hasBookingId()) {
-            throw new PaymentException(PaymentErrorCode.PREPARE_TARGET_REQUIRED);
+            throw GeneralException.of(ErrorCode.PAYMENT_PREPARE_TARGET_REQUIRED);
         }
 
         Booking booking = bookingRepository.findById(request.getBookingId())
-                .orElseThrow(() -> new PaymentException(PaymentErrorCode.BOOKING_NOT_FOUND));
+                .orElseThrow(() -> GeneralException.of(ErrorCode.PAYMENT_BOOKING_NOT_FOUND));
 
         Match match = booking.getMatch();
 
@@ -134,9 +142,44 @@ public class PaymentService {
             validateBookingMatch(request.getMatchId(), match);
         }
 
-        User buyer = booking.getUser();
         User seller = booking.getExpertProfile().getUser();
-        return new PaymentTarget(booking, match, buyer, seller);
+        return new PaymentTarget(booking, match, seller);
+    }
+
+    /**
+     * 로그인 사용자를 DB 기준으로 다시 확인합니다.
+     *
+     * 어디서 불리는지:
+     * - prepare()의 가장 앞에서 호출합니다.
+     *
+     * 왜 필요한지:
+     * - Controller의 @AuthenticationPrincipal User는 JWT 필터가 SecurityContext에 넣어준 사용자입니다.
+     * - 인증이 없거나, 토큰의 userId에 해당하는 사용자가 DB에 없으면 결제 준비를 진행하면 안 됩니다.
+     * - main 브랜치의 다른 서비스(ServiceRequestService)와 같은 방식으로 UNAUTHORIZED를 반환합니다.
+     */
+    private User findLoginUser(User loginUser) {
+        if (loginUser == null || loginUser.getUserId() == null) {
+            throw GeneralException.of(ErrorCode.UNAUTHORIZED);
+        }
+
+        return userRepository.findById(loginUser.getUserId())
+                .orElseThrow(() -> GeneralException.of(ErrorCode.UNAUTHORIZED));
+    }
+
+    /**
+     * 로그인 사용자가 예약의 결제 주체인지 확인합니다.
+     *
+     * 어디서 불리는지:
+     * - prepare()에서 Booking 조회 직후 호출합니다.
+     *
+     * 왜 필요한지:
+     * - 사용자는 본인의 예약에 대해서만 결제 준비를 할 수 있어야 합니다.
+     * - 다른 사용자의 bookingId를 알고 있더라도 결제 준비를 만들 수 없도록 막습니다.
+     */
+    private void validateBookingOwner(User user, Booking booking) {
+        if (!booking.getUser().getUserId().equals(user.getUserId())) {
+            throw GeneralException.of(ErrorCode.FORBIDDEN);
+        }
     }
 
     /**
@@ -155,7 +198,7 @@ public class PaymentService {
      */
     private void validatePaymentMethod(String paymentMethod) {
         if (paymentMethod == null || !SUPPORTED_PAYMENT_METHODS.contains(paymentMethod)) {
-            throw new PaymentException(PaymentErrorCode.INVALID_PAYMENT_METHOD);
+            throw GeneralException.of(ErrorCode.PAYMENT_INVALID_METHOD);
         }
     }
 
@@ -168,7 +211,7 @@ public class PaymentService {
      */
     private void validateRequestedMatchExists(Long matchId) {
         if (!matchRepository.existsById(matchId)) {
-            throw new PaymentException(PaymentErrorCode.MATCH_NOT_FOUND);
+            throw GeneralException.of(ErrorCode.PAYMENT_MATCH_NOT_FOUND);
         }
     }
 
@@ -180,7 +223,7 @@ public class PaymentService {
      */
     private void validateBookingMatch(Long requestedMatchId, Match bookingMatch) {
         if (!requestedMatchId.equals(bookingMatch.getMatchId())) {
-            throw new PaymentException(PaymentErrorCode.BOOKING_MATCH_MISMATCH);
+            throw GeneralException.of(ErrorCode.PAYMENT_BOOKING_MATCH_MISMATCH);
         }
     }
 
@@ -196,7 +239,7 @@ public class PaymentService {
      */
     private void validatePaymentNotPrepared(Booking booking) {
         if (transactionRepository.existsByBooking_BookingId(booking.getBookingId())) {
-            throw new PaymentException(PaymentErrorCode.PAYMENT_ALREADY_PREPARED);
+            throw GeneralException.of(ErrorCode.PAYMENT_ALREADY_PREPARED);
         }
     }
 
@@ -213,7 +256,7 @@ public class PaymentService {
         BigDecimal amount = match.getProposedPrice();
 
         if (amount == null || amount.compareTo(BigDecimal.ZERO) <= 0) {
-            throw new PaymentException(PaymentErrorCode.INVALID_PAYMENT_AMOUNT);
+            throw GeneralException.of(ErrorCode.PAYMENT_INVALID_AMOUNT);
         }
 
         return amount;
@@ -242,19 +285,19 @@ public class PaymentService {
             }
         }
 
-        throw new PaymentException(PaymentErrorCode.ORDER_ID_GENERATION_FAILED);
+        throw GeneralException.of(ErrorCode.PAYMENT_ORDER_ID_GENERATION_FAILED);
     }
 
     /**
      * prepare 로직 내부에서만 사용하는 결제 대상 묶음입니다.
      *
-     * record를 사용해 Booking, Match, 구매자, 판매자를 한 번에 전달합니다.
+     * record를 사용해 Booking, Match, 판매자를 한 번에 전달합니다.
+     * 구매자는 로그인 사용자 검증이 끝난 User를 그대로 사용하므로 이 record에 별도로 넣지 않습니다.
      * 외부 API 응답으로 나가는 객체가 아니므로 private으로 제한합니다.
      */
     private record PaymentTarget(
             Booking booking,
             Match match,
-            User buyer,
             User seller
     ) {
     }

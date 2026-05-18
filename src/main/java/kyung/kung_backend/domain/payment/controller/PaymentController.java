@@ -6,10 +6,12 @@ import jakarta.validation.Valid;
 import kyung.kung_backend.domain.payment.dto.PaymentPrepareRequest;
 import kyung.kung_backend.domain.payment.dto.PaymentPrepareResponse;
 import kyung.kung_backend.domain.payment.service.PaymentService;
+import kyung.kung_backend.domain.user.entity.User;
 import kyung.kung_backend.global.response.ApiResponse;
 import kyung.kung_backend.global.response.SuccessCode;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -21,8 +23,9 @@ import org.springframework.web.bind.annotation.RestController;
  *
  * 호출 흐름:
  * - 사용자가 Swagger 또는 프론트엔드에서 /api/payments/prepare를 호출합니다.
- * - 이 Controller가 요청 JSON을 PaymentPrepareRequest로 변환해 받습니다.
- * - 실제 결제 준비 로직은 PaymentService.prepare()에 위임합니다.
+ * - JWT 인증 필터가 Authorization 헤더의 Bearer 토큰을 검증하고 로그인 User를 SecurityContext에 넣습니다.
+ * - 이 Controller는 @AuthenticationPrincipal로 로그인 User를 받고, 요청 JSON은 PaymentPrepareRequest로 받습니다.
+ * - 실제 결제 준비 로직은 PaymentService.prepare(loginUser, request)에 위임합니다.
  * - Service가 반환한 PaymentPrepareResponse를 공통 응답 ApiResponse로 감싸 반환합니다.
  *
  * Controller는 HTTP 요청/응답 형식을 담당하고,
@@ -41,9 +44,11 @@ public class PaymentController {
      *
      * 사용하는 곳:
      * - 프론트엔드에서 사용자가 결제 버튼을 누른 직후 호출합니다.
-     * - Swagger에서는 Payment 그룹의 POST /api/payments/prepare 항목에서 직접 테스트할 수 있습니다.
+     * - Swagger에서는 Payment 그룹의 POST /api/payments/prepare 항목에서 테스트할 수 있습니다.
+     * - main 브랜치의 SecurityConfig 기준으로 인증이 필요한 API이므로 Swagger Authorize에 JWT Bearer 토큰을 넣고 호출합니다.
      *
      * 하는 일:
+     * - 로그인 사용자가 실제 예약의 사용자와 같은지 확인합니다.
      * - 예약/매칭 정보를 기준으로 서버에서 결제 금액을 확정합니다.
      * - 서버 주문번호(orderId)를 생성합니다.
      * - Transaction과 Payment를 READY 상태로 저장합니다.
@@ -65,8 +70,11 @@ public class PaymentController {
     @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "500", description = "주문번호 생성 실패 등 서버 오류")
     @ResponseStatus(HttpStatus.CREATED)
     @PostMapping("/prepare")
-    public ApiResponse<PaymentPrepareResponse> prepare(@Valid @RequestBody PaymentPrepareRequest request) {
-        PaymentPrepareResponse response = paymentService.prepare(request);
+    public ApiResponse<PaymentPrepareResponse> prepare(
+            @AuthenticationPrincipal User loginUser,
+            @Valid @RequestBody PaymentPrepareRequest request
+    ) {
+        PaymentPrepareResponse response = paymentService.prepare(loginUser, request);
         return ApiResponse.onSuccess(SuccessCode.CREATED, response);
     }
 }
