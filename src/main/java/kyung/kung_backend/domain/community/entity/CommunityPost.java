@@ -6,6 +6,7 @@ import kyung.kung_backend.domain.location.entity.Location;
 import kyung.kung_backend.domain.user.entity.User;
 import kyung.kung_backend.global.common.BaseEntity;
 import lombok.AccessLevel;
+import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
@@ -57,4 +58,16 @@ public class CommunityPost extends BaseEntity {
 
     @Column(name = "DELETED_AT")
     private LocalDateTime deletedAt;
+
+    @Builder
+    public CommunityPost(User user, ServiceCategory category, Location location, String boardType, String title, String content, String status) {
+        this.user = user;
+        this.category = category;
+        this.location = location;
+        this.boardType = boardType;
+        this.title = title;
+        this.content = content;
+        this.status = status;
+        this.viewCount = 0L;
+    }
 }
