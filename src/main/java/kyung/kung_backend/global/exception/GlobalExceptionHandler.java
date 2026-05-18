@@ -10,6 +10,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -79,6 +80,19 @@ public class GlobalExceptionHandler {
         return ResponseEntity
                 .status(reason.getHttpStatus())
                 .body(ApiResponse.onFailure(ErrorCode.BAD_REQUEST, e.getMessage()));
+    }
+
+    // ResponseStatusException 처리
+    @ExceptionHandler(ResponseStatusException.class)
+    public ResponseEntity<ApiResponse<?>> handleResponseStatusException(
+            ResponseStatusException e
+    ) {
+        return ResponseEntity
+                .status(e.getStatusCode())
+                .body(ApiResponse.onFailure(
+                        ErrorCode.UNAUTHORIZED,
+                        e.getReason()
+                ));
     }
 
     // 그 외 예상하지 못한 예외 처리
