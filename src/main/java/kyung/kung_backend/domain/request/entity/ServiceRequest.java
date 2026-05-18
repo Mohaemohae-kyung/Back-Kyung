@@ -63,4 +63,65 @@ public class ServiceRequest extends BaseEntity {
 
     @Column(name = "DELETED_AT")
     private LocalDateTime deletedAt;
+
+    private static final String STATUS_OPEN = "OPEN";
+    private static final String STATUS_CANCELLED = "CANCELLED";
+
+    public static ServiceRequest create(
+            User user,
+            ServiceCategory category,
+            Location location,
+            ExpertService expertService,
+            String title,
+            String content,
+            BigDecimal budget,
+            LocalDateTime preferredDate
+    ) {
+        ServiceRequest serviceRequest = new ServiceRequest();
+
+        serviceRequest.user = user;
+        serviceRequest.category = category;
+        serviceRequest.location = location;
+        serviceRequest.expertService = expertService;
+        serviceRequest.title = title;
+        serviceRequest.content = content;
+        serviceRequest.budget = budget;
+        serviceRequest.preferredDate = preferredDate;
+        serviceRequest.status = STATUS_OPEN;
+        serviceRequest.deletedAt = null;
+
+        return serviceRequest;
+    }
+
+    public void update(
+            String title,
+            String content,
+            BigDecimal budget,
+            LocalDateTime preferredDate
+    ) {
+        if (title != null && !title.isBlank()) {
+            this.title = title;
+        }
+
+        if (content != null && !content.isBlank()) {
+            this.content = content;
+        }
+
+        if (budget != null) {
+            this.budget = budget;
+        }
+
+        if (preferredDate != null) {
+            this.preferredDate = preferredDate;
+        }
+    }
+
+    public void cancel() {
+        this.status = STATUS_CANCELLED;
+        this.deletedAt = LocalDateTime.now();
+    }
+
+    public boolean isCancelled() {
+        return STATUS_CANCELLED.equals(this.status);
+    }
 }
