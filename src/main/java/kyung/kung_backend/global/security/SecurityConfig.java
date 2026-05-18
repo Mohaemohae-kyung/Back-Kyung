@@ -6,10 +6,16 @@ import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
+import kyung.kung_backend.global.jwt.JwtAuthenticationFilter;
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import lombok.RequiredArgsConstructor;
 
 @Configuration
 @EnableWebSecurity
+@RequiredArgsConstructor
 public class SecurityConfig {
 
     private static final String[] SWAGGER_WHITE_LIST = {
@@ -21,6 +27,8 @@ public class SecurityConfig {
     private static final String[] AUTH_WHITE_LIST = {
             "/api/auth/**"
     };
+
+    private final JwtAuthenticationFilter jwtAuthenticationFilter;
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
@@ -48,24 +56,21 @@ public class SecurityConfig {
 
                         // JWT 구현 전까지는 개발 편의를 위해 전체 API를 임시 허용합니다.
                         // 추후 JWT 필터 추가 후 authenticated()로 변경합니다.
-                        .anyRequest().permitAll()
-                );
-
-                /*
-                // 추후 JWT 필터 구현 후 추가 예정
+                        .anyRequest().authenticated()
+                )
+                // JWT 인증 필터 등록
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
-                */
 
         return http.build();
     }
 
-    /*
-    // 추후 회원가입/로그인에서 비밀번호 암호화가 필요할 때 추가 예정
+
+    // 회원가입/로그인 시 비밀번호 암호화를 위해 사용합니다.
     @Bean
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
     }
-    */
+
 
     /*
     // 추후 프론트엔드 연동 시 CORS 설정이 필요하면 추가 예정

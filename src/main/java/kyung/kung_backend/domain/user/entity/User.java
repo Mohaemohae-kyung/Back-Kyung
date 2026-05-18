@@ -50,4 +50,25 @@ public class User extends BaseEntity {
 
     @Column(name = "DELETED_AT")
     private LocalDateTime deletedAt;
+
+    public static User createUser(String email, String encodedPassword, String name, String nickname, String phone) {
+        User user = new User();
+        user.email = email;
+        user.password = encodedPassword;
+        user.name = name;
+        user.nickname = nickname;
+        user.phone = phone;
+        user.role = "USER";
+        user.status = "ACTIVE";
+        return user;
+    }
+
+    public void delete() {
+        this.status = "DELETED";
+        this.deletedAt = LocalDateTime.now();
+    }
+
+    public void updateLastLoginAt() {
+        this.lastLoginAt = LocalDateTime.now();
+    }
 }
