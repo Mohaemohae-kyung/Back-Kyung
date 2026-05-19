@@ -117,6 +117,26 @@ public class Payment extends BaseEntity {
         return STATUS_PAID.equals(this.paymentStatus);
     }
 
+    public void resetReady(
+            Transaction transaction,
+            UserCoupon userCoupon,
+            String paymentMethod,
+            BigDecimal paymentAmount,
+            String pgProvider
+    ) {
+        this.transaction = transaction;
+        this.orderId = transaction.getOrderId();
+        this.userCoupon = userCoupon;
+        this.paymentMethod = paymentMethod;
+        this.paymentAmount = paymentAmount;
+        this.paymentStatus = STATUS_READY;
+        this.pgProvider = pgProvider;
+        this.pgPaymentKey = null;
+        this.paidAt = null;
+        this.cancelledAt = null;
+        this.failedReason = null;
+    }
+
     public void complete(
             String pgPaymentKey,
             LocalDateTime paidAt

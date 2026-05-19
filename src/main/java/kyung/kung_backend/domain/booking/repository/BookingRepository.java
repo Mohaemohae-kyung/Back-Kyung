@@ -16,13 +16,6 @@ public interface BookingRepository extends JpaRepository<Booking, Long> {
             LocalDateTime now
     );
 
-    boolean existsByExpertServiceExpertServiceIdAndStartAtLessThanAndEndAtGreaterThanAndStatusIn(
-            Long expertServiceId,
-            LocalDateTime endAt,
-            LocalDateTime startAt,
-            Collection<String> statuses
-    );
-
     boolean existsByStoreProductStoreProductIdAndStartAtLessThanAndEndAtGreaterThanAndStatusIn(
             Long storeProductId,
             LocalDateTime endAt,

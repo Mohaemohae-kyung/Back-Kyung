@@ -43,7 +43,7 @@ public class ServiceRequestCheckoutResponse {
                 .requestId(serviceRequest.getRequestId())
                 .expertServiceId(expertService != null ? expertService.getExpertServiceId() : null)
                 .expertProfileId(expertProfile != null ? expertProfile.getExpertProfileId() : null)
-                .serviceTitle(expertService != null ? expertService.getTitle() : null)
+                .serviceTitle(serviceRequest.getTitle())
                 .expertDisplayName(expertProfile != null ? expertProfile.getDisplayName() : null)
                 .preferredDate(serviceRequest.getPreferredDate())
                 .requestStatus(serviceRequest.getStatus())

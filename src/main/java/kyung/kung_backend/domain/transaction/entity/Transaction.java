@@ -1,6 +1,16 @@
 package kyung.kung_backend.domain.transaction.entity;
 
-import jakarta.persistence.*;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.SequenceGenerator;
+import jakarta.persistence.Table;
+import jakarta.persistence.UniqueConstraint;
 import kyung.kung_backend.domain.booking.entity.Booking;
 import kyung.kung_backend.domain.purchase.entity.Purchase;
 import kyung.kung_backend.domain.request.entity.ServiceRequest;
@@ -19,7 +29,8 @@ import java.math.BigDecimal;
         uniqueConstraints = {
                 @UniqueConstraint(name = "UK_TRANSACTIONS_REQUEST", columnNames = "REQUEST_ID"),
                 @UniqueConstraint(name = "UK_TRANSACTIONS_BOOKING", columnNames = "BOOKING_ID"),
-                @UniqueConstraint(name = "UK_TRANSACTIONS_PURCHASE", columnNames = "PURCHASE_ID")
+                @UniqueConstraint(name = "UK_TRANSACTIONS_PURCHASE", columnNames = "PURCHASE_ID"),
+                @UniqueConstraint(name = "UK_TRANSACTIONS_ORDER_ID", columnNames = "ORDER_ID")
         }
 )
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
@@ -35,6 +46,9 @@ public class Transaction extends BaseEntity {
     @Column(name = "TRANSACTION_ID", nullable = false)
     private Long transactionId;
 
+    @Column(name = "ORDER_ID", nullable = false, unique = true, length = 100)
+    private String orderId;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "REQUEST_ID", unique = true)
     private ServiceRequest serviceRequest;
@@ -42,14 +56,6 @@ public class Transaction extends BaseEntity {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "BOOKING_ID", unique = true)
     private Booking booking;
-
-    /*
-     * 견적 요청은 예약을 만들지 않고 바로 결제로 넘어가는 흐름입니다.
-     * 따라서 ServiceRequest 기반 결제는 Transaction에서 REQUEST_ID로 직접 추적합니다.
-     */
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "REQUEST_ID")
-    private ServiceRequest serviceRequest;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "PURCHASE_ID", unique = true)
@@ -98,19 +104,7 @@ public class Transaction extends BaseEntity {
             BigDecimal finalAmount
     ) {
         Transaction transaction = new Transaction();
-
-        transaction.orderId = orderId;
-        transaction.booking = booking;
-        transaction.serviceRequest = null;
-        transaction.purchase = null;
-        transaction.buyer = buyer;
-        transaction.seller = seller;
-        transaction.transactionType = TYPE_BOOKING;
-        transaction.totalAmount = totalAmount;
-        transaction.discountAmount = discountAmount;
-        transaction.finalAmount = finalAmount;
-        transaction.status = STATUS_READY;
-
+        transaction.resetForBooking(booking, buyer, seller, orderId, totalAmount, discountAmount, finalAmount);
         return transaction;
     }
 
@@ -124,20 +118,52 @@ public class Transaction extends BaseEntity {
             BigDecimal finalAmount
     ) {
         Transaction transaction = new Transaction();
-
-        transaction.orderId = orderId;
-        transaction.booking = null;
-        transaction.serviceRequest = serviceRequest;
-        transaction.purchase = null;
-        transaction.buyer = buyer;
-        transaction.seller = seller;
-        transaction.transactionType = TYPE_SERVICE_REQUEST;
-        transaction.totalAmount = totalAmount;
-        transaction.discountAmount = discountAmount;
-        transaction.finalAmount = finalAmount;
-        transaction.status = STATUS_READY;
-
+        transaction.resetForServiceRequest(serviceRequest, buyer, seller, orderId, totalAmount, discountAmount, finalAmount);
         return transaction;
+    }
+
+    public void resetForBooking(
+            Booking booking,
+            User buyer,
+            User seller,
+            String orderId,
+            BigDecimal totalAmount,
+            BigDecimal discountAmount,
+            BigDecimal finalAmount
+    ) {
+        this.orderId = orderId;
+        this.booking = booking;
+        this.serviceRequest = null;
+        this.purchase = null;
+        this.buyer = buyer;
+        this.seller = seller;
+        this.transactionType = TYPE_BOOKING;
+        this.totalAmount = totalAmount;
+        this.discountAmount = discountAmount;
+        this.finalAmount = finalAmount;
+        this.status = STATUS_READY;
+    }
+
+    public void resetForServiceRequest(
+            ServiceRequest serviceRequest,
+            User buyer,
+            User seller,
+            String orderId,
+            BigDecimal totalAmount,
+            BigDecimal discountAmount,
+            BigDecimal finalAmount
+    ) {
+        this.orderId = orderId;
+        this.booking = null;
+        this.serviceRequest = serviceRequest;
+        this.purchase = null;
+        this.buyer = buyer;
+        this.seller = seller;
+        this.transactionType = TYPE_SERVICE_REQUEST;
+        this.totalAmount = totalAmount;
+        this.discountAmount = discountAmount;
+        this.finalAmount = finalAmount;
+        this.status = STATUS_READY;
     }
 
     public boolean isReady() {

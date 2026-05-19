@@ -2,7 +2,6 @@ package kyung.kung_backend.domain.booking.dto;
 
 import kyung.kung_backend.domain.booking.entity.Booking;
 import kyung.kung_backend.domain.expert.entity.ExpertProfile;
-import kyung.kung_backend.domain.servicepost.entity.ExpertService;
 import kyung.kung_backend.domain.store.entity.StoreProduct;
 import lombok.Builder;
 import lombok.Getter;
@@ -29,23 +28,18 @@ public class BookingResponse {
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 
-    /*
-     * Entity를 API 응답으로 바꾸는 변환 메서드입니다.
-     * 컨트롤러가 JPA Entity를 그대로 노출하지 않도록 DTO에서 필요한 값만 골라 내려줍니다.
-     */
     public static BookingResponse from(Booking booking) {
-        ExpertService expertService = booking.getExpertService();
         StoreProduct storeProduct = booking.getStoreProduct();
-        ExpertProfile expertProfile = booking.getExpertProfile();
+        ExpertProfile expertProfile = storeProduct != null ? storeProduct.getExpertProfile() : null;
 
         return BookingResponse.builder()
                 .bookingId(booking.getBookingId())
                 .userId(booking.getUser().getUserId())
                 .storeProductId(storeProduct != null ? storeProduct.getStoreProductId() : null)
-                .expertServiceId(expertService != null ? expertService.getExpertServiceId() : null)
+                .expertServiceId(null)
                 .expertProfileId(expertProfile != null ? expertProfile.getExpertProfileId() : null)
                 .productTitle(storeProduct != null ? storeProduct.getTitle() : null)
-                .serviceTitle(expertService != null ? expertService.getTitle() : null)
+                .serviceTitle(null)
                 .expertDisplayName(expertProfile != null ? expertProfile.getDisplayName() : null)
                 .startAt(booking.getStartAt())
                 .endAt(booking.getEndAt())
