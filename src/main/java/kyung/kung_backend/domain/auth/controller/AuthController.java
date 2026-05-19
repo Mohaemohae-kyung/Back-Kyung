@@ -12,8 +12,6 @@ import kyung.kung_backend.domain.user.entity.User;
 import kyung.kung_backend.global.response.ApiResponse;
 import kyung.kung_backend.global.response.SuccessCode;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 
@@ -26,45 +24,34 @@ public class AuthController {
     private final AuthService authService;
 
     @PostMapping("/signup")
-    public ResponseEntity<ApiResponse<SignupResponse>> signup(
+    public ApiResponse<SignupResponse> signup(
             @Valid @RequestBody SignupRequest request
     ) {
         SignupResponse response = authService.signup(request);
-
-        return ResponseEntity
-                .status(HttpStatus.CREATED)
-                .body(ApiResponse.onSuccess(SuccessCode.CREATED, response));
+        return ApiResponse.onSuccess(SuccessCode.CREATED, response);
     }
 
     @PostMapping("/login")
-    public ResponseEntity<ApiResponse<LoginResponse>> login(
+    public ApiResponse<LoginResponse> login(
             @Valid @RequestBody LoginRequest request
     ) {
         LoginResponse response = authService.login(request);
-
-        return ResponseEntity
-                .ok(ApiResponse.onSuccess(SuccessCode.OK, response));
+        return ApiResponse.onSuccess(SuccessCode.OK, response);
     }
 
     @PostMapping("/reissue")
-    public ResponseEntity<ApiResponse<ReissueResponse>> reissue(
+    public ApiResponse<ReissueResponse> reissue(
             @Valid @RequestBody ReissueRequest request
     ) {
         ReissueResponse response = authService.reissue(request);
-
-        return ResponseEntity.ok(
-                ApiResponse.onSuccess(SuccessCode.OK, response)
-        );
+        return ApiResponse.onSuccess(SuccessCode.OK, response);
     }
 
     @PostMapping("/logout")
-    public ResponseEntity<ApiResponse<String>> logout(
+    public ApiResponse<Void> logout(
             @AuthenticationPrincipal User user
     ) {
         authService.logout(user);
-
-        return ResponseEntity.ok(
-                ApiResponse.onSuccess(SuccessCode.OK, "로그아웃이 완료되었습니다.")
-        );
+        return ApiResponse.onSuccess(SuccessCode.OK);
     }
 }

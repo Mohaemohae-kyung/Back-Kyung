@@ -10,11 +10,11 @@ import kyung.kung_backend.domain.user.entity.User;
 import kyung.kung_backend.domain.user.repository.UserRepository;
 import kyung.kung_backend.global.response.ErrorCode;
 import kyung.kung_backend.global.jwt.JwtProvider;
+import kyung.kung_backend.global.exception.GeneralException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.server.ResponseStatusException;
 
 
 @Service
@@ -32,17 +32,11 @@ public class AuthService {
         String phone = request.getPhone() == null ? null : request.getPhone().trim();
 
         if (userRepository.existsByEmail(email)) {
-            throw new ResponseStatusException(
-                    ErrorCode.DUPLICATE_EMAIL.getHttpStatus(),
-                    ErrorCode.DUPLICATE_EMAIL.getMessage()
-            );
+            throw GeneralException.of(ErrorCode.DUPLICATE_EMAIL);
         }
 
         if (phone != null && !phone.isBlank() && userRepository.existsByPhone(phone)) {
-            throw new ResponseStatusException(
-                    ErrorCode.DUPLICATE_PHONE.getHttpStatus(),
-                    ErrorCode.DUPLICATE_PHONE.getMessage()
-            );
+            throw GeneralException.of(ErrorCode.DUPLICATE_PHONE);
         }
 
         String encodedPassword = passwordEncoder.encode(request.getPassword());
@@ -65,23 +59,14 @@ public class AuthService {
         String email = request.getEmail().trim().toLowerCase();
 
         User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new ResponseStatusException(
-                        ErrorCode.INVALID_LOGIN.getHttpStatus(),
-                        ErrorCode.INVALID_LOGIN.getMessage()
-                ));
+                .orElseThrow(() -> GeneralException.of(ErrorCode.INVALID_LOGIN));
 
         if (!passwordEncoder.matches(request.getPassword(), user.getPassword())) {
-            throw new ResponseStatusException(
-                    ErrorCode.INVALID_LOGIN.getHttpStatus(),
-                    ErrorCode.INVALID_LOGIN.getMessage()
-            );
+            throw GeneralException.of(ErrorCode.INVALID_LOGIN);
         }
 
         if ("DELETED".equals(user.getStatus())) {
-            throw new ResponseStatusException(
-                    ErrorCode.DELETED_USER.getHttpStatus(),
-                    ErrorCode.DELETED_USER.getMessage()
-            );
+            throw GeneralException.of(ErrorCode.DELETED_USER);
         }
 
         user.updateLastLoginAt();
@@ -99,32 +84,20 @@ public class AuthService {
         String refreshToken = request.getRefreshToken();
 
         if (!jwtProvider.validateToken(refreshToken)) {
-            throw new ResponseStatusException(
-                    ErrorCode.UNAUTHORIZED.getHttpStatus(),
-                    "유효하지 않은 Refresh Token입니다."
-            );
+            throw GeneralException.of(ErrorCode.UNAUTHORIZED);
         }
 
         Long userId = jwtProvider.getUserId(refreshToken);
 
         User user = userRepository.findById(userId)
-                .orElseThrow(() -> new ResponseStatusException(
-                        ErrorCode.UNAUTHORIZED.getHttpStatus(),
-                        "사용자를 찾을 수 없습니다."
-                ));
+                .orElseThrow(() -> GeneralException.of(ErrorCode.UNAUTHORIZED));
 
         if (!"ACTIVE".equals(user.getStatus())) {
-            throw new ResponseStatusException(
-                    ErrorCode.UNAUTHORIZED.getHttpStatus(),
-                    "활성 상태의 회원이 아닙니다."
-            );
+            throw GeneralException.of(ErrorCode.UNAUTHORIZED);
         }
 
         if (user.getRefreshToken() == null || !user.getRefreshToken().equals(refreshToken)) {
-            throw new ResponseStatusException(
-                    ErrorCode.UNAUTHORIZED.getHttpStatus(),
-                    "Refresh Token이 일치하지 않습니다."
-            );
+            throw GeneralException.of(ErrorCode.UNAUTHORIZED);
         }
 
         String newAccessToken = jwtProvider.createAccessToken(user);
@@ -138,10 +111,7 @@ public class AuthService {
     @Transactional
     public void logout(User user) {
         User findUser = userRepository.findById(user.getUserId())
-                .orElseThrow(() -> new ResponseStatusException(
-                        ErrorCode.UNAUTHORIZED.getHttpStatus(),
-                        "사용자를 찾을 수 없습니다."
-                ));
+                .orElseThrow(() -> GeneralException.of(ErrorCode.UNAUTHORIZED));
 
         findUser.clearRefreshToken();
     }
