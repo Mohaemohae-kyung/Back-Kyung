@@ -4,6 +4,7 @@ import jakarta.persistence.*;
 import kyung.kung_backend.domain.user.entity.User;
 import kyung.kung_backend.global.common.BaseEntity;
 import lombok.AccessLevel;
+import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
@@ -46,4 +47,23 @@ public class CommunityComment extends BaseEntity {
 
     @Column(name = "DELETED_AT")
     private LocalDateTime deletedAt;
+
+
+    @Builder
+    public CommunityComment(CommunityPost communityPost, User user, CommunityComment parent, String content, String status) {
+        this.communityPost = communityPost;
+        this.user = user;
+        this.parent = parent;
+        this.content = content;
+        this.status = status;
+    }
+
+    public void updateContent(String content) {
+        this.content = content;
+    }
+
+    public void softDelete() {
+        this.status = "DELETED";
+        this.deletedAt = LocalDateTime.now();
+    }
 }
