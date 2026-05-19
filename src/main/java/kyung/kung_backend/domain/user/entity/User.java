@@ -82,4 +82,14 @@ public class User extends BaseEntity {
     public void clearRefreshToken() {
         this.refreshToken = null;
     }
+
+    @Column(name = "PROFILE_IMAGE_URL", length = 500)
+    private String profileImageUrl;
+
+    public void updateProfile(String name, String phone, String nickname, String profileImageUrl) {
+        if (name != null) this.name = name;
+        if (phone != null) this.phone = phone;
+        if (nickname != null) this.nickname = nickname;
+        if (profileImageUrl != null) this.profileImageUrl = profileImageUrl;
+    }
 }
