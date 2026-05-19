@@ -13,6 +13,7 @@ import kyung.kung_backend.global.response.ErrorCode;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import kyung.kung_backend.domain.store.entity.enums.StoreProductStatus;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -160,10 +161,8 @@ public class BookingService {
                 || storeProduct.getExpertProfile().getUser() == null
                 || storeProduct.getPrice() == null
                 || storeProduct.getPrice().signum() < 0
-                || !"ACTIVE".equals(storeProduct.getStatus())
-                || storeProduct.getDeletedAt() != null
-                || storeProduct.getStockQuantity() == null
-                || storeProduct.getStockQuantity() <= 0) {
+                || storeProduct.getStatus() != StoreProductStatus.ACTIVE
+                || storeProduct.getDeletedAt() != null) {
             throw GeneralException.of(ErrorCode.BAD_REQUEST);
         }
     }
