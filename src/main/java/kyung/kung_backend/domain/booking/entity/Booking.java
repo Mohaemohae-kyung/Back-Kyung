@@ -1,6 +1,7 @@
 package kyung.kung_backend.domain.booking.entity;
 
 import jakarta.persistence.*;
+import kyung.kung_backend.domain.store.entity.StoreProduct;
 import kyung.kung_backend.domain.expert.entity.ExpertProfile;
 import kyung.kung_backend.domain.servicepost.entity.ExpertService;
 import kyung.kung_backend.domain.store.entity.StoreProduct;
@@ -49,17 +50,14 @@ public class Booking extends BaseEntity {
     private User user;
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "EXPERT_PROFILE_ID", nullable = false)
-    private ExpertProfile expertProfile;
+    @JoinColumn(name = "STORE_PRODUCT_ID", nullable = false)
+    private StoreProduct storeProduct;
 
     @Column(name = "START_AT", nullable = false)
     private LocalDateTime startAt;
 
     @Column(name = "END_AT")
     private LocalDateTime endAt;
-
-    @Column(name = "LOCATION_TEXT", length = 255)
-    private String locationText;
 
     @Column(name = "STATUS", nullable = false, length = 20)
     private String status;

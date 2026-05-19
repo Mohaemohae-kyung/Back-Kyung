@@ -2,7 +2,7 @@ package kyung.kung_backend.domain.store.entity;
 
 import jakarta.persistence.*;
 import kyung.kung_backend.domain.category.entity.ServiceCategory;
-import kyung.kung_backend.domain.user.entity.User;
+import kyung.kung_backend.domain.expert.entity.ExpertProfile;
 import kyung.kung_backend.global.common.BaseEntity;
 import lombok.AccessLevel;
 import lombok.Getter;
@@ -27,9 +27,9 @@ public class StoreProduct extends BaseEntity {
     @Column(name = "STORE_PRODUCT_ID", nullable = false)
     private Long storeProductId;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "SELLER_ID")
-    private User seller;
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "EXPERT_PROFILE_ID", nullable = false)
+    private ExpertProfile expertProfile;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "CATEGORY_ID")
