@@ -69,7 +69,6 @@ public class Transaction extends BaseEntity {
 
     public static final String TYPE_BOOKING = "BOOKING";
     public static final String TYPE_SERVICE_REQUEST = "SERVICE_REQUEST";
-    public static final String TYPE_PURCHASE = "PURCHASE";
 
     public static final String STATUS_READY = "READY";
     public static final String STATUS_PAID = "PAID";
@@ -117,7 +116,6 @@ public class Transaction extends BaseEntity {
         this.orderId = orderId;
         this.booking = booking;
         this.serviceRequest = null;
-        this.purchase = null;
         this.buyer = buyer;
         this.seller = seller;
         this.transactionType = TYPE_BOOKING;
@@ -139,7 +137,6 @@ public class Transaction extends BaseEntity {
         this.orderId = orderId;
         this.booking = null;
         this.serviceRequest = serviceRequest;
-        this.purchase = null;
         this.buyer = buyer;
         this.seller = seller;
         this.transactionType = TYPE_SERVICE_REQUEST;
