@@ -6,7 +6,6 @@ import kyung.kung_backend.domain.expert.dto.ExpertDetailResponse;
 import kyung.kung_backend.domain.expert.entity.ExpertProfile;
 import kyung.kung_backend.domain.expert.repository.ExpertProfileRepository;
 import kyung.kung_backend.domain.expert.dto.ExpertProfileUpdateRequest;
-import kyung.kung_backend.domain.expert.dto.ExpertActivitySelectionRequest;
 import kyung.kung_backend.domain.user.entity.User;
 import kyung.kung_backend.domain.category.entity.ServiceCategory;
 import kyung.kung_backend.domain.category.repository.ServiceCategoryRepository;
@@ -33,11 +32,19 @@ public class ExpertService {
             throw new IllegalArgumentException("이미 고수 프로필이 존재합니다.");
         }
 
+        ServiceCategory mainCategory = serviceCategoryRepository.findById(request.getMainCategoryId())
+                .orElseThrow(() -> new IllegalArgumentException("카테고리가 존재하지 않습니다."));
+
+        Location mainLocation = locationRepository.findById(request.getMainLocationId())
+                .orElseThrow(() -> new IllegalArgumentException("지역이 존재하지 않습니다."));
+
         ExpertProfile expertProfile = new ExpertProfile(
                 user,
                 request.getDisplayName(),
                 request.getIntroduction(),
-                request.getCareerYears()
+                request.getCareerYears(),
+                mainCategory,
+                mainLocation
         );
 
         expertProfileRepository.save(expertProfile);
@@ -48,10 +55,18 @@ public class ExpertService {
         ExpertProfile expertProfile = expertProfileRepository.findByUser(user)
                 .orElseThrow(() -> new IllegalArgumentException("고수 프로필이 존재하지 않습니다."));
 
+        ServiceCategory mainCategory = serviceCategoryRepository.findById(request.getMainCategoryId())
+                .orElseThrow(() -> new IllegalArgumentException("카테고리가 존재하지 않습니다."));
+
+        Location mainLocation = locationRepository.findById(request.getMainLocationId())
+                .orElseThrow(() -> new IllegalArgumentException("지역이 존재하지 않습니다."));
+
         expertProfile.updateProfile(
                 request.getDisplayName(),
                 request.getIntroduction(),
-                request.getCareerYears()
+                request.getCareerYears(),
+                mainCategory,
+                mainLocation
         );
     }
 
@@ -96,19 +111,5 @@ public class ExpertService {
                 .orElseThrow(() -> new IllegalArgumentException("고수 프로필이 존재하지 않습니다."));
 
         return ExpertDetailResponse.from(expertProfile);
-    }
-
-    public void selectActivity(User user, ExpertActivitySelectionRequest request) {
-
-        ExpertProfile expertProfile = expertProfileRepository.findByUser(user)
-                .orElseThrow(() -> new IllegalArgumentException("고수 프로필이 존재하지 않습니다."));
-
-        ServiceCategory mainCategory = serviceCategoryRepository.findById(request.getMainCategoryId())
-                .orElseThrow(() -> new IllegalArgumentException("카테고리가 존재하지 않습니다."));
-
-        Location mainLocation = locationRepository.findById(request.getMainLocationId())
-                .orElseThrow(() -> new IllegalArgumentException("지역이 존재하지 않습니다."));
-
-        expertProfile.updateActivity(mainCategory, mainLocation);
     }
 }

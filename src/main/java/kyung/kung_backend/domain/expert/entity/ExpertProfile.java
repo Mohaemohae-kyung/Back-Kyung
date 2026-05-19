@@ -62,12 +62,16 @@ public class ExpertProfile extends BaseEntity {
             User user,
             String displayName,
             String introduction,
-            Long careerYears
+            Long careerYears,
+            ServiceCategory mainCategory,
+            Location mainLocation
     ) {
         this.user = user;
         this.displayName = displayName;
         this.introduction = introduction;
         this.careerYears = careerYears;
+        this.mainCategory = mainCategory;
+        this.mainLocation = mainLocation;
         this.verifiedYn = "N";
         this.status = "ACTIVE";
     }
@@ -75,17 +79,13 @@ public class ExpertProfile extends BaseEntity {
     public void updateProfile(
             String displayName,
             String introduction,
-            Long careerYears
+            Long careerYears,
+            ServiceCategory mainCategory,
+            Location mainLocation
     ) {
         this.displayName = displayName;
         this.introduction = introduction;
         this.careerYears = careerYears;
-    }
-
-    public void updateActivity(
-            ServiceCategory mainCategory,
-            Location mainLocation
-    ) {
         this.mainCategory = mainCategory;
         this.mainLocation = mainLocation;
     }

@@ -1,12 +1,11 @@
 package kyung.kung_backend.domain.expert.controller;
 
-import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import io.swagger.v3.oas.annotations.Operation;
 import kyung.kung_backend.domain.expert.dto.ExpertProfileCreateRequest;
 import kyung.kung_backend.domain.expert.dto.ExpertProfileUpdateRequest;
 import kyung.kung_backend.domain.expert.dto.ExpertSearchResponse;
 import kyung.kung_backend.domain.expert.dto.ExpertDetailResponse;
-import kyung.kung_backend.domain.expert.dto.ExpertActivitySelectionRequest;
 import kyung.kung_backend.domain.expert.service.ExpertService;
 import kyung.kung_backend.domain.user.entity.User;
 import kyung.kung_backend.global.response.ApiResponse;
@@ -77,18 +76,5 @@ public class ExpertController {
     ) {
         ExpertDetailResponse response = expertService.getExpertDetail(expertId);
         return ApiResponse.onSuccess(response);
-    }
-
-    @Operation(
-            summary = "고수 활동 선택",
-            description = "로그인한 고수가 대표 활동 카테고리와 대표 활동 지역을 선택합니다."
-    )
-    @PostMapping("/me/activity-selection")
-    public ApiResponse<Void> selectActivity(
-            @AuthenticationPrincipal User user,
-            @RequestBody ExpertActivitySelectionRequest request
-    ) {
-        expertService.selectActivity(user, request);
-        return ApiResponse.onSuccess(SuccessCode.CREATED);
     }
 }

@@ -8,4 +8,6 @@ public class ExpertProfileUpdateRequest {
     private String displayName;
     private String introduction;
     private Long careerYears;
+    private Long mainCategoryId;
+    private Long mainLocationId;
 }
