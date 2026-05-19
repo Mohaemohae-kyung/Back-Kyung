@@ -1,6 +1,15 @@
 package kyung.kung_backend.domain.booking.entity;
 
-import jakarta.persistence.*;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.SequenceGenerator;
+import jakarta.persistence.Table;
 import kyung.kung_backend.domain.store.entity.StoreProduct;
 import kyung.kung_backend.domain.user.entity.User;
 import kyung.kung_backend.global.common.BaseEntity;
@@ -40,9 +49,73 @@ public class Booking extends BaseEntity {
     @Column(name = "END_AT")
     private LocalDateTime endAt;
 
+    @Column(name = "LOCATION_TEXT", length = 255)
+    private String locationText;
+
     @Column(name = "STATUS", nullable = false, length = 20)
     private String status;
 
+    @Column(name = "PAYMENT_EXPIRES_AT")
+    private LocalDateTime paymentExpiresAt;
+
     @Column(name = "CANCELLED_AT")
     private LocalDateTime cancelledAt;
+
+    public static final String STATUS_PENDING_PAYMENT = "PENDING_PAYMENT";
+    public static final String STATUS_CONFIRMED = "CONFIRMED";
+    public static final String STATUS_CANCELLED = "CANCELLED";
+    public static final String STATUS_EXPIRED = "EXPIRED";
+
+    public static Booking createPendingPaymentForStoreProduct(
+            User user,
+            StoreProduct storeProduct,
+            LocalDateTime startAt,
+            LocalDateTime endAt,
+            String locationText,
+            LocalDateTime paymentExpiresAt
+    ) {
+        Booking booking = new Booking();
+
+        booking.user = user;
+        booking.storeProduct = storeProduct;
+        booking.startAt = startAt;
+        booking.endAt = endAt;
+        booking.locationText = locationText;
+        booking.status = STATUS_PENDING_PAYMENT;
+        booking.paymentExpiresAt = paymentExpiresAt;
+        booking.cancelledAt = null;
+
+        return booking;
+    }
+
+    public boolean isOwnedBy(User user) {
+        return user != null && this.user.getUserId().equals(user.getUserId());
+    }
+
+    public boolean isPendingPayment() {
+        return STATUS_PENDING_PAYMENT.equals(this.status);
+    }
+
+    public boolean isConfirmed() {
+        return STATUS_CONFIRMED.equals(this.status);
+    }
+
+    public boolean isPaymentExpired(LocalDateTime now) {
+        return paymentExpiresAt != null && paymentExpiresAt.isBefore(now);
+    }
+
+    public void confirmPayment() {
+        this.status = STATUS_CONFIRMED;
+        this.paymentExpiresAt = null;
+    }
+
+    public void expirePayment() {
+        this.status = STATUS_EXPIRED;
+    }
+
+    public void cancel() {
+        this.status = STATUS_CANCELLED;
+        this.cancelledAt = LocalDateTime.now();
+        this.paymentExpiresAt = null;
+    }
 }

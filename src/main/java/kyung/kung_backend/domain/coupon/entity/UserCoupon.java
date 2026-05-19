@@ -43,4 +43,26 @@ public class UserCoupon {
 
     @Column(name = "EXPIRED_AT")
     private LocalDateTime expiredAt;
+
+    public static final String STATUS_ISSUED = "ISSUED";
+    public static final String STATUS_AVAILABLE = "AVAILABLE";
+    public static final String STATUS_USED = "USED";
+    public static final String STATUS_EXPIRED = "EXPIRED";
+
+    public boolean isUsable(LocalDateTime now) {
+        boolean statusUsable = STATUS_ISSUED.equals(this.status) || STATUS_AVAILABLE.equals(this.status);
+        boolean notExpired = this.expiredAt == null || !this.expiredAt.isBefore(now);
+
+        return statusUsable && notExpired && this.usedAt == null && this.coupon.isActive(now);
+    }
+
+    public void use(LocalDateTime usedAt) {
+        this.status = STATUS_USED;
+        this.usedAt = usedAt;
+    }
+
+    public void restoreAfterPaymentCancel() {
+        this.status = STATUS_ISSUED;
+        this.usedAt = null;
+    }
 }
