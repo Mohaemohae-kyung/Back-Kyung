@@ -88,4 +88,30 @@ public class ServiceRequestController {
         ServiceRequestResponse response = serviceRequestService.cancelServiceRequest(user, requestId);
         return ApiResponse.onSuccess(SuccessCode.OK, response);
     }
+
+    @Operation(
+            summary = "견적 요청 승인",
+            description = "고수가 견적 요청을 승인합니다. 승인 시 상태가 CHATTING으로 변경되고 채팅방 생성 흐름으로 이어집니다."
+    )
+    @PatchMapping("/{requestId}/approve")
+    public ApiResponse<ServiceRequestResponse> approveServiceRequest(
+            @AuthenticationPrincipal User user,
+            @PathVariable Long requestId
+    ) {
+        ServiceRequestResponse response = serviceRequestService.approveServiceRequest(user, requestId);
+        return ApiResponse.onSuccess(SuccessCode.OK, response);
+    }
+
+    @Operation(
+            summary = "견적 요청 거절",
+            description = "고수가 견적 요청을 거절합니다. 상태가 REJECTED로 변경됩니다."
+    )
+    @PatchMapping("/{requestId}/reject")
+    public ApiResponse<ServiceRequestResponse> rejectServiceRequest(
+            @AuthenticationPrincipal User user,
+            @PathVariable Long requestId
+    ) {
+        ServiceRequestResponse response = serviceRequestService.rejectServiceRequest(user, requestId);
+        return ApiResponse.onSuccess(SuccessCode.OK, response);
+    }
 }

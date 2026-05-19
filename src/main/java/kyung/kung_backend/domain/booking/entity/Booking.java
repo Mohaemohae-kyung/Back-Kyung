@@ -2,7 +2,6 @@ package kyung.kung_backend.domain.booking.entity;
 
 import jakarta.persistence.*;
 import kyung.kung_backend.domain.expert.entity.ExpertProfile;
-import kyung.kung_backend.domain.match.entity.Match;
 import kyung.kung_backend.domain.user.entity.User;
 import kyung.kung_backend.global.common.BaseEntity;
 import lombok.AccessLevel;
@@ -26,10 +25,6 @@ public class Booking extends BaseEntity {
     @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "BOOKINGS_SEQ_GENERATOR")
     @Column(name = "BOOKING_ID", nullable = false)
     private Long bookingId;
-
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "MATCH_ID", nullable = false, unique = true)
-    private Match match;
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "USER_ID", nullable = false)
