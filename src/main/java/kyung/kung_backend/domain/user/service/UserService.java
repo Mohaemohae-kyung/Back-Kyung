@@ -46,8 +46,6 @@ public class UserService {
         User user = getUser(currentUser.getUserId());
         String newProfileImageUrl = user.getProfileImageUrl();
 
-        // 추후 FileUpload 도메인 연동 시 이미지 URL 갱신 로직 추가 필요
-
         user.updateProfile(request.getName(), request.getPhone(), request.getNickname(), newProfileImageUrl);
         return getMyProfile(user);
     }

@@ -1,18 +1,7 @@
 package kyung.kung_backend.domain.transaction.entity;
 
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.FetchType;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.ManyToOne;
-import jakarta.persistence.SequenceGenerator;
-import jakarta.persistence.Table;
-import jakarta.persistence.UniqueConstraint;
+import jakarta.persistence.*;
 import kyung.kung_backend.domain.booking.entity.Booking;
-import kyung.kung_backend.domain.purchase.entity.Purchase;
 import kyung.kung_backend.domain.request.entity.ServiceRequest;
 import kyung.kung_backend.domain.user.entity.User;
 import kyung.kung_backend.global.common.BaseEntity;
@@ -28,9 +17,7 @@ import java.math.BigDecimal;
         name = "TRANSACTIONS",
         uniqueConstraints = {
                 @UniqueConstraint(name = "UK_TRANSACTIONS_REQUEST", columnNames = "REQUEST_ID"),
-                @UniqueConstraint(name = "UK_TRANSACTIONS_BOOKING", columnNames = "BOOKING_ID"),
-                @UniqueConstraint(name = "UK_TRANSACTIONS_PURCHASE", columnNames = "PURCHASE_ID"),
-                @UniqueConstraint(name = "UK_TRANSACTIONS_ORDER_ID", columnNames = "ORDER_ID")
+                @UniqueConstraint(name = "UK_TRANSACTIONS_BOOKING", columnNames = "BOOKING_ID")
         }
 )
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
@@ -56,10 +43,6 @@ public class Transaction extends BaseEntity {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "BOOKING_ID", unique = true)
     private Booking booking;
-
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "PURCHASE_ID", unique = true)
-    private Purchase purchase;
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "BUYER_ID", nullable = false)
