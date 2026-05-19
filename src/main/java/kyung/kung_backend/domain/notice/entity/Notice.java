@@ -39,12 +39,41 @@ public class Notice extends BaseEntity {
     @Column(name = "CONTENT", nullable = false)
     private String content;
 
-    @Column(name = "PINNED_YN", nullable = false, length = 1)
-    private String pinnedYn;
+    @Column(name = "VIEW_COUNT", nullable = false)
+    private Long viewCount;
 
     @Column(name = "STATUS", nullable = false, length = 20)
     private String status;
 
     @Column(name = "DELETED_AT")
     private LocalDateTime deletedAt;
+
+    public static Notice createNotice(User admin, String noticeType, String title, String content) {
+        Notice notice = new Notice();
+        notice.admin = admin;
+        notice.noticeType = noticeType;
+        notice.title = title;
+        notice.content = content;
+        notice.viewCount = 0L;
+        notice.status = "ACTIVE";
+        return notice;
+    }
+
+    public void incrementViewCount() {
+        this.viewCount++;
+    }
+
+    public void updateNotice(String title, String content) {
+        if (title != null && !title.trim().isEmpty()) {
+            this.title = title;
+        }
+        if (content != null && !content.trim().isEmpty()) {
+            this.content = content;
+        }
+    }
+
+    // 기존 클래스 내부 최하단(닫는 중괄호 바로 위)에 추가합니다.
+    public void updateStatus(String status) {
+        this.status = status;
+    }
 }

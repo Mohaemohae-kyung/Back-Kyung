@@ -59,4 +59,14 @@ public class Coupon extends BaseEntity {
 
     @Column(name = "STATUS", nullable = false, length = 20)
     private String status;
+
+    public static final String STATUS_ACTIVE = "ACTIVE";
+    public static final String DISCOUNT_TYPE_FIXED = "FIXED";
+    public static final String DISCOUNT_TYPE_RATE = "RATE";
+
+    public boolean isActive(LocalDateTime now) {
+        return STATUS_ACTIVE.equals(this.status)
+                && !this.startAt.isAfter(now)
+                && !this.endAt.isBefore(now);
+    }
 }
