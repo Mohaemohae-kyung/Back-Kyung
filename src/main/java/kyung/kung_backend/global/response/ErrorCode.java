@@ -13,21 +13,35 @@ public enum ErrorCode implements BaseCode {
     FORBIDDEN(HttpStatus.FORBIDDEN, "COMMON_403", "접근 권한이 없습니다."),
     NOT_FOUND(HttpStatus.NOT_FOUND, "COMMON_404", "요청한 리소스를 찾을 수 없습니다."),
     CONFLICT(HttpStatus.CONFLICT, "COMMON_409", "이미 존재하거나 충돌이 발생한 요청입니다."),
+    INTERNAL_SERVER_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "COMMON_500", "서버 내부 오류가 발생했습니다."),
+
+    // USER
     DUPLICATE_EMAIL(HttpStatus.CONFLICT, "USER_409_1", "이미 사용 중인 이메일입니다."),
     DUPLICATE_PHONE(HttpStatus.CONFLICT, "USER_409_2", "이미 사용 중인 전화번호입니다."),
     INVALID_LOGIN(HttpStatus.UNAUTHORIZED, "AUTH_401_1", "아이디 또는 비밀번호가 올바르지 않습니다."),
     DELETED_USER(HttpStatus.UNAUTHORIZED, "AUTH_401_2", "탈퇴한 회원입니다."),
+
+    // STORE PRODUCT
+    STORE_PRODUCT_NOT_FOUND(HttpStatus.NOT_FOUND, "STORE_PRODUCT_404_1", "마켓 상품을 찾을 수 없습니다."),
+    STORE_PRODUCT_ACCESS_DENIED(HttpStatus.FORBIDDEN, "STORE_PRODUCT_403_1", "해당 상품에 접근할 권한이 없습니다."),
+    EXPERT_PROFILE_NOT_FOUND(HttpStatus.NOT_FOUND, "EXPERT_PROFILE_404_1", "고수 프로필을 찾을 수 없습니다."),
+    CATEGORY_NOT_FOUND(HttpStatus.NOT_FOUND, "CATEGORY_404_1", "카테고리를 찾을 수 없습니다."),
+
+    // BOOKING
     BOOKING_NOT_FOUND(HttpStatus.NOT_FOUND, "BOOKING_404_1", "예약을 찾을 수 없습니다."),
     BOOKING_INVALID_TIME(HttpStatus.BAD_REQUEST, "BOOKING_400_1", "예약 시간이 올바르지 않습니다."),
     BOOKING_ALREADY_RESERVED(HttpStatus.CONFLICT, "BOOKING_409_1", "이미 예약된 시간입니다."),
     BOOKING_NOT_PAYABLE(HttpStatus.BAD_REQUEST, "BOOKING_400_2", "결제할 수 없는 예약입니다."),
+
+    // PAYMENT
     PAYMENT_NOT_FOUND(HttpStatus.NOT_FOUND, "PAYMENT_404_1", "결제 정보를 찾을 수 없습니다."),
     PAYMENT_UNSUPPORTED_TARGET(HttpStatus.BAD_REQUEST, "PAYMENT_400_1", "지원하지 않는 결제 대상입니다."),
     PAYMENT_AMOUNT_MISMATCH(HttpStatus.BAD_REQUEST, "PAYMENT_400_2", "결제 금액이 일치하지 않습니다."),
     PAYMENT_INVALID_STATUS(HttpStatus.BAD_REQUEST, "PAYMENT_400_3", "현재 결제 상태에서 처리할 수 없습니다."),
     PAYMENT_DUPLICATE_KEY(HttpStatus.CONFLICT, "PAYMENT_409_1", "이미 처리된 PG 결제 키입니다."),
-    COUPON_NOT_AVAILABLE(HttpStatus.BAD_REQUEST, "COUPON_400_1", "사용할 수 없는 쿠폰입니다."),
-    INTERNAL_SERVER_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "COMMON_500", "서버 내부 오류가 발생했습니다.");
+
+    // COUPON
+    COUPON_NOT_AVAILABLE(HttpStatus.BAD_REQUEST, "COUPON_400_1", "사용할 수 없는 쿠폰입니다.");
 
     private final HttpStatus httpStatus;
     private final String code;
