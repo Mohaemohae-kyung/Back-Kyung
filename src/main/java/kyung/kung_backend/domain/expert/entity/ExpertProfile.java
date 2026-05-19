@@ -71,4 +71,22 @@ public class ExpertProfile extends BaseEntity {
         this.verifiedYn = "N";
         this.status = "ACTIVE";
     }
+
+    public void updateProfile(
+            String displayName,
+            String introduction,
+            Long careerYears
+    ) {
+        this.displayName = displayName;
+        this.introduction = introduction;
+        this.careerYears = careerYears;
+    }
+
+    public void updateActivity(
+            ServiceCategory mainCategory,
+            Location mainLocation
+    ) {
+        this.mainCategory = mainCategory;
+        this.mainLocation = mainLocation;
+    }
 }
