@@ -1,6 +1,7 @@
 package kyung.kung_backend.domain.request.dto;
 
 import kyung.kung_backend.domain.request.entity.ServiceRequest;
+import kyung.kung_backend.domain.request.enums.RequestStatus;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -24,7 +25,7 @@ public class ServiceRequestResponse {
     private String content;
     private BigDecimal budget;
     private LocalDateTime preferredDate;
-    private String status;
+    private RequestStatus status;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 

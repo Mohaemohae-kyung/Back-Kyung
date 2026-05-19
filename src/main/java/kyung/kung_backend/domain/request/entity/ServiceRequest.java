@@ -3,6 +3,7 @@ package kyung.kung_backend.domain.request.entity;
 import jakarta.persistence.*;
 import kyung.kung_backend.domain.category.entity.ServiceCategory;
 import kyung.kung_backend.domain.location.entity.Location;
+import kyung.kung_backend.domain.request.enums.RequestStatus;
 import kyung.kung_backend.domain.servicepost.entity.ExpertService;
 import kyung.kung_backend.domain.user.entity.User;
 import kyung.kung_backend.global.common.BaseEntity;
@@ -58,14 +59,21 @@ public class ServiceRequest extends BaseEntity {
     @Column(name = "PREFERRED_DATE")
     private LocalDateTime preferredDate;
 
+    @Enumerated(EnumType.STRING)
     @Column(name = "STATUS", nullable = false, length = 20)
-    private String status;
+    private RequestStatus status;
+
+    @Column(name = "RESPONDED_AT")
+    private LocalDateTime respondedAt;
+
+    @Column(name = "REJECT_REASON", length = 500)
+    private String rejectReason;
+
+    @Column(name = "COMPLETED_AT")
+    private LocalDateTime completedAt;
 
     @Column(name = "DELETED_AT")
     private LocalDateTime deletedAt;
-
-    private static final String STATUS_OPEN = "OPEN";
-    private static final String STATUS_CANCELLED = "CANCELLED";
 
     public static ServiceRequest create(
             User user,
@@ -87,7 +95,7 @@ public class ServiceRequest extends BaseEntity {
         serviceRequest.content = content;
         serviceRequest.budget = budget;
         serviceRequest.preferredDate = preferredDate;
-        serviceRequest.status = STATUS_OPEN;
+        serviceRequest.status = RequestStatus.PENDING;
         serviceRequest.deletedAt = null;
 
         return serviceRequest;
@@ -99,6 +107,10 @@ public class ServiceRequest extends BaseEntity {
             BigDecimal budget,
             LocalDateTime preferredDate
     ) {
+        if (!isPending()) {
+            throw new IllegalStateException("대기 중인 견적 요청만 수정할 수 있습니다.");
+        }
+
         if (title != null && !title.isBlank()) {
             this.title = title;
         }
@@ -116,12 +128,74 @@ public class ServiceRequest extends BaseEntity {
         }
     }
 
+    // 고수가 견적 요청을 승인하면 곧바로 채팅방 생성 흐름으로 진입한다.
+    public void startChatting() {
+        if (!isPending()) {
+            throw new IllegalStateException("대기 중인 견적 요청만 승인할 수 있습니다.");
+        }
+
+        this.status = RequestStatus.CHATTING;
+        this.respondedAt = LocalDateTime.now();
+    }
+
+    // 고수가 견적 요청을 거절한다.
+    public void reject(String rejectReason) {
+        if (!isPending()) {
+            throw new IllegalStateException("대기 중인 견적 요청만 거절할 수 있습니다.");
+        }
+
+        this.status = RequestStatus.REJECTED;
+        this.rejectReason = rejectReason;
+        this.respondedAt = LocalDateTime.now();
+    }
+
+    // 채팅/결제/거래가 최종 완료된 상태로 변경한다.
+    public void complete() {
+        if (!isChatting()) {
+            throw new IllegalStateException("채팅 중인 견적 요청만 완료 처리할 수 있습니다.");
+        }
+
+        this.status = RequestStatus.COMPLETED;
+        this.completedAt = LocalDateTime.now();
+    }
+
+    // 사용자가 견적 요청을 취소한다.
     public void cancel() {
-        this.status = STATUS_CANCELLED;
+        if (!isPending()) {
+            throw new IllegalStateException("대기 중인 견적 요청만 취소할 수 있습니다.");
+        }
+
+        this.status = RequestStatus.CANCELLED;
         this.deletedAt = LocalDateTime.now();
     }
 
+    // 관리자 또는 작성자가 소프트 삭제 처리한다.
+    public void delete() {
+        this.status = RequestStatus.DELETED;
+        this.deletedAt = LocalDateTime.now();
+    }
+
+    public boolean isPending() {
+        return this.status == RequestStatus.PENDING;
+    }
+
+    public boolean isChatting() {
+        return this.status == RequestStatus.CHATTING;
+    }
+
+    public boolean isCompleted() {
+        return this.status == RequestStatus.COMPLETED;
+    }
+
+    public boolean isRejected() {
+        return this.status == RequestStatus.REJECTED;
+    }
+
     public boolean isCancelled() {
-        return STATUS_CANCELLED.equals(this.status);
+        return this.status == RequestStatus.CANCELLED;
+    }
+
+    public boolean isDeleted() {
+        return this.status == RequestStatus.DELETED;
     }
 }
