@@ -1,4 +1,86 @@
-맞아. `db-structure.md`는 너무 설계서처럼 깊게 들어가기보다, **팀원이 현재 테이블 구조와 흐름만 빠르게 이해할 수 있는 수준**이면 충분해. 아래 버전으로 교체하면 좋아. 기존 문서에서 과하게 상세한 컬럼 설명은 줄이고, 테이블 목록/역할/관계 중심으로 정리했어.
+맞아. `PURCHASES`를 제거하면 `TRANSACTIONS`에서는 `Purchase` import, `purchase` 필드, `UK_TRANSACTIONS_PURCHASE` 제약조건, `PURCHASE_ID` 관계를 전부 제거하면 됩니다. 현재 `db-structure.md`에도 `PURCHASES`, “마켓 상품 구매”, `STORE_PRODUCTS → PURCHASES → TRANSACTIONS → PAYMENTS` 흐름이 남아 있어서 같이 정리해야 합니다.
+
+## 1. Transaction.java 수정본
+
+```java
+package kyung.kung_backend.domain.transaction.entity;
+
+import jakarta.persistence.*;
+import kyung.kung_backend.domain.booking.entity.Booking;
+import kyung.kung_backend.domain.request.entity.ServiceRequest;
+import kyung.kung_backend.domain.user.entity.User;
+import kyung.kung_backend.global.common.BaseEntity;
+import lombok.AccessLevel;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+
+import java.math.BigDecimal;
+
+@Getter
+@Entity
+@Table(
+        name = "TRANSACTIONS",
+        uniqueConstraints = {
+                @UniqueConstraint(name = "UK_TRANSACTIONS_REQUEST", columnNames = "REQUEST_ID"),
+                @UniqueConstraint(name = "UK_TRANSACTIONS_BOOKING", columnNames = "BOOKING_ID")
+        }
+)
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
+@SequenceGenerator(
+        name = "TRANSACTIONS_SEQ_GENERATOR",
+        sequenceName = "TRANSACTIONS_SEQ",
+        allocationSize = 1
+)
+public class Transaction extends BaseEntity {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "TRANSACTIONS_SEQ_GENERATOR")
+    @Column(name = "TRANSACTION_ID", nullable = false)
+    private Long transactionId;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "REQUEST_ID", unique = true)
+    private ServiceRequest serviceRequest;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "BOOKING_ID", unique = true)
+    private Booking booking;
+
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "BUYER_ID", nullable = false)
+    private User buyer;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "SELLER_ID")
+    private User seller;
+
+    @Column(name = "TRANSACTION_TYPE", nullable = false, length = 30)
+    private String transactionType;
+
+    @Column(name = "TOTAL_AMOUNT", nullable = false, precision = 12, scale = 2)
+    private BigDecimal totalAmount;
+
+    @Column(name = "DISCOUNT_AMOUNT", nullable = false, precision = 12, scale = 2)
+    private BigDecimal discountAmount;
+
+    @Column(name = "FINAL_AMOUNT", nullable = false, precision = 12, scale = 2)
+    private BigDecimal finalAmount;
+
+    @Column(name = "STATUS", nullable = false, length = 20)
+    private String status;
+}
+```
+
+`TRANSACTION_TYPE`은 이제 아래 2개만 기준으로 잡으면 됩니다.
+
+```text
+SERVICE_REQUEST
+BOOKING
+```
+
+---
+
+## 2. db-structure.md 수정본
 
 ````md
 # DB Structure 초안
@@ -50,20 +132,17 @@ SERVICE_REQUESTS → MATCHES → BOOKINGS
 → 완료 시 SERVICE_REQUESTS 상태를 COMPLETED로 변경
 ```
 
-견적 요청 기반 결제는 `PURCHASES`가 아니라 `TRANSACTIONS`를 통해 처리합니다.
+견적 요청 기반 결제는 `TRANSACTIONS`를 통해 처리합니다.
 
 ```text
 SERVICE_REQUESTS → TRANSACTIONS → PAYMENTS
 ```
 
-마켓 상품 예약/구매는 별도 흐름으로 관리합니다.
+마켓 상품은 일반 물품 구매가 아니라 예약형 상품으로 관리합니다.
 
 ```text
 마켓 상품 예약:
 STORE_PRODUCTS → BOOKINGS → TRANSACTIONS → PAYMENTS
-
-마켓 상품 구매:
-STORE_PRODUCTS → PURCHASES → TRANSACTIONS → PAYMENTS
 ```
 
 ---
@@ -80,25 +159,26 @@ STORE_PRODUCTS → PURCHASES → TRANSACTIONS → PAYMENTS
 |  6 | SERVICE_REQUESTS      | 사용자의 견적 요청             |
 |  7 | CHAT_ROOMS            | 채팅방                    |
 |  8 | CHAT_MESSAGES         | 채팅 메시지                 |
-|  9 | STORE_PRODUCTS        | 고수가 등록한 마켓 상품          |
+|  9 | STORE_PRODUCTS        | 고수가 등록한 예약형 마켓 상품      |
 | 10 | BOOKINGS              | 마켓 상품 예약               |
-| 11 | PURCHASES             | 마켓 상품 구매 내역            |
-| 12 | TRANSACTIONS          | 거래 내역                  |
-| 13 | PAYMENTS              | 결제 내역                  |
-| 14 | SERVICE_PAY_ACCOUNTS  | 숨고페이 계정                |
-| 15 | SERVICE_PAY_HISTORIES | 숨고페이 사용/충전 이력          |
-| 16 | FAVORITE_EXPERTS      | 찜한 고수                  |
-| 17 | COMMUNITY_POSTS       | 커뮤니티 게시글               |
-| 18 | COMMUNITY_COMMENTS    | 커뮤니티 댓글                |
-| 19 | NOTIFICATIONS         | 알림                     |
-| 20 | FILE_UPLOADS          | 파일 업로드                 |
-| 21 | ADMIN_ACTIONS         | 관리자 조치 이력              |
-| 22 | NOTICES               | 공지사항                   |
-| 23 | REVIEWS               | 후기                     |
-| 24 | COUPONS               | 쿠폰                     |
-| 25 | USER_COUPONS          | 사용자 보유 쿠폰              |
+| 11 | TRANSACTIONS          | 거래 내역                  |
+| 12 | PAYMENTS              | 결제 내역                  |
+| 13 | SERVICE_PAY_ACCOUNTS  | 숨고페이 계정                |
+| 14 | SERVICE_PAY_HISTORIES | 숨고페이 사용/충전 이력          |
+| 15 | FAVORITE_EXPERTS      | 찜한 고수                  |
+| 16 | COMMUNITY_POSTS       | 커뮤니티 게시글               |
+| 17 | COMMUNITY_COMMENTS    | 커뮤니티 댓글                |
+| 18 | NOTIFICATIONS         | 알림                     |
+| 19 | FILE_UPLOADS          | 파일 업로드                 |
+| 20 | ADMIN_ACTIONS         | 관리자 조치 이력              |
+| 21 | NOTICES               | 공지사항                   |
+| 22 | REVIEWS               | 후기                     |
+| 23 | COUPONS               | 쿠폰                     |
+| 24 | USER_COUPONS          | 사용자 보유 쿠폰              |
 
 > `MATCHES` 테이블은 제거합니다.
+> `PURCHASES` 테이블은 제거합니다.
+> 마켓 상품은 구매형 상품이 아니라 예약형 상품으로 관리합니다.
 
 ---
 
@@ -128,24 +208,23 @@ STORE_PRODUCTS → PURCHASES → TRANSACTIONS → PAYMENTS
 | CHAT_ROOMS       | 견적 요청 승인 후 생성되는 채팅방 |
 | CHAT_MESSAGES    | 채팅방 내 메시지           |
 
-### 마켓 / 예약 / 구매
+### 마켓 / 예약
 
-| 테이블명           | 설명            |
-| -------------- | ------------- |
-| STORE_PRODUCTS | 고수가 등록한 마켓 상품 |
-| BOOKINGS       | 마켓 상품 예약      |
-| PURCHASES      | 마켓 상품 구매 내역   |
+| 테이블명           | 설명                |
+| -------------- | ----------------- |
+| STORE_PRODUCTS | 고수가 등록한 예약형 마켓 상품 |
+| BOOKINGS       | 마켓 상품 예약          |
 
 ### 거래 / 결제
 
-| 테이블명                  | 설명                            |
-| --------------------- | ----------------------------- |
-| TRANSACTIONS          | 견적 요청, 마켓 예약, 마켓 구매에 대한 거래 단위 |
-| PAYMENTS              | 실제 결제 시도 및 결과                 |
-| SERVICE_PAY_ACCOUNTS  | 사용자별 숨고페이 계정                  |
-| SERVICE_PAY_HISTORIES | 숨고페이 충전, 사용, 환불 이력            |
-| COUPONS               | 쿠폰 정책                         |
-| USER_COUPONS          | 사용자에게 발급된 쿠폰                  |
+| 테이블명                  | 설명                       |
+| --------------------- | ------------------------ |
+| TRANSACTIONS          | 견적 요청 또는 마켓 예약에 대한 거래 단위 |
+| PAYMENTS              | 실제 결제 시도 및 결과            |
+| SERVICE_PAY_ACCOUNTS  | 사용자별 숨고페이 계정             |
+| SERVICE_PAY_HISTORIES | 숨고페이 충전, 사용, 환불 이력       |
+| COUPONS               | 쿠폰 정책                    |
+| USER_COUPONS          | 사용자에게 발급된 쿠폰             |
 
 ### 커뮤니티 / 알림 / 공통
 
@@ -179,7 +258,7 @@ EXPERT_PROFILES ↔ SERVICE_CATEGORIES
 고수 B → 보컬 레슨 제공 가능
 ```
 
-따라서 `EXPERT_SERVICES`는 아래 정도의 구조를 기준으로 합니다.
+기준 구조는 다음과 같습니다.
 
 ```text
 EXPERT_SERVICE_ID
@@ -195,7 +274,7 @@ DELETED_AT
 
 ### STORE_PRODUCTS
 
-`STORE_PRODUCTS`는 고수가 등록한 마켓 상품을 관리합니다.
+`STORE_PRODUCTS`는 고수가 등록한 예약형 마켓 상품을 관리합니다.
 
 ```text
 EXPERT_PROFILES → STORE_PRODUCTS
@@ -233,16 +312,15 @@ STORE_PRODUCTS → BOOKINGS
 BOOKINGS → STORE_PRODUCTS → EXPERT_PROFILES
 ```
 
----
-
-### PURCHASES
-
-`PURCHASES`는 마켓 상품 구매 내역 전용으로 사용합니다.
-
-견적 요청 기반 결제는 `PURCHASES`가 아니라 `TRANSACTIONS`로 처리합니다.
+예약 상품 흐름은 다음과 같습니다.
 
 ```text
-STORE_PRODUCTS → PURCHASES
+상품 선택
+→ 날짜/시간 선택
+→ 예약 생성
+→ 결제 완료
+→ 예약 시점에 서비스 이용
+→ 완료 또는 취소/환불
 ```
 
 ---
@@ -251,12 +329,11 @@ STORE_PRODUCTS → PURCHASES
 
 `TRANSACTIONS`는 전체 거래 단위입니다.
 
-견적 요청 거래, 마켓 예약 거래, 마켓 구매 거래를 모두 표현할 수 있습니다.
+견적 요청 거래와 마켓 예약 거래를 표현합니다.
 
 ```text
 SERVICE_REQUESTS → TRANSACTIONS
 BOOKINGS → TRANSACTIONS
-PURCHASES → TRANSACTIONS
 ```
 
 거래 유형은 `TRANSACTION_TYPE`으로 구분합니다.
@@ -264,7 +341,6 @@ PURCHASES → TRANSACTIONS
 ```text
 SERVICE_REQUEST
 BOOKING
-PURCHASE
 ```
 
 ---
@@ -273,7 +349,7 @@ PURCHASE
 
 `PAYMENTS`는 실제 결제 시도와 결과를 관리합니다.
 
-`PAYMENTS`는 견적 요청, 예약, 구매를 직접 참조하지 않고 항상 `TRANSACTIONS`를 통해 연결합니다.
+`PAYMENTS`는 견적 요청 또는 예약을 직접 참조하지 않고 항상 `TRANSACTIONS`를 통해 연결합니다.
 
 ```text
 TRANSACTIONS → PAYMENTS
@@ -339,9 +415,6 @@ EXPERT_PROFILES → STORE_PRODUCTS
 마켓 상품 예약:
 STORE_PRODUCTS → BOOKINGS → TRANSACTIONS → PAYMENTS
 
-마켓 상품 구매:
-STORE_PRODUCTS → PURCHASES → TRANSACTIONS → PAYMENTS
-
 숨고페이:
 USERS → SERVICE_PAY_ACCOUNTS → SERVICE_PAY_HISTORIES
 
@@ -372,16 +445,14 @@ USERS → NOTICES
 | USERS 1:1 EXPERT_PROFILES                      | 고수 회원은 고수 프로필을 가질 수 있음            |
 | EXPERT_PROFILES 1:N EXPERT_SERVICES            | 고수는 여러 서비스 카테고리를 제공할 수 있음         |
 | SERVICE_CATEGORIES 1:N EXPERT_SERVICES         | 하나의 카테고리에 여러 고수 제공 서비스가 연결될 수 있음  |
-| EXPERT_PROFILES 1:N STORE_PRODUCTS             | 고수는 여러 마켓 상품을 등록할 수 있음            |
+| EXPERT_PROFILES 1:N STORE_PRODUCTS             | 고수는 여러 예약형 마켓 상품을 등록할 수 있음        |
 | STORE_PRODUCTS 1:N BOOKINGS                    | 마켓 상품은 여러 예약을 가질 수 있음             |
-| STORE_PRODUCTS 1:N PURCHASES                   | 마켓 상품은 여러 구매 내역을 가질 수 있음          |
 | USERS 1:N SERVICE_REQUESTS                     | 사용자는 여러 견적 요청을 작성할 수 있음           |
 | EXPERT_SERVICES 1:N SERVICE_REQUESTS           | 특정 고수 제공 서비스를 선택해 견적 요청을 생성할 수 있음 |
 | SERVICE_REQUESTS 1:1 CHAT_ROOMS                | 고수가 요청을 승인하면 채팅방이 생성됨             |
 | CHAT_ROOMS 1:N CHAT_MESSAGES                   | 채팅방은 여러 메시지를 가짐                   |
 | SERVICE_REQUESTS 1:1 TRANSACTIONS              | 견적 요청 기반 거래가 생성될 수 있음             |
 | BOOKINGS 1:1 TRANSACTIONS                      | 마켓 예약은 거래로 연결될 수 있음               |
-| PURCHASES 1:1 TRANSACTIONS                     | 마켓 구매는 거래로 연결될 수 있음               |
 | TRANSACTIONS 1:N PAYMENTS                      | 하나의 거래에 여러 결제 시도가 있을 수 있음         |
 | USERS 1:1 SERVICE_PAY_ACCOUNTS                 | 사용자는 숨고페이 계정을 가질 수 있음             |
 | SERVICE_PAY_ACCOUNTS 1:N SERVICE_PAY_HISTORIES | 숨고페이 계정은 여러 이력을 가짐                |
@@ -395,35 +466,32 @@ USERS → NOTICES
 
 이번 구조 정리에서 수정하는 핵심 Entity는 다음과 같습니다.
 
-| Entity        | 수정 방향                       |
-| ------------- | --------------------------- |
-| ExpertService | 고수-서비스 카테고리 연결 구조로 단순화      |
-| StoreProduct  | 고수가 등록한 마켓 상품으로 정리          |
-| Booking       | 마켓 상품 예약 중심으로 정리            |
-| Transaction   | 견적 요청/예약/구매 거래를 모두 표현하도록 정리 |
+| Entity        | 수정 방향                  |
+| ------------- | ---------------------- |
+| ExpertService | 고수-서비스 카테고리 연결 구조로 단순화 |
+| StoreProduct  | 고수가 등록한 예약형 마켓 상품으로 정리 |
+| Booking       | 마켓 상품 예약 중심으로 정리       |
+| Transaction   | 견적 요청/예약 거래를 표현하도록 정리  |
 
 현재 구조 유지 또는 역할만 명확히 하는 Entity는 다음과 같습니다.
 
-| Entity         | 방향                      |
-| -------------- | ----------------------- |
-| Purchase       | 마켓 상품 구매 내역 전용          |
-| Payment        | Transaction 기준 결제 구조 유지 |
-| ChatRoom       | ServiceRequest 기준 연결 유지 |
-| ServiceRequest | 상태값 기준 흐름 유지            |
+| Entity         | 방향                           |
+| -------------- | ---------------------------- |
+| Payment        | Transaction 기준 결제 구조 유지      |
+| ChatRoom       | ServiceRequest 기준 연결 유지      |
+| ServiceRequest | ExpertService 기준 견적 요청 구조 유지 |
 
 ---
 
 ## 11. 참고 사항
 
 * `MATCHES`는 제거하고 `SERVICE_REQUESTS` 상태값과 `CHAT_ROOMS`로 흐름을 단순화합니다.
+* `PURCHASES`는 제거합니다.
 * `EXPERT_SERVICES`는 고수 프로필과 서비스 카테고리 연결 정보로 사용합니다.
-* `STORE_PRODUCTS`는 고수가 등록한 마켓 상품으로 사용합니다.
-* `BOOKINGS`는 견적 요청 흐름이 아니라 마켓 상품 예약 기능에서 사용합니다.
-* `PURCHASES`는 마켓 상품 구매 내역 전용으로 사용합니다.
+* `STORE_PRODUCTS`는 고수가 등록한 예약형 마켓 상품으로 사용합니다.
+* `BOOKINGS`는 마켓 상품 예약 기능에서 사용합니다.
 * 견적 요청 기반 결제는 `TRANSACTIONS`를 통해 처리합니다.
+* 마켓 상품 예약 결제는 `BOOKINGS → TRANSACTIONS → PAYMENTS`로 처리합니다.
 * `PAYMENTS`는 항상 `TRANSACTIONS`를 기준으로 연결합니다.
 * 실제 기능 구현 과정에서 컬럼, 제약조건, 인덱스는 변경될 수 있습니다.
-* 기존 로컬 DB에 생성된 컬럼은 `ddl-auto: update`만으로 삭제되지 않을 수 있으므로, 필요 시 로컬 테이블 재생성 또는 수동 정리가 필요합니다.
-
-```
-```
+* 기존 로컬 DB에 생성된 컬럼은 `ddl-auto: update`만으로 삭제되지 않을 수 있으므로, 필요 시 로컬 테이블 재생성 또는 수동 컬럼 정리가 필요합니다.
