@@ -160,18 +160,67 @@ public class ServiceRequestService {
     }
 
     private void validateUpdatable(ServiceRequest serviceRequest) {
-        if (serviceRequest.isCancelled()) {
+        if (!serviceRequest.isPending()) {
             throw GeneralException.of(ErrorCode.BAD_REQUEST);
         }
-
-        // TODO: 추후 매칭/예약/결제 진행 상태에 따라 수정 제한 정책 추가
     }
 
     private void validateCancelable(ServiceRequest serviceRequest) {
-        if (serviceRequest.isCancelled()) {
+        if (!serviceRequest.isPending()) {
             throw GeneralException.of(ErrorCode.BAD_REQUEST);
         }
+    }
 
-        // TODO: 추후 매칭/예약/결제 진행 상태에 따라 취소 제한 정책 추가
+    @Transactional
+    public ServiceRequestResponse approveServiceRequest(
+            User loginUser,
+            Long requestId
+    ) {
+        User user = findLoginUser(loginUser);
+        ServiceRequest serviceRequest = findServiceRequest(requestId);
+
+        validateExpert(user);
+        validateApprovable(serviceRequest);
+
+        serviceRequest.startChatting();
+
+        // TODO: ChatRoom 생성 로직 추가 예정
+        // chatRoomService.createByServiceRequest(serviceRequest);
+
+        return ServiceRequestResponse.from(serviceRequest);
+    }
+
+    @Transactional
+    public ServiceRequestResponse rejectServiceRequest(
+            User loginUser,
+            Long requestId
+    ) {
+        User user = findLoginUser(loginUser);
+        ServiceRequest serviceRequest = findServiceRequest(requestId);
+
+        validateExpert(user);
+        validateRejectable(serviceRequest);
+
+        serviceRequest.reject(null);
+
+        return ServiceRequestResponse.from(serviceRequest);
+    }
+
+    private void validateApprovable(ServiceRequest serviceRequest) {
+        if (!serviceRequest.isPending()) {
+            throw GeneralException.of(ErrorCode.BAD_REQUEST);
+        }
+    }
+
+    private void validateRejectable(ServiceRequest serviceRequest) {
+        if (!serviceRequest.isPending()) {
+            throw GeneralException.of(ErrorCode.BAD_REQUEST);
+        }
+    }
+
+    private void validateExpert(User user) {
+        if (!"EXPERT".equals(user.getRole())) {
+            throw GeneralException.of(ErrorCode.FORBIDDEN);
+        }
     }
 }
