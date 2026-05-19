@@ -2,7 +2,7 @@ package kyung.kung_backend.domain.chat.entity;
 
 import jakarta.persistence.*;
 import kyung.kung_backend.domain.expert.entity.ExpertProfile;
-import kyung.kung_backend.domain.match.entity.Match;
+import kyung.kung_backend.domain.request.entity.ServiceRequest;
 import kyung.kung_backend.domain.user.entity.User;
 import kyung.kung_backend.global.common.BaseEntity;
 import lombok.AccessLevel;
@@ -13,7 +13,12 @@ import java.time.LocalDateTime;
 
 @Getter
 @Entity
-@Table(name = "CHAT_ROOMS")
+@Table(
+        name = "CHAT_ROOMS",
+        uniqueConstraints = {
+                @UniqueConstraint(name = "UK_CHAT_ROOMS_REQUEST", columnNames = "REQUEST_ID")
+        }
+)
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @SequenceGenerator(
         name = "CHAT_ROOMS_SEQ_GENERATOR",
@@ -28,6 +33,10 @@ public class ChatRoom extends BaseEntity {
     private Long chatRoomId;
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "REQUEST_ID", nullable = false)
+    private ServiceRequest serviceRequest;
+
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "USER_ID", nullable = false)
     private User user;
 
@@ -35,13 +44,38 @@ public class ChatRoom extends BaseEntity {
     @JoinColumn(name = "EXPERT_PROFILE_ID", nullable = false)
     private ExpertProfile expertProfile;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "MATCH_ID")
-    private Match match;
-
     @Column(name = "STATUS", nullable = false, length = 20)
     private String status;
 
     @Column(name = "CLOSED_AT")
     private LocalDateTime closedAt;
+
+    public static ChatRoom create(
+            ServiceRequest serviceRequest,
+            User user,
+            ExpertProfile expertProfile
+    ) {
+        ChatRoom chatRoom = new ChatRoom();
+
+        chatRoom.serviceRequest = serviceRequest;
+        chatRoom.user = user;
+        chatRoom.expertProfile = expertProfile;
+        chatRoom.status = "ACTIVE";
+        chatRoom.closedAt = null;
+
+        return chatRoom;
+    }
+
+    public void close() {
+        this.status = "CLOSED";
+        this.closedAt = LocalDateTime.now();
+    }
+
+    public boolean isActive() {
+        return "ACTIVE".equals(this.status);
+    }
+
+    public boolean isClosed() {
+        return "CLOSED".equals(this.status);
+    }
 }
