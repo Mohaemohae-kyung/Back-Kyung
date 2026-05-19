@@ -21,13 +21,13 @@ public class PaymentConfirmRequest {
 
     /*
      * PG사가 결제 성공 후 내려주는 결제 키입니다.
-     * 실제 운영에서는 이 키로 PG 서버에 승인 확인 요청을 보내고, 성공 응답일 때만 결제 완료 처리합니다.
+     * 실제 운영에서는 이 값으로 PG 서버에 승인 확인 요청을 보냅니다.
      */
     @NotBlank(message = "PG 결제 키는 필수입니다.")
     private String paymentKey;
 
     /*
-     * 프론트/PG가 알려준 결제 금액입니다.
+     * 프론트와 PG가 내려준 결제 금액입니다.
      * 서버에 저장된 최종 금액과 반드시 비교해서 금액 위변조를 막습니다.
      */
     @NotNull(message = "결제 금액은 필수입니다.")

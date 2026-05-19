@@ -4,8 +4,12 @@ import kyung.kung_backend.domain.booking.dto.BookingPrepareRequest;
 import kyung.kung_backend.domain.booking.dto.BookingResponse;
 import kyung.kung_backend.domain.booking.entity.Booking;
 import kyung.kung_backend.domain.booking.repository.BookingRepository;
+import kyung.kung_backend.domain.expert.entity.ExpertProfile;
+import kyung.kung_backend.domain.expert.repository.ExpertProfileRepository;
 import kyung.kung_backend.domain.servicepost.entity.ExpertService;
 import kyung.kung_backend.domain.servicepost.repository.ExpertServiceRepository;
+import kyung.kung_backend.domain.store.entity.StoreProduct;
+import kyung.kung_backend.domain.store.repository.StoreProductRepository;
 import kyung.kung_backend.domain.user.entity.User;
 import kyung.kung_backend.domain.user.repository.UserRepository;
 import kyung.kung_backend.global.exception.GeneralException;
@@ -35,6 +39,8 @@ public class BookingService {
 
     private final BookingRepository bookingRepository;
     private final ExpertServiceRepository expertServiceRepository;
+    private final StoreProductRepository storeProductRepository;
+    private final ExpertProfileRepository expertProfileRepository;
     private final UserRepository userRepository;
 
     @Transactional
@@ -43,7 +49,6 @@ public class BookingService {
             BookingPrepareRequest request
     ) {
         User user = findLoginUser(loginUser);
-        ExpertService expertService = findExpertService(request.getExpertServiceId());
         LocalDateTime now = LocalDateTime.now();
 
         /*
@@ -52,16 +57,10 @@ public class BookingService {
          */
         expireStalePendingBookings(now);
         validateBookingTime(request.getStartAt(), request.getEndAt(), now);
-        validateSlotAvailable(expertService.getExpertServiceId(), request.getStartAt(), request.getEndAt());
 
-        Booking booking = Booking.createPendingPayment(
-                user,
-                expertService,
-                request.getStartAt(),
-                request.getEndAt(),
-                request.getLocationText(),
-                now.plusMinutes(PAYMENT_HOLD_MINUTES)
-        );
+        Booking booking = request.getStoreProductId() != null
+                ? createStoreProductBooking(user, request, now)
+                : createExpertServiceBooking(user, request, now);
 
         return BookingResponse.from(bookingRepository.save(booking));
     }
@@ -121,7 +120,16 @@ public class BookingService {
     }
 
     private ExpertService findExpertService(Long expertServiceId) {
+        if (expertServiceId == null) {
+            throw GeneralException.of(ErrorCode.BAD_REQUEST);
+        }
+
         return expertServiceRepository.findById(expertServiceId)
+                .orElseThrow(() -> GeneralException.of(ErrorCode.NOT_FOUND));
+    }
+
+    private StoreProduct findStoreProduct(Long storeProductId) {
+        return storeProductRepository.findById(storeProductId)
                 .orElseThrow(() -> GeneralException.of(ErrorCode.NOT_FOUND));
     }
 
@@ -164,6 +172,77 @@ public class BookingService {
         boolean alreadyReserved = bookingRepository
                 .existsByExpertServiceExpertServiceIdAndStartAtLessThanAndEndAtGreaterThanAndStatusIn(
                         expertServiceId,
+                        endAt,
+                        startAt,
+                        BLOCKING_STATUSES
+                );
+
+        if (alreadyReserved) {
+            throw GeneralException.of(ErrorCode.BOOKING_ALREADY_RESERVED);
+        }
+    }
+
+    private Booking createStoreProductBooking(
+            User user,
+            BookingPrepareRequest request,
+            LocalDateTime now
+    ) {
+        StoreProduct storeProduct = findStoreProduct(request.getStoreProductId());
+        validateStoreProductReservable(storeProduct);
+        validateStoreProductSlotAvailable(storeProduct.getStoreProductId(), request.getStartAt(), request.getEndAt());
+
+        ExpertProfile expertProfile = expertProfileRepository.findByUserUserId(storeProduct.getSeller().getUserId())
+                .orElseThrow(() -> GeneralException.of(ErrorCode.NOT_FOUND));
+
+        return Booking.createPendingPaymentForStoreProduct(
+                user,
+                storeProduct,
+                expertProfile,
+                request.getStartAt(),
+                request.getEndAt(),
+                request.getLocationText(),
+                now.plusMinutes(PAYMENT_HOLD_MINUTES)
+        );
+    }
+
+    private Booking createExpertServiceBooking(
+            User user,
+            BookingPrepareRequest request,
+            LocalDateTime now
+    ) {
+        ExpertService expertService = findExpertService(request.getExpertServiceId());
+        validateSlotAvailable(expertService.getExpertServiceId(), request.getStartAt(), request.getEndAt());
+
+        return Booking.createPendingPayment(
+                user,
+                expertService,
+                request.getStartAt(),
+                request.getEndAt(),
+                request.getLocationText(),
+                now.plusMinutes(PAYMENT_HOLD_MINUTES)
+        );
+    }
+
+    private void validateStoreProductReservable(StoreProduct storeProduct) {
+        if (storeProduct.getSeller() == null
+                || storeProduct.getPrice() == null
+                || storeProduct.getPrice().signum() < 0
+                || !"ACTIVE".equals(storeProduct.getStatus())
+                || storeProduct.getDeletedAt() != null
+                || storeProduct.getStockQuantity() == null
+                || storeProduct.getStockQuantity() <= 0) {
+            throw GeneralException.of(ErrorCode.BAD_REQUEST);
+        }
+    }
+
+    private void validateStoreProductSlotAvailable(
+            Long storeProductId,
+            LocalDateTime startAt,
+            LocalDateTime endAt
+    ) {
+        boolean alreadyReserved = bookingRepository
+                .existsByStoreProductStoreProductIdAndStartAtLessThanAndEndAtGreaterThanAndStatusIn(
+                        storeProductId,
                         endAt,
                         startAt,
                         BLOCKING_STATUSES

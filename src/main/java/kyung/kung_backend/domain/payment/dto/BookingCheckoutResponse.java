@@ -3,6 +3,7 @@ package kyung.kung_backend.domain.payment.dto;
 import kyung.kung_backend.domain.booking.entity.Booking;
 import kyung.kung_backend.domain.expert.entity.ExpertProfile;
 import kyung.kung_backend.domain.servicepost.entity.ExpertService;
+import kyung.kung_backend.domain.store.entity.StoreProduct;
 import lombok.Builder;
 import lombok.Getter;
 
@@ -14,7 +15,9 @@ import java.time.LocalDateTime;
 public class BookingCheckoutResponse {
 
     private Long bookingId;
+    private Long storeProductId;
     private Long expertServiceId;
+    private String productTitle;
     private String serviceTitle;
     private String expertDisplayName;
     private LocalDateTime startAt;
@@ -37,11 +40,14 @@ public class BookingCheckoutResponse {
             BigDecimal finalAmount
     ) {
         ExpertService expertService = booking.getExpertService();
+        StoreProduct storeProduct = booking.getStoreProduct();
         ExpertProfile expertProfile = booking.getExpertProfile();
 
         return BookingCheckoutResponse.builder()
                 .bookingId(booking.getBookingId())
+                .storeProductId(storeProduct != null ? storeProduct.getStoreProductId() : null)
                 .expertServiceId(expertService != null ? expertService.getExpertServiceId() : null)
+                .productTitle(storeProduct != null ? storeProduct.getTitle() : null)
                 .serviceTitle(expertService != null ? expertService.getTitle() : null)
                 .expertDisplayName(expertProfile != null ? expertProfile.getDisplayName() : null)
                 .startAt(booking.getStartAt())

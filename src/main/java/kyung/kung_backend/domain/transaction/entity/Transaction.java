@@ -3,6 +3,7 @@ package kyung.kung_backend.domain.transaction.entity;
 import jakarta.persistence.*;
 import kyung.kung_backend.domain.booking.entity.Booking;
 import kyung.kung_backend.domain.purchase.entity.Purchase;
+import kyung.kung_backend.domain.request.entity.ServiceRequest;
 import kyung.kung_backend.domain.user.entity.User;
 import kyung.kung_backend.global.common.BaseEntity;
 import lombok.AccessLevel;
@@ -45,6 +46,14 @@ public class Transaction extends BaseEntity {
     @JoinColumn(name = "BOOKING_ID")
     private Booking booking;
 
+    /*
+     * 견적 요청은 예약을 만들지 않고 바로 결제로 넘어가는 흐름입니다.
+     * 따라서 ServiceRequest 기반 결제는 Transaction에서 REQUEST_ID로 직접 추적합니다.
+     */
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "REQUEST_ID")
+    private ServiceRequest serviceRequest;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "PURCHASE_ID", unique = true)
     private Purchase purchase;
@@ -73,6 +82,7 @@ public class Transaction extends BaseEntity {
     private String status;
 
     public static final String TYPE_BOOKING = "BOOKING";
+    public static final String TYPE_SERVICE_REQUEST = "SERVICE_REQUEST";
     public static final String TYPE_PURCHASE = "PURCHASE";
 
     public static final String STATUS_READY = "READY";
@@ -94,10 +104,37 @@ public class Transaction extends BaseEntity {
 
         transaction.orderId = orderId;
         transaction.booking = booking;
+        transaction.serviceRequest = null;
         transaction.purchase = null;
         transaction.buyer = buyer;
         transaction.seller = seller;
         transaction.transactionType = TYPE_BOOKING;
+        transaction.totalAmount = totalAmount;
+        transaction.discountAmount = discountAmount;
+        transaction.finalAmount = finalAmount;
+        transaction.status = STATUS_READY;
+
+        return transaction;
+    }
+
+    public static Transaction createForServiceRequest(
+            ServiceRequest serviceRequest,
+            User buyer,
+            User seller,
+            String orderId,
+            BigDecimal totalAmount,
+            BigDecimal discountAmount,
+            BigDecimal finalAmount
+    ) {
+        Transaction transaction = new Transaction();
+
+        transaction.orderId = orderId;
+        transaction.booking = null;
+        transaction.serviceRequest = serviceRequest;
+        transaction.purchase = null;
+        transaction.buyer = buyer;
+        transaction.seller = seller;
+        transaction.transactionType = TYPE_SERVICE_REQUEST;
         transaction.totalAmount = totalAmount;
         transaction.discountAmount = discountAmount;
         transaction.finalAmount = finalAmount;

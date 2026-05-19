@@ -18,4 +18,9 @@ public interface TransactionRepository extends JpaRepository<Transaction, Long> 
             Long bookingId,
             String status
     );
+
+    Optional<Transaction> findFirstByServiceRequestRequestIdAndStatusOrderByCreatedAtDesc(
+            Long requestId,
+            String status
+    );
 }

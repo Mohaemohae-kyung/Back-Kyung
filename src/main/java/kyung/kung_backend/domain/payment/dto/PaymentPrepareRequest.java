@@ -11,14 +11,15 @@ public class PaymentPrepareRequest {
 
     /*
      * 결제 대상 종류입니다.
-     * 현재는 BOOKING만 구현했고, 이후 마켓 상품 구매를 붙일 때 PURCHASE를 추가하면 됩니다.
+     * BOOKING은 이미 생성된 예약을 결제할 때 사용하고,
+     * SERVICE_REQUEST 또는 REQUEST는 승인된 견적 요청을 결제 준비 단계에서 바로 결제할 때 사용합니다.
      */
     @NotBlank(message = "결제 대상 타입은 필수입니다.")
     private String targetType;
 
     /*
-     * targetType이 BOOKING이면 bookingId입니다.
-     * 서버는 이 ID로 예약을 조회한 뒤 로그인 사용자 소유인지, 결제 가능한 상태인지 검증합니다.
+     * targetType이 BOOKING이면 bookingId, SERVICE_REQUEST이면 requestId입니다.
+     * 서버는 이 ID로 대상 데이터를 조회하고 로그인 사용자 소유 여부와 결제 가능 상태를 검증합니다.
      */
     @NotNull(message = "결제 대상 ID는 필수입니다.")
     private Long targetId;

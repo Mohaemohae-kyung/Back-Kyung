@@ -13,6 +13,8 @@ public class PaymentPrepareResponse {
 
     private Long paymentId;
     private Long transactionId;
+    private Long bookingId;
+    private Long serviceRequestId;
     private String orderId;
     private String orderName;
     private BigDecimal totalAmount;
@@ -32,6 +34,12 @@ public class PaymentPrepareResponse {
         return PaymentPrepareResponse.builder()
                 .paymentId(payment.getPaymentId())
                 .transactionId(transaction.getTransactionId())
+                .bookingId(transaction.getBooking() != null
+                        ? transaction.getBooking().getBookingId()
+                        : null)
+                .serviceRequestId(transaction.getServiceRequest() != null
+                        ? transaction.getServiceRequest().getRequestId()
+                        : null)
                 .orderId(transaction.getOrderId())
                 .orderName(orderName)
                 .totalAmount(transaction.getTotalAmount())

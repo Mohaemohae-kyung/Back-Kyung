@@ -15,6 +15,7 @@ public class PaymentResponse {
     private Long paymentId;
     private Long transactionId;
     private Long bookingId;
+    private Long serviceRequestId;
     private String orderId;
     private String transactionType;
     private String paymentMethod;
@@ -42,6 +43,9 @@ public class PaymentResponse {
                 .paymentId(payment.getPaymentId())
                 .transactionId(transaction.getTransactionId())
                 .bookingId(transaction.getBooking() != null ? transaction.getBooking().getBookingId() : null)
+                .serviceRequestId(transaction.getServiceRequest() != null
+                        ? transaction.getServiceRequest().getRequestId()
+                        : null)
                 .orderId(payment.getOrderId())
                 .transactionType(transaction.getTransactionType())
                 .paymentMethod(payment.getPaymentMethod())

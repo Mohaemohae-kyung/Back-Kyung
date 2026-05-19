@@ -12,10 +12,15 @@ import java.time.LocalDateTime;
 public class BookingPrepareRequest {
 
     /*
-     * 사용자가 상세 화면에서 예약하려는 서비스 ID입니다.
-     * 결제 금액은 프론트가 보낸 값이 아니라 이 서비스의 basePrice를 서버에서 다시 읽어 계산합니다.
+     * 숨고 마켓 상품 ID입니다.
+     * 마켓 결제 흐름은 StoreProduct를 기준으로 예약을 만들고 결제 금액은 StoreProduct.price에서 계산합니다.
      */
-    @NotNull(message = "고수 서비스 ID는 필수입니다.")
+    private Long storeProductId;
+
+    /*
+     * 기존 서비스 게시글 기반 테스트를 위한 값입니다.
+     * 실제 마켓 플로우에서는 storeProductId를 우선 사용합니다.
+     */
     private Long expertServiceId;
 
     /*

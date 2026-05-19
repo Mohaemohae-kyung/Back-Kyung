@@ -22,4 +22,11 @@ public interface BookingRepository extends JpaRepository<Booking, Long> {
             LocalDateTime startAt,
             Collection<String> statuses
     );
+
+    boolean existsByStoreProductStoreProductIdAndStartAtLessThanAndEndAtGreaterThanAndStatusIn(
+            Long storeProductId,
+            LocalDateTime endAt,
+            LocalDateTime startAt,
+            Collection<String> statuses
+    );
 }

@@ -11,8 +11,11 @@ import kyung.kung_backend.domain.payment.dto.PaymentConfirmRequest;
 import kyung.kung_backend.domain.payment.dto.PaymentPrepareRequest;
 import kyung.kung_backend.domain.payment.dto.PaymentPrepareResponse;
 import kyung.kung_backend.domain.payment.dto.PaymentResponse;
+import kyung.kung_backend.domain.payment.dto.ServiceRequestCheckoutResponse;
 import kyung.kung_backend.domain.payment.entity.Payment;
 import kyung.kung_backend.domain.payment.repository.PaymentRepository;
+import kyung.kung_backend.domain.request.entity.ServiceRequest;
+import kyung.kung_backend.domain.request.repository.ServiceRequestRepository;
 import kyung.kung_backend.domain.servicepost.entity.ExpertService;
 import kyung.kung_backend.domain.transaction.entity.Transaction;
 import kyung.kung_backend.domain.transaction.repository.TransactionRepository;
@@ -38,6 +41,8 @@ import java.util.UUID;
 public class PaymentService {
 
     private static final String TARGET_TYPE_BOOKING = "BOOKING";
+    private static final String TARGET_TYPE_SERVICE_REQUEST = "SERVICE_REQUEST";
+    private static final String TARGET_TYPE_REQUEST = "REQUEST";
     private static final BigDecimal ZERO = BigDecimal.ZERO;
     private static final DateTimeFormatter ORDER_TIME_FORMATTER = DateTimeFormatter.ofPattern("yyyyMMddHHmmss");
 
@@ -45,6 +50,7 @@ public class PaymentService {
     private final TransactionRepository transactionRepository;
     private final PaymentRepository paymentRepository;
     private final UserCouponRepository userCouponRepository;
+    private final ServiceRequestRepository serviceRequestRepository;
     private final UserRepository userRepository;
 
     @Transactional
@@ -65,31 +71,57 @@ public class PaymentService {
     }
 
     @Transactional
+    public ServiceRequestCheckoutResponse getServiceRequestCheckout(
+            User loginUser,
+            Long requestId
+    ) {
+        User user = findLoginUser(loginUser);
+        ServiceRequest serviceRequest = findOwnedServiceRequest(user, requestId);
+        validateServiceRequestPayable(serviceRequest);
+
+        BigDecimal baseAmount = getServiceRequestAmount(serviceRequest);
+
+        /*
+         * 견적 요청 결제 화면은 사용자가 요청한 budget을 기준으로 보여줍니다.
+         * 결제 준비 API에서도 같은 requestId를 다시 조회하므로, 프론트가 금액을 조작해 보낼 수 없습니다.
+         */
+        return ServiceRequestCheckoutResponse.of(serviceRequest, baseAmount, ZERO, baseAmount);
+    }
+
+    @Transactional
     public PaymentPrepareResponse preparePayment(
             User loginUser,
             PaymentPrepareRequest request
     ) {
         User user = findLoginUser(loginUser);
-
-        if (!TARGET_TYPE_BOOKING.equals(request.getTargetType())) {
-            throw GeneralException.of(ErrorCode.PAYMENT_UNSUPPORTED_TARGET);
-        }
-
         LocalDateTime now = LocalDateTime.now();
 
+        if (TARGET_TYPE_BOOKING.equals(request.getTargetType())) {
+            return prepareBookingPayment(user, request, now);
+        }
+
+        if (TARGET_TYPE_SERVICE_REQUEST.equals(request.getTargetType())
+                || TARGET_TYPE_REQUEST.equals(request.getTargetType())) {
+            return prepareServiceRequestPayment(user, request, now);
+        }
+
+        throw GeneralException.of(ErrorCode.PAYMENT_UNSUPPORTED_TARGET);
+    }
+
+    private PaymentPrepareResponse prepareBookingPayment(
+            User user,
+            PaymentPrepareRequest request,
+            LocalDateTime now
+    ) {
         /*
-         * 결제 준비 시점에도 만료된 임시 예약을 정리합니다.
-         * 사용자가 예약 화면을 오래 열어 둔 뒤 결제를 시도하는 케이스를 여기서 한 번 더 차단합니다.
+         * 마켓 결제 흐름입니다.
+         * 사용자가 StoreProduct에서 날짜/시간을 선택해 Booking을 만든 뒤, 그 bookingId로 결제 준비를 요청합니다.
          */
         bookingService.expireStalePendingBookings(now);
 
         Booking booking = bookingService.findOwnedBooking(user, request.getTargetId());
         validateBookingPayable(booking, now);
 
-        /*
-         * 동일 예약에 대해 이미 READY 결제 건이 있으면 새 결제 건을 만들지 않고 기존 주문 정보를 돌려줍니다.
-         * 프론트 새로고침이나 중복 클릭으로 주문이 여러 개 생성되는 것을 막기 위한 장치입니다.
-         */
         Payment existingReadyPayment = findExistingReadyPayment(booking);
         if (existingReadyPayment != null) {
             if (samePrepareCondition(existingReadyPayment, request)) {
@@ -100,10 +132,6 @@ public class PaymentService {
                 );
             }
 
-            /*
-             * 쿠폰이나 결제수단이 바뀐 경우 기존 READY 주문을 그대로 쓰면 금액/결제 조건이 어긋납니다.
-             * 아직 PG 승인 전 상태이므로 기존 준비 건은 취소하고 새 orderId로 다시 생성합니다.
-             */
             existingReadyPayment.cancel("결제 조건 변경으로 기존 결제 준비 건을 취소합니다.");
             existingReadyPayment.getTransaction().markCancelled();
         }
@@ -113,10 +141,10 @@ public class PaymentService {
         BigDecimal discountAmount = calculateDiscountAmount(userCoupon, totalAmount);
         BigDecimal finalAmount = totalAmount.subtract(discountAmount);
 
-        String orderId = createOrderId(booking.getBookingId(), now);
-        User seller = booking.getExpertProfile() != null ? booking.getExpertProfile().getUser() : null;
+        String orderId = createOrderId("BOOKING", booking.getBookingId(), now);
+        User seller = resolveBookingSeller(booking);
 
-        Transaction transaction = Transaction.createForBooking(
+        Transaction savedTransaction = transactionRepository.save(Transaction.createForBooking(
                 booking,
                 user,
                 seller,
@@ -124,22 +152,73 @@ public class PaymentService {
                 totalAmount,
                 discountAmount,
                 finalAmount
-        );
+        ));
 
-        Transaction savedTransaction = transactionRepository.save(transaction);
-
-        Payment payment = Payment.createReady(
+        Payment savedPayment = paymentRepository.save(Payment.createReady(
                 savedTransaction,
                 user,
                 userCoupon,
                 request.getPaymentMethod(),
                 finalAmount,
                 request.getPgProvider()
-        );
-
-        Payment savedPayment = paymentRepository.save(payment);
+        ));
 
         return PaymentPrepareResponse.of(savedPayment, savedTransaction, getOrderName(booking));
+    }
+
+    private PaymentPrepareResponse prepareServiceRequestPayment(
+            User user,
+            PaymentPrepareRequest request,
+            LocalDateTime now
+    ) {
+        /*
+         * 견적 요청 결제 흐름입니다.
+         * ServiceRequest는 예약을 만들지 않고, 요청의 budget을 결제 금액으로 사용해 바로 Transaction/Payment를 생성합니다.
+         */
+        ServiceRequest serviceRequest = findOwnedServiceRequest(user, request.getTargetId());
+        validateServiceRequestPayable(serviceRequest);
+
+        Payment existingReadyPayment = findExistingReadyPayment(serviceRequest);
+        if (existingReadyPayment != null) {
+            if (samePrepareCondition(existingReadyPayment, request)) {
+                return PaymentPrepareResponse.of(
+                        existingReadyPayment,
+                        existingReadyPayment.getTransaction(),
+                        getOrderName(serviceRequest)
+                );
+            }
+
+            existingReadyPayment.cancel("결제 조건 변경으로 기존 결제 준비 건을 취소합니다.");
+            existingReadyPayment.getTransaction().markCancelled();
+        }
+
+        BigDecimal totalAmount = getServiceRequestAmount(serviceRequest);
+        UserCoupon userCoupon = findUsableCoupon(request.getUserCouponId(), user, now);
+        BigDecimal discountAmount = calculateDiscountAmount(userCoupon, totalAmount);
+        BigDecimal finalAmount = totalAmount.subtract(discountAmount);
+        String orderId = createOrderId("REQUEST", serviceRequest.getRequestId(), now);
+        User seller = serviceRequest.getExpertService().getExpertProfile().getUser();
+
+        Transaction savedTransaction = transactionRepository.save(Transaction.createForServiceRequest(
+                serviceRequest,
+                user,
+                seller,
+                orderId,
+                totalAmount,
+                discountAmount,
+                finalAmount
+        ));
+
+        Payment savedPayment = paymentRepository.save(Payment.createReady(
+                savedTransaction,
+                user,
+                userCoupon,
+                request.getPaymentMethod(),
+                finalAmount,
+                request.getPgProvider()
+        ));
+
+        return PaymentPrepareResponse.of(savedPayment, savedTransaction, getOrderName(serviceRequest));
     }
 
     @Transactional
@@ -184,7 +263,14 @@ public class PaymentService {
         LocalDateTime paidAt = LocalDateTime.now();
         payment.complete(request.getPaymentKey(), paidAt);
         transaction.markPaid();
-        transaction.getBooking().confirmPayment();
+
+        if (transaction.getBooking() != null) {
+            transaction.getBooking().confirmPayment();
+        }
+
+        if (transaction.getServiceRequest() != null && transaction.getServiceRequest().isChatting()) {
+            transaction.getServiceRequest().complete();
+        }
 
         if (payment.getUserCoupon() != null) {
             payment.getUserCoupon().use(paidAt);
@@ -215,14 +301,18 @@ public class PaymentService {
         if (payment.isReady()) {
             payment.cancel(reason);
             transaction.markCancelled();
-            transaction.getBooking().cancel();
+            if (transaction.getBooking() != null) {
+                transaction.getBooking().cancel();
+            }
             return PaymentResponse.from(payment);
         }
 
         if (payment.isPaid()) {
             payment.refund(reason);
             transaction.markRefunded();
-            transaction.getBooking().cancel();
+            if (transaction.getBooking() != null) {
+                transaction.getBooking().cancel();
+            }
 
             if (payment.getUserCoupon() != null) {
                 payment.getUserCoupon().restoreAfterPaymentCancel();
@@ -264,6 +354,38 @@ public class PaymentService {
                 .orElseThrow(() -> GeneralException.of(ErrorCode.UNAUTHORIZED));
     }
 
+    private ServiceRequest findOwnedServiceRequest(
+            User user,
+            Long requestId
+    ) {
+        ServiceRequest serviceRequest = serviceRequestRepository
+                .findByRequestIdAndDeletedAtIsNull(requestId)
+                .orElseThrow(() -> GeneralException.of(ErrorCode.NOT_FOUND));
+
+        if (!serviceRequest.getUser().getUserId().equals(user.getUserId())) {
+            throw GeneralException.of(ErrorCode.FORBIDDEN);
+        }
+
+        return serviceRequest;
+    }
+
+    private void validateServiceRequestPayable(ServiceRequest serviceRequest) {
+        /*
+         * main의 새 흐름에서는 고수가 요청을 승인하면 ServiceRequest가 CHATTING 상태가 됩니다.
+         * 결제는 고수가 승인한 뒤 사용자와 고수가 협의 중인 상태에서만 열어둡니다.
+         */
+        if (!serviceRequest.isChatting()) {
+            throw GeneralException.of(ErrorCode.BOOKING_NOT_PAYABLE);
+        }
+
+        if (serviceRequest.getExpertService() == null
+                || serviceRequest.getPreferredDate() == null
+                || serviceRequest.getBudget() == null
+                || serviceRequest.getBudget().compareTo(ZERO) <= 0) {
+            throw GeneralException.of(ErrorCode.BOOKING_NOT_PAYABLE);
+        }
+    }
+
     private void validateBookingPayable(
             Booking booking,
             LocalDateTime now
@@ -279,6 +401,10 @@ public class PaymentService {
     }
 
     private BigDecimal getBookingBaseAmount(Booking booking) {
+        if (booking.getStoreProduct() != null) {
+            return booking.getStoreProduct().getPrice();
+        }
+
         ExpertService expertService = booking.getExpertService();
 
         if (expertService == null || expertService.getBasePrice() == null) {
@@ -286,6 +412,14 @@ public class PaymentService {
         }
 
         return expertService.getBasePrice();
+    }
+
+    private BigDecimal getServiceRequestAmount(ServiceRequest serviceRequest) {
+        if (serviceRequest.getBudget() == null || serviceRequest.getBudget().compareTo(ZERO) <= 0) {
+            throw GeneralException.of(ErrorCode.BOOKING_NOT_PAYABLE);
+        }
+
+        return serviceRequest.getBudget();
     }
 
     private Payment findExistingReadyPayment(Booking booking) {
@@ -297,6 +431,29 @@ public class PaymentService {
                 .flatMap(transaction -> paymentRepository.findByTransactionOrderId(transaction.getOrderId()))
                 .filter(Payment::isReady)
                 .orElse(null);
+    }
+
+    private Payment findExistingReadyPayment(ServiceRequest serviceRequest) {
+        return transactionRepository
+                .findFirstByServiceRequestRequestIdAndStatusOrderByCreatedAtDesc(
+                        serviceRequest.getRequestId(),
+                        Transaction.STATUS_READY
+                )
+                .flatMap(transaction -> paymentRepository.findByTransactionOrderId(transaction.getOrderId()))
+                .filter(Payment::isReady)
+                .orElse(null);
+    }
+
+    private User resolveBookingSeller(Booking booking) {
+        if (booking.getStoreProduct() != null) {
+            return booking.getStoreProduct().getSeller();
+        }
+
+        if (booking.getExpertProfile() != null) {
+            return booking.getExpertProfile().getUser();
+        }
+
+        return null;
     }
 
     private boolean samePrepareCondition(
@@ -384,14 +541,21 @@ public class PaymentService {
     }
 
     private String createOrderId(
-            Long bookingId,
+            String targetPrefix,
+            Long targetId,
             LocalDateTime now
     ) {
         String shortUuid = UUID.randomUUID().toString().replace("-", "").substring(0, 8);
-        return "BOOKING-" + bookingId + "-" + now.format(ORDER_TIME_FORMATTER) + "-" + shortUuid;
+        return targetPrefix + "-" + targetId + "-" + now.format(ORDER_TIME_FORMATTER) + "-" + shortUuid;
     }
 
     private String getOrderName(Booking booking) {
+        if (booking.getStoreProduct() != null
+                && booking.getStoreProduct().getTitle() != null
+                && !booking.getStoreProduct().getTitle().isBlank()) {
+            return booking.getStoreProduct().getTitle();
+        }
+
         ExpertService expertService = booking.getExpertService();
 
         if (expertService == null || expertService.getTitle() == null || expertService.getTitle().isBlank()) {
@@ -399,5 +563,13 @@ public class PaymentService {
         }
 
         return expertService.getTitle();
+    }
+
+    private String getOrderName(ServiceRequest serviceRequest) {
+        if (serviceRequest.getTitle() == null || serviceRequest.getTitle().isBlank()) {
+            return "견적 요청 결제";
+        }
+
+        return serviceRequest.getTitle();
     }
 }

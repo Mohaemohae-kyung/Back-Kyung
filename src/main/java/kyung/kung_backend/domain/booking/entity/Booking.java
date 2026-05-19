@@ -3,6 +3,7 @@ package kyung.kung_backend.domain.booking.entity;
 import jakarta.persistence.*;
 import kyung.kung_backend.domain.expert.entity.ExpertProfile;
 import kyung.kung_backend.domain.servicepost.entity.ExpertService;
+import kyung.kung_backend.domain.store.entity.StoreProduct;
 import kyung.kung_backend.domain.user.entity.User;
 import kyung.kung_backend.global.common.BaseEntity;
 import lombok.AccessLevel;
@@ -28,19 +29,16 @@ public class Booking extends BaseEntity {
     private Long bookingId;
 
     /*
-     * 매칭 기반 예약에서 사용하는 연결값입니다.
-     *
-     * 결제 API에서는 "서비스 상세 -> 날짜/시간 선택 -> 바로 결제" 흐름도 지원해야 하므로
-     * MATCH_ID는 nullable로 둡니다. 기존 견적/매칭 플로우에서 생성된 예약은 이 값을 채우고,
-     * 마켓형 즉시 예약은 아래 expertService 값을 기준으로 생성됩니다.
+     * 마켓 상품 예약 연결값입니다.
+     * 숨고 마켓처럼 고수가 올린 상품(StoreProduct)을 사용자가 날짜/시간 선택 후 예약할 때 사용합니다.
      */
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "MATCH_ID", unique = true)
-    private Match match;
+    @JoinColumn(name = "STORE_PRODUCT_ID")
+    private StoreProduct storeProduct;
 
     /*
-     * 마켓형 예약에서 사용자가 선택한 실제 서비스입니다.
-     * 결제 화면에서 상품명/가격을 다시 계산할 때 이 값을 사용합니다.
+     * 이전 서비스 게시글 기반 예약을 위한 연결값입니다.
+     * main 병합 후 마켓 결제는 StoreProduct를 우선 사용하지만, 기존 Swagger/개발 테스트 호환을 위해 남겨둡니다.
      */
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "EXPERT_SERVICE_ID")
@@ -81,6 +79,31 @@ public class Booking extends BaseEntity {
     public static final String STATUS_CANCELLED = "CANCELLED";
     public static final String STATUS_EXPIRED = "EXPIRED";
 
+    public static Booking createPendingPaymentForStoreProduct(
+            User user,
+            StoreProduct storeProduct,
+            ExpertProfile expertProfile,
+            LocalDateTime startAt,
+            LocalDateTime endAt,
+            String locationText,
+            LocalDateTime paymentExpiresAt
+    ) {
+        Booking booking = new Booking();
+
+        booking.storeProduct = storeProduct;
+        booking.expertService = null;
+        booking.user = user;
+        booking.expertProfile = expertProfile;
+        booking.startAt = startAt;
+        booking.endAt = endAt;
+        booking.locationText = locationText;
+        booking.status = STATUS_PENDING_PAYMENT;
+        booking.paymentExpiresAt = paymentExpiresAt;
+        booking.cancelledAt = null;
+
+        return booking;
+    }
+
     public static Booking createPendingPayment(
             User user,
             ExpertService expertService,
@@ -91,7 +114,7 @@ public class Booking extends BaseEntity {
     ) {
         Booking booking = new Booking();
 
-        booking.match = null;
+        booking.storeProduct = null;
         booking.expertService = expertService;
         booking.user = user;
         booking.expertProfile = expertService.getExpertProfile();
@@ -136,22 +159,3 @@ public class Booking extends BaseEntity {
         this.paymentExpiresAt = null;
     }
 }
-
-    /*
-     * 매칭 기반 예약에서 사용하는 연결값입니다.
-     *
-     * 결제 API에서는 "서비스 상세 -> 날짜/시간 선택 -> 바로 결제" 흐름도 지원해야 하므로
-     * MATCH_ID는 nullable로 둡니다. 기존 견적/매칭 플로우에서 생성된 예약은 이 값을 채우고,
-     * 마켓형 즉시 예약은 아래 expertService 값을 기준으로 생성됩니다.
-     */
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "MATCH_ID", unique = true)
-    private Match match;
-
-    /*
-     * 마켓형 예약에서 사용자가 선택한 실제 서비스입니다.
-     * 결제 화면에서 상품명/가격을 다시 계산할 때 이 값을 사용합니다.
-     */
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "EXPERT_SERVICE_ID")
-    private ExpertService expertService;
