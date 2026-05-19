@@ -1,7 +1,9 @@
 package kyung.kung_backend.domain.request.dto;
 
+import kyung.kung_backend.domain.location.entity.Location;
 import kyung.kung_backend.domain.request.entity.ServiceRequest;
 import kyung.kung_backend.domain.request.enums.RequestStatus;
+import kyung.kung_backend.domain.servicepost.entity.ExpertService;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -18,9 +20,13 @@ public class ServiceRequestResponse {
 
     private Long requestId;
     private Long userId;
+
+    private Long expertServiceId;
+    private Long expertProfileId;
+
     private Long categoryId;
     private Long locationId;
-    private Long expertServiceId;
+
     private String title;
     private String content;
     private BigDecimal budget;
@@ -30,16 +36,31 @@ public class ServiceRequestResponse {
     private LocalDateTime updatedAt;
 
     public static ServiceRequestResponse from(ServiceRequest serviceRequest) {
+        ExpertService expertService = serviceRequest.getExpertService();
+        Location mainLocation = null;
+
+        if (expertService != null && expertService.getExpertProfile() != null) {
+            mainLocation = expertService.getExpertProfile().getMainLocation();
+        }
+
         return ServiceRequestResponse.builder()
                 .requestId(serviceRequest.getRequestId())
                 .userId(serviceRequest.getUser().getUserId())
-                .categoryId(serviceRequest.getCategory().getCategoryId())
-                .locationId(serviceRequest.getLocation() != null
-                        ? serviceRequest.getLocation().getLocationId()
+
+                .expertServiceId(expertService != null
+                        ? expertService.getExpertServiceId()
                         : null)
-                .expertServiceId(serviceRequest.getExpertService() != null
-                        ? serviceRequest.getExpertService().getExpertServiceId()
+                .expertProfileId(expertService != null && expertService.getExpertProfile() != null
+                        ? expertService.getExpertProfile().getExpertProfileId()
                         : null)
+
+                .categoryId(expertService != null && expertService.getCategory() != null
+                        ? expertService.getCategory().getCategoryId()
+                        : null)
+                .locationId(mainLocation != null
+                        ? mainLocation.getLocationId()
+                        : null)
+
                 .title(serviceRequest.getTitle())
                 .content(serviceRequest.getContent())
                 .budget(serviceRequest.getBudget())

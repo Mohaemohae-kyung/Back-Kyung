@@ -3,6 +3,7 @@ package kyung.kung_backend.domain.transaction.entity;
 import jakarta.persistence.*;
 import kyung.kung_backend.domain.booking.entity.Booking;
 import kyung.kung_backend.domain.purchase.entity.Purchase;
+import kyung.kung_backend.domain.request.entity.ServiceRequest;
 import kyung.kung_backend.domain.user.entity.User;
 import kyung.kung_backend.global.common.BaseEntity;
 import lombok.AccessLevel;
@@ -16,6 +17,7 @@ import java.math.BigDecimal;
 @Table(
         name = "TRANSACTIONS",
         uniqueConstraints = {
+                @UniqueConstraint(name = "UK_TRANSACTIONS_REQUEST", columnNames = "REQUEST_ID"),
                 @UniqueConstraint(name = "UK_TRANSACTIONS_BOOKING", columnNames = "BOOKING_ID"),
                 @UniqueConstraint(name = "UK_TRANSACTIONS_PURCHASE", columnNames = "PURCHASE_ID")
         }
@@ -32,6 +34,10 @@ public class Transaction extends BaseEntity {
     @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "TRANSACTIONS_SEQ_GENERATOR")
     @Column(name = "TRANSACTION_ID", nullable = false)
     private Long transactionId;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "REQUEST_ID", unique = true)
+    private ServiceRequest serviceRequest;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "BOOKING_ID", unique = true)
