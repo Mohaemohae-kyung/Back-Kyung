@@ -17,6 +17,16 @@ public enum ErrorCode implements BaseCode {
     DUPLICATE_PHONE(HttpStatus.CONFLICT, "USER_409_2", "이미 사용 중인 전화번호입니다."),
     INVALID_LOGIN(HttpStatus.UNAUTHORIZED, "AUTH_401_1", "아이디 또는 비밀번호가 올바르지 않습니다."),
     DELETED_USER(HttpStatus.UNAUTHORIZED, "AUTH_401_2", "탈퇴한 회원입니다."),
+    BOOKING_NOT_FOUND(HttpStatus.NOT_FOUND, "BOOKING_404_1", "예약을 찾을 수 없습니다."),
+    BOOKING_INVALID_TIME(HttpStatus.BAD_REQUEST, "BOOKING_400_1", "예약 시간이 올바르지 않습니다."),
+    BOOKING_ALREADY_RESERVED(HttpStatus.CONFLICT, "BOOKING_409_1", "이미 예약된 시간입니다."),
+    BOOKING_NOT_PAYABLE(HttpStatus.BAD_REQUEST, "BOOKING_400_2", "결제할 수 없는 예약입니다."),
+    PAYMENT_NOT_FOUND(HttpStatus.NOT_FOUND, "PAYMENT_404_1", "결제 정보를 찾을 수 없습니다."),
+    PAYMENT_UNSUPPORTED_TARGET(HttpStatus.BAD_REQUEST, "PAYMENT_400_1", "지원하지 않는 결제 대상입니다."),
+    PAYMENT_AMOUNT_MISMATCH(HttpStatus.BAD_REQUEST, "PAYMENT_400_2", "결제 금액이 일치하지 않습니다."),
+    PAYMENT_INVALID_STATUS(HttpStatus.BAD_REQUEST, "PAYMENT_400_3", "현재 결제 상태에서 처리할 수 없습니다."),
+    PAYMENT_DUPLICATE_KEY(HttpStatus.CONFLICT, "PAYMENT_409_1", "이미 처리된 PG 결제 키입니다."),
+    COUPON_NOT_AVAILABLE(HttpStatus.BAD_REQUEST, "COUPON_400_1", "사용할 수 없는 쿠폰입니다."),
     INTERNAL_SERVER_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "COMMON_500", "서버 내부 오류가 발생했습니다.");
 
     private final HttpStatus httpStatus;
