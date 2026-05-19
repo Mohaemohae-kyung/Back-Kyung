@@ -64,7 +64,7 @@ public class ServiceRequestController {
 
     @Operation(
             summary = "견적 요청 수정",
-            description = "작성자 본인이 견적 요청 내용을 수정합니다. 서비스, 카테고리, 지역은 수정하지 않습니다."
+            description = "작성자 본인이 견적 요청 내용을 수정합니다. 선택한 고수 서비스는 수정하지 않습니다."
     )
     @PatchMapping("/{requestId}")
     public ApiResponse<ServiceRequestResponse> updateServiceRequest(

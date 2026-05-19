@@ -1,7 +1,5 @@
 package kyung.kung_backend.domain.request.service;
 
-import kyung.kung_backend.domain.category.entity.ServiceCategory;
-import kyung.kung_backend.domain.location.entity.Location;
 import kyung.kung_backend.domain.request.dto.ServiceRequestCreateRequest;
 import kyung.kung_backend.domain.request.dto.ServiceRequestResponse;
 import kyung.kung_backend.domain.request.dto.ServiceRequestUpdateRequest;
@@ -38,13 +36,8 @@ public class ServiceRequestService {
         User user = findLoginUser(loginUser);
         ExpertService expertService = findExpertService(request.getExpertServiceId());
 
-        ServiceCategory category = expertService.getCategory();
-        Location location = expertService.getLocation();
-
         ServiceRequest serviceRequest = ServiceRequest.create(
                 user,
-                category,
-                location,
                 expertService,
                 request.getTitle(),
                 request.getContent(),
@@ -116,6 +109,41 @@ public class ServiceRequestService {
         return ServiceRequestResponse.from(serviceRequest);
     }
 
+    @Transactional
+    public ServiceRequestResponse approveServiceRequest(
+            User loginUser,
+            Long requestId
+    ) {
+        User user = findLoginUser(loginUser);
+        ServiceRequest serviceRequest = findServiceRequest(requestId);
+
+        validateExpert(user);
+        validateApprovable(serviceRequest);
+
+        serviceRequest.startChatting();
+
+        // TODO: ChatRoom 생성 로직 추가 예정
+        // chatRoomService.createByServiceRequest(serviceRequest);
+
+        return ServiceRequestResponse.from(serviceRequest);
+    }
+
+    @Transactional
+    public ServiceRequestResponse rejectServiceRequest(
+            User loginUser,
+            Long requestId
+    ) {
+        User user = findLoginUser(loginUser);
+        ServiceRequest serviceRequest = findServiceRequest(requestId);
+
+        validateExpert(user);
+        validateRejectable(serviceRequest);
+
+        serviceRequest.reject(null);
+
+        return ServiceRequestResponse.from(serviceRequest);
+    }
+
     private User findLoginUser(User loginUser) {
         if (loginUser == null || loginUser.getUserId() == null) {
             throw GeneralException.of(ErrorCode.UNAUTHORIZED);
@@ -169,41 +197,6 @@ public class ServiceRequestService {
         if (!serviceRequest.isPending()) {
             throw GeneralException.of(ErrorCode.BAD_REQUEST);
         }
-    }
-
-    @Transactional
-    public ServiceRequestResponse approveServiceRequest(
-            User loginUser,
-            Long requestId
-    ) {
-        User user = findLoginUser(loginUser);
-        ServiceRequest serviceRequest = findServiceRequest(requestId);
-
-        validateExpert(user);
-        validateApprovable(serviceRequest);
-
-        serviceRequest.startChatting();
-
-        // TODO: ChatRoom 생성 로직 추가 예정
-        // chatRoomService.createByServiceRequest(serviceRequest);
-
-        return ServiceRequestResponse.from(serviceRequest);
-    }
-
-    @Transactional
-    public ServiceRequestResponse rejectServiceRequest(
-            User loginUser,
-            Long requestId
-    ) {
-        User user = findLoginUser(loginUser);
-        ServiceRequest serviceRequest = findServiceRequest(requestId);
-
-        validateExpert(user);
-        validateRejectable(serviceRequest);
-
-        serviceRequest.reject(null);
-
-        return ServiceRequestResponse.from(serviceRequest);
     }
 
     private void validateApprovable(ServiceRequest serviceRequest) {

@@ -1,8 +1,6 @@
 package kyung.kung_backend.domain.request.entity;
 
 import jakarta.persistence.*;
-import kyung.kung_backend.domain.category.entity.ServiceCategory;
-import kyung.kung_backend.domain.location.entity.Location;
 import kyung.kung_backend.domain.request.enums.RequestStatus;
 import kyung.kung_backend.domain.servicepost.entity.ExpertService;
 import kyung.kung_backend.domain.user.entity.User;
@@ -35,15 +33,7 @@ public class ServiceRequest extends BaseEntity {
     private User user;
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "CATEGORY_ID", nullable = false)
-    private ServiceCategory category;
-
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "LOCATION_ID")
-    private Location location;
-
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "EXPERT_SERVICE_ID")
+    @JoinColumn(name = "EXPERT_SERVICE_ID", nullable = false)
     private ExpertService expertService;
 
     @Column(name = "TITLE", nullable = false, length = 200)
@@ -77,8 +67,6 @@ public class ServiceRequest extends BaseEntity {
 
     public static ServiceRequest create(
             User user,
-            ServiceCategory category,
-            Location location,
             ExpertService expertService,
             String title,
             String content,
@@ -88,8 +76,6 @@ public class ServiceRequest extends BaseEntity {
         ServiceRequest serviceRequest = new ServiceRequest();
 
         serviceRequest.user = user;
-        serviceRequest.category = category;
-        serviceRequest.location = location;
         serviceRequest.expertService = expertService;
         serviceRequest.title = title;
         serviceRequest.content = content;
@@ -128,7 +114,6 @@ public class ServiceRequest extends BaseEntity {
         }
     }
 
-    // 고수가 견적 요청을 승인하면 곧바로 채팅방 생성 흐름으로 진입한다.
     public void startChatting() {
         if (!isPending()) {
             throw new IllegalStateException("대기 중인 견적 요청만 승인할 수 있습니다.");
@@ -138,7 +123,6 @@ public class ServiceRequest extends BaseEntity {
         this.respondedAt = LocalDateTime.now();
     }
 
-    // 고수가 견적 요청을 거절한다.
     public void reject(String rejectReason) {
         if (!isPending()) {
             throw new IllegalStateException("대기 중인 견적 요청만 거절할 수 있습니다.");
@@ -149,7 +133,6 @@ public class ServiceRequest extends BaseEntity {
         this.respondedAt = LocalDateTime.now();
     }
 
-    // 채팅/결제/거래가 최종 완료된 상태로 변경한다.
     public void complete() {
         if (!isChatting()) {
             throw new IllegalStateException("채팅 중인 견적 요청만 완료 처리할 수 있습니다.");
@@ -159,7 +142,6 @@ public class ServiceRequest extends BaseEntity {
         this.completedAt = LocalDateTime.now();
     }
 
-    // 사용자가 견적 요청을 취소한다.
     public void cancel() {
         if (!isPending()) {
             throw new IllegalStateException("대기 중인 견적 요청만 취소할 수 있습니다.");
@@ -169,7 +151,6 @@ public class ServiceRequest extends BaseEntity {
         this.deletedAt = LocalDateTime.now();
     }
 
-    // 관리자 또는 작성자가 소프트 삭제 처리한다.
     public void delete() {
         this.status = RequestStatus.DELETED;
         this.deletedAt = LocalDateTime.now();

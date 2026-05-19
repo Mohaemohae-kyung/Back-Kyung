@@ -3,18 +3,24 @@ package kyung.kung_backend.domain.servicepost.entity;
 import jakarta.persistence.*;
 import kyung.kung_backend.domain.category.entity.ServiceCategory;
 import kyung.kung_backend.domain.expert.entity.ExpertProfile;
-import kyung.kung_backend.domain.location.entity.Location;
 import kyung.kung_backend.global.common.BaseEntity;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
-import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 @Getter
 @Entity
-@Table(name = "EXPERT_SERVICES")
+@Table(
+        name = "EXPERT_SERVICES",
+        uniqueConstraints = {
+                @UniqueConstraint(
+                        name = "UK_EXPERT_SERVICES_PROFILE_CATEGORY",
+                        columnNames = {"EXPERT_PROFILE_ID", "CATEGORY_ID"}
+                )
+        }
+)
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @SequenceGenerator(
         name = "EXPERT_SERVICES_SEQ_GENERATOR",
@@ -36,26 +42,36 @@ public class ExpertService extends BaseEntity {
     @JoinColumn(name = "CATEGORY_ID", nullable = false)
     private ServiceCategory category;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "LOCATION_ID")
-    private Location location;
-
-    @Column(name = "TITLE", nullable = false, length = 200)
-    private String title;
-
-    @Lob
-    @Column(name = "CONTENT", nullable = false)
-    private String content;
-
-    @Column(name = "BASE_PRICE", precision = 12, scale = 2)
-    private BigDecimal basePrice;
-
     @Column(name = "STATUS", nullable = false, length = 20)
     private String status;
 
-    @Column(name = "VIEW_COUNT", nullable = false)
-    private Long viewCount;
-
     @Column(name = "DELETED_AT")
     private LocalDateTime deletedAt;
+
+    public static ExpertService create(
+            ExpertProfile expertProfile,
+            ServiceCategory category
+    ) {
+        ExpertService expertService = new ExpertService();
+
+        expertService.expertProfile = expertProfile;
+        expertService.category = category;
+        expertService.status = "ACTIVE";
+        expertService.deletedAt = null;
+
+        return expertService;
+    }
+
+    public void delete() {
+        this.status = "DELETED";
+        this.deletedAt = LocalDateTime.now();
+    }
+
+    public boolean isActive() {
+        return "ACTIVE".equals(this.status);
+    }
+
+    public boolean isDeleted() {
+        return "DELETED".equals(this.status);
+    }
 }
