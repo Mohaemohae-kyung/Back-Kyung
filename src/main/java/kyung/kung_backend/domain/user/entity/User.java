@@ -45,24 +45,41 @@ public class User extends BaseEntity {
     @Column(name = "STATUS", nullable = false, length = 20)
     private String status;
 
-    @Column(name = "PROFILE_IMAGE_URL", length = 500)
-    private String profileImageUrl;
-
     @Column(name = "LAST_LOGIN_AT")
     private LocalDateTime lastLoginAt;
 
     @Column(name = "DELETED_AT")
     private LocalDateTime deletedAt;
 
-    public void updateProfile(String name, String phone, String nickname, String profileImageUrl) {
-        if (name != null) this.name = name;
-        if (phone != null) this.phone = phone;
-        if (nickname != null) this.nickname = nickname;
-        if (profileImageUrl != null) this.profileImageUrl = profileImageUrl;
+    @Column(name = "REFRESH_TOKEN", length = 500)
+    private String refreshToken;
+
+    public static User createUser(String email, String encodedPassword, String name, String nickname, String phone) {
+        User user = new User();
+        user.email = email;
+        user.password = encodedPassword;
+        user.name = name;
+        user.nickname = nickname;
+        user.phone = phone;
+        user.role = "USER";
+        user.status = "ACTIVE";
+        return user;
     }
 
-    public void withdraw() {
+    public void delete() {
         this.status = "DELETED";
         this.deletedAt = LocalDateTime.now();
+    }
+
+    public void updateLastLoginAt() {
+        this.lastLoginAt = LocalDateTime.now();
+    }
+
+    public void updateRefreshToken(String refreshToken) {
+        this.refreshToken = refreshToken;
+    }
+
+    public void clearRefreshToken() {
+        this.refreshToken = null;
     }
 }
