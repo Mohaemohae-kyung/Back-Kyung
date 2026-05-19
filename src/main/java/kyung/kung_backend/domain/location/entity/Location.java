@@ -6,8 +6,6 @@ import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
-import java.math.BigDecimal;
-
 @Getter
 @Entity
 @Table(name = "LOCATIONS")
@@ -34,12 +32,41 @@ public class Location extends BaseEntity {
     @Column(name = "DEPTH", nullable = false)
     private Long depth;
 
-    @Column(name = "LATITUDE", precision = 10, scale = 7)
-    private BigDecimal latitude;
-
-    @Column(name = "LONGITUDE", precision = 10, scale = 7)
-    private BigDecimal longitude;
+    @Column(name = "SORT_ORDER", nullable = false)
+    private Long sortOrder;
 
     @Column(name = "ACTIVE_YN", nullable = false, length = 1)
     private String activeYn;
+
+    public static Location createRoot(
+            String name,
+            Long sortOrder
+    ) {
+        Location location = new Location();
+
+        location.parent = null;
+        location.name = name;
+        location.depth = 0L;
+        location.sortOrder = sortOrder;
+        location.activeYn = "Y";
+
+        return location;
+    }
+
+    public static Location createChild(
+            Location parent,
+            String name,
+            Long depth,
+            Long sortOrder
+    ) {
+        Location location = new Location();
+
+        location.parent = parent;
+        location.name = name;
+        location.depth = depth;
+        location.sortOrder = sortOrder;
+        location.activeYn = "Y";
+
+        return location;
+    }
 }

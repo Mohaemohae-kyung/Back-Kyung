@@ -37,4 +37,35 @@ public class ServiceCategory extends BaseEntity {
 
     @Column(name = "ACTIVE_YN", nullable = false, length = 1)
     private String activeYn;
+
+    public static ServiceCategory createRoot(
+            String name,
+            Long sortOrder
+    ) {
+        ServiceCategory category = new ServiceCategory();
+
+        category.parent = null;
+        category.name = name;
+        category.depth = 1L;
+        category.sortOrder = sortOrder;
+        category.activeYn = "Y";
+
+        return category;
+    }
+
+    public static ServiceCategory createChild(
+            ServiceCategory parent,
+            String name,
+            Long sortOrder
+    ) {
+        ServiceCategory category = new ServiceCategory();
+
+        category.parent = parent;
+        category.name = name;
+        category.depth = 2L;
+        category.sortOrder = sortOrder;
+        category.activeYn = "Y";
+
+        return category;
+    }
 }
