@@ -85,7 +85,7 @@ public class CommunityPostService {
 
     @Transactional(readOnly = true)
     public Page<PostResponse> getPosts(Pageable pageable) {
-        return communityPostRepository.findAll(pageable)
+        return communityPostRepository.findByStatus("ACTIVE", pageable)
                 .map(PostResponse::from);
     }
 
