@@ -54,8 +54,7 @@ public class SecurityConfig {
                         // 회원가입, 로그인 등 인증 전 접근이 필요한 API
                         .requestMatchers(AUTH_WHITE_LIST).permitAll()
 
-                        // JWT 구현 전까지는 개발 편의를 위해 전체 API를 임시 허용합니다.
-                        // 추후 JWT 필터 추가 후 authenticated()로 변경합니다.
+                        // 인증이 필요한 모든 API는 JWT 인증을 요구합니다.
                         .anyRequest().authenticated()
                 )
                 // JWT 인증 필터 등록

@@ -57,4 +57,18 @@ public class ExpertProfile extends BaseEntity {
 
     @Column(name = "STATUS", nullable = false, length = 20)
     private String status;
+
+    public ExpertProfile(
+            User user,
+            String displayName,
+            String introduction,
+            Long careerYears
+    ) {
+        this.user = user;
+        this.displayName = displayName;
+        this.introduction = introduction;
+        this.careerYears = careerYears;
+        this.verifiedYn = "N";
+        this.status = "ACTIVE";
+    }
 }
