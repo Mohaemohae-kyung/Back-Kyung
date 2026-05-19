@@ -61,4 +61,37 @@ public class NoticeService {
 
         return NoticePostResponse.from(savedNotice);
     }
+
+    @Transactional
+    public NoticePostResponse updateAdminNotice(Long postId, NoticePostCreateRequest request) {
+        Notice notice = noticeRepository.findById(postId)
+                .orElseThrow(() -> new IllegalArgumentException("게시글을 찾을 수 없습니다."));
+
+        if (!"EXPERT_NOTICE".equals(notice.getNoticeType()) || "DELETED".equals(notice.getStatus())) {
+            throw new IllegalArgumentException("수정할 수 없는 게시글입니다.");
+        }
+
+        notice.updateNotice(request.getTitle(), request.getContent());
+
+        if (request.getAttachmentFileIds() != null && !request.getAttachmentFileIds().isEmpty()) {
+            List<FileUpload> files = fileUploadRepository.findAllById(request.getAttachmentFileIds());
+            for (FileUpload file : files) {
+                file.updateTarget("EXPERT_NOTICE", notice.getNoticeId());
+            }
+        }
+
+        return NoticePostResponse.from(notice);
+    }
+
+    @Transactional
+    public void deleteAdminNotice(Long postId) {
+        Notice notice = noticeRepository.findById(postId)
+                .orElseThrow(() -> new IllegalArgumentException("게시글을 찾을 수 없습니다."));
+
+        if (!"EXPERT_NOTICE".equals(notice.getNoticeType()) || "DELETED".equals(notice.getStatus())) {
+            throw new IllegalArgumentException("이미 삭제되었거나 처리할 수 없는 게시글입니다.");
+        }
+
+        notice.updateStatus("DELETED");
+    }
 }

@@ -62,4 +62,18 @@ public class Notice extends BaseEntity {
     public void incrementViewCount() {
         this.viewCount++;
     }
+
+    public void updateNotice(String title, String content) {
+        if (title != null && !title.trim().isEmpty()) {
+            this.title = title;
+        }
+        if (content != null && !content.trim().isEmpty()) {
+            this.content = content;
+        }
+    }
+
+    // 기존 클래스 내부 최하단(닫는 중괄호 바로 위)에 추가합니다.
+    public void updateStatus(String status) {
+        this.status = status;
+    }
 }
