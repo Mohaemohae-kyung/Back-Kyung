@@ -39,4 +39,11 @@ public class FavoriteExpert extends BaseCreatedEntity {
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "EXPERT_PROFILE_ID", nullable = false)
     private ExpertProfile expertProfile;
+
+    public static FavoriteExpert create(User user, ExpertProfile expertProfile) {
+        FavoriteExpert favoriteExpert = new FavoriteExpert();
+        favoriteExpert.user = user;
+        favoriteExpert.expertProfile = expertProfile;
+        return favoriteExpert;
+    }
 }

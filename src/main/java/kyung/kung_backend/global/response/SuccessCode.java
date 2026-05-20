@@ -18,7 +18,14 @@ public enum SuccessCode implements BaseCode {
     STORE_PRODUCT_GET_SUCCESS(HttpStatus.OK, "STORE_PRODUCT_200_2", "마켓 상품을 조회했습니다."),
     STORE_PRODUCT_MY_LIST_GET_SUCCESS(HttpStatus.OK, "STORE_PRODUCT_200_3", "내 마켓 상품 목록을 조회했습니다."),
     STORE_PRODUCT_UPDATE_SUCCESS(HttpStatus.OK, "STORE_PRODUCT_200_4", "마켓 상품이 수정되었습니다."),
-    STORE_PRODUCT_DELETE_SUCCESS(HttpStatus.OK, "STORE_PRODUCT_200_5", "마켓 상품이 삭제되었습니다.");
+    STORE_PRODUCT_DELETE_SUCCESS(HttpStatus.OK, "STORE_PRODUCT_200_5", "마켓 상품이 삭제되었습니다."),
+
+    // FAVORITE
+    FAVORITE_EXPERT_TOGGLE_SUCCESS(HttpStatus.OK, "FAVORITE_200_1", "고수 찜 상태를 변경했습니다."),
+
+    // MYPAGE
+    MYPAGE_FAVORITE_EXPERTS_GET_SUCCESS(HttpStatus.OK, "MYPAGE_200_1", "찜한 고수 목록을 조회했습니다."),
+    MYPAGE_SUMMARY_GET_SUCCESS(HttpStatus.OK, "MYPAGE_200_2", "마이페이지 요약 정보를 조회했습니다.");
 
     private final HttpStatus httpStatus;
     private final String code;
