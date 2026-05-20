@@ -78,6 +78,9 @@ dependencies {
 
 	// JUnit Platform Launcher
 	testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+
+	// 채팅 구현 위한 Websocket
+	implementation 'org.springframework.boot:spring-boot-starter-websocket'
 }
 
 

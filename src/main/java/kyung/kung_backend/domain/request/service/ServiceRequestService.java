@@ -1,5 +1,7 @@
 package kyung.kung_backend.domain.request.service;
 
+import kyung.kung_backend.domain.chat.entity.ChatRoom;
+import kyung.kung_backend.domain.chat.repository.ChatRoomRepository;
 import kyung.kung_backend.domain.request.dto.ServiceRequestCreateRequest;
 import kyung.kung_backend.domain.request.dto.ServiceRequestResponse;
 import kyung.kung_backend.domain.request.dto.ServiceRequestUpdateRequest;
@@ -27,6 +29,7 @@ public class ServiceRequestService {
     private final ServiceRequestRepository serviceRequestRepository;
     private final ExpertServiceRepository expertServiceRepository;
     private final UserRepository userRepository;
+    private final ChatRoomRepository chatRoomRepository;
 
     @Transactional
     public ServiceRequestResponse createServiceRequest(
@@ -122,10 +125,15 @@ public class ServiceRequestService {
 
         serviceRequest.startChatting();
 
-        // TODO: ChatRoom 생성 로직 추가 예정
-        // chatRoomService.createByServiceRequest(serviceRequest);
+        ChatRoom chatRoom = ChatRoom.create(
+                serviceRequest,
+                serviceRequest.getUser(),
+                serviceRequest.getExpertService().getExpertProfile()
+        );
 
-        return ServiceRequestResponse.from(serviceRequest);
+        ChatRoom savedChatRoom = chatRoomRepository.save(chatRoom);
+
+        return ServiceRequestResponse.from(serviceRequest, savedChatRoom.getChatRoomId());
     }
 
     @Transactional
