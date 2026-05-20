@@ -54,6 +54,9 @@ public class User extends BaseEntity {
     @Column(name = "REFRESH_TOKEN", length = 500)
     private String refreshToken;
 
+    @Column(name = "PROFILE_IMAGE_URL", length = 500)
+    private String profileImageUrl;
+
     public static User createUser(String email, String encodedPassword, String name, String nickname, String phone) {
         User user = new User();
         user.email = email;
@@ -83,13 +86,14 @@ public class User extends BaseEntity {
         this.refreshToken = null;
     }
 
-    @Column(name = "PROFILE_IMAGE_URL", length = 500)
-    private String profileImageUrl;
-
     public void updateProfile(String name, String phone, String nickname, String profileImageUrl) {
         if (name != null) this.name = name;
         if (phone != null) this.phone = phone;
         if (nickname != null) this.nickname = nickname;
         if (profileImageUrl != null) this.profileImageUrl = profileImageUrl;
+    }
+
+    public void suspend() {
+        this.status = "SUSPENDED";
     }
 }
