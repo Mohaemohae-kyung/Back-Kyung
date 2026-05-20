@@ -41,7 +41,6 @@ public class PaymentService {
 
     private static final String TARGET_TYPE_BOOKING = "BOOKING";
     private static final String TARGET_TYPE_SERVICE_REQUEST = "SERVICE_REQUEST";
-    private static final String TARGET_TYPE_REQUEST = "REQUEST";
     private static final BigDecimal ZERO = BigDecimal.ZERO;
     private static final DateTimeFormatter ORDER_TIME_FORMATTER = DateTimeFormatter.ofPattern("yyyyMMddHHmmss");
 
@@ -89,8 +88,7 @@ public class PaymentService {
             return prepareBookingPayment(user, request, now);
         }
 
-        if (TARGET_TYPE_SERVICE_REQUEST.equals(request.getTargetType())
-                || TARGET_TYPE_REQUEST.equals(request.getTargetType())) {
+        if (TARGET_TYPE_SERVICE_REQUEST.equals(request.getTargetType())) {
             return prepareServiceRequestPayment(user, request, now);
         }
 
@@ -150,6 +148,8 @@ public class PaymentService {
             PaymentPrepareRequest request,
             LocalDateTime now
     ) {
+        validateCouponNotUsedForServiceRequest(request.getUserCouponId());
+
         ServiceRequest serviceRequest = findOwnedServiceRequest(user, request.getTargetId());
         validateServiceRequestPayable(serviceRequest);
 
@@ -211,6 +211,14 @@ public class PaymentService {
             throw GeneralException.of(ErrorCode.PAYMENT_INVALID_STATUS);
         }
 
+        validateServiceRequestPaymentHasNoCoupon(payment, transaction);
+
+        LocalDateTime now = LocalDateTime.now();
+
+        if (transaction.getBooking() != null) {
+            validateBookingPayable(transaction.getBooking(), now);
+        }
+
         if (!sameAmount(request.getAmount(), transaction.getFinalAmount())) {
             payment.fail("결제 승인 요청 금액과 서버 주문 금액이 일치하지 않습니다.");
             transaction.markFailed();
@@ -219,7 +227,7 @@ public class PaymentService {
 
         validatePgPaymentKeyNotUsed(request.getPaymentKey(), payment);
 
-        LocalDateTime paidAt = LocalDateTime.now();
+        LocalDateTime paidAt = now;
         payment.complete(request.getPaymentKey(), paidAt);
         transaction.markPaid();
 
@@ -512,6 +520,23 @@ public class PaymentService {
         return Objects.equals(savedCouponId, request.getUserCouponId())
                 && Objects.equals(payment.getPaymentMethod(), request.getPaymentMethod())
                 && Objects.equals(payment.getPgProvider(), request.getPgProvider());
+    }
+
+    private void validateCouponNotUsedForServiceRequest(Long userCouponId) {
+        if (userCouponId != null) {
+            throw GeneralException.of(ErrorCode.PAYMENT_COUPON_NOT_ALLOWED);
+        }
+    }
+
+    private void validateServiceRequestPaymentHasNoCoupon(
+            Payment payment,
+            Transaction transaction
+    ) {
+        if (transaction.getServiceRequest() == null || payment.getUserCoupon() == null) {
+            return;
+        }
+
+        throw GeneralException.of(ErrorCode.PAYMENT_COUPON_NOT_ALLOWED);
     }
 
     private UserCoupon findUsableCoupon(

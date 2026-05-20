@@ -2,6 +2,7 @@ package kyung.kung_backend.domain.booking.dto;
 
 import kyung.kung_backend.domain.booking.entity.Booking;
 import kyung.kung_backend.domain.expert.entity.ExpertProfile;
+import kyung.kung_backend.domain.location.entity.Location;
 import kyung.kung_backend.domain.store.entity.StoreProduct;
 import lombok.Builder;
 import lombok.Getter;
@@ -22,6 +23,8 @@ public class BookingResponse {
     private String expertDisplayName;
     private LocalDateTime startAt;
     private LocalDateTime endAt;
+    private Long locationId;
+    private String locationName;
     private String locationText;
     private String status;
     private LocalDateTime paymentExpiresAt;
@@ -31,6 +34,7 @@ public class BookingResponse {
     public static BookingResponse from(Booking booking) {
         StoreProduct storeProduct = booking.getStoreProduct();
         ExpertProfile expertProfile = storeProduct != null ? storeProduct.getExpertProfile() : null;
+        Location location = booking.getLocation();
 
         return BookingResponse.builder()
                 .bookingId(booking.getBookingId())
@@ -43,6 +47,8 @@ public class BookingResponse {
                 .expertDisplayName(expertProfile != null ? expertProfile.getDisplayName() : null)
                 .startAt(booking.getStartAt())
                 .endAt(booking.getEndAt())
+                .locationId(location != null ? location.getLocationId() : null)
+                .locationName(location != null ? location.getName() : null)
                 .locationText(booking.getLocationText())
                 .status(booking.getStatus())
                 .paymentExpiresAt(booking.getPaymentExpiresAt())

@@ -4,7 +4,11 @@ import kyung.kung_backend.domain.booking.dto.BookingPrepareRequest;
 import kyung.kung_backend.domain.booking.dto.BookingResponse;
 import kyung.kung_backend.domain.booking.entity.Booking;
 import kyung.kung_backend.domain.booking.repository.BookingRepository;
+import kyung.kung_backend.domain.location.entity.Location;
+import kyung.kung_backend.domain.location.repository.LocationRepository;
 import kyung.kung_backend.domain.store.entity.StoreProduct;
+import kyung.kung_backend.domain.store.entity.enums.StoreProductServiceType;
+import kyung.kung_backend.domain.store.entity.enums.StoreProductStatus;
 import kyung.kung_backend.domain.store.repository.StoreProductRepository;
 import kyung.kung_backend.domain.user.entity.User;
 import kyung.kung_backend.domain.user.repository.UserRepository;
@@ -13,7 +17,6 @@ import kyung.kung_backend.global.response.ErrorCode;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import kyung.kung_backend.domain.store.entity.enums.StoreProductStatus;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -36,6 +39,7 @@ public class BookingService {
 
     private final BookingRepository bookingRepository;
     private final StoreProductRepository storeProductRepository;
+    private final LocationRepository locationRepository;
     private final UserRepository userRepository;
 
     @Transactional
@@ -143,7 +147,9 @@ public class BookingService {
             LocalDateTime now
     ) {
         StoreProduct storeProduct = findStoreProduct(request.getStoreProductId());
+        Location location = findLocation(request.getLocationId());
         validateStoreProductReservable(storeProduct);
+        validateBookingLocation(storeProduct, location);
         validateStoreProductSlotAvailable(storeProduct.getStoreProductId(), request.getStartAt(), request.getEndAt());
 
         return Booking.createPendingPaymentForStoreProduct(
@@ -151,20 +157,77 @@ public class BookingService {
                 storeProduct,
                 request.getStartAt(),
                 request.getEndAt(),
+                location,
                 request.getLocationText(),
                 now.plusMinutes(PAYMENT_HOLD_MINUTES)
         );
     }
 
+    private Location findLocation(Long locationId) {
+        if (locationId == null) {
+            return null;
+        }
+
+        Location location = locationRepository.findById(locationId)
+                .orElseThrow(() -> GeneralException.of(ErrorCode.NOT_FOUND));
+
+        if (!"Y".equals(location.getActiveYn())) {
+            throw GeneralException.of(ErrorCode.BAD_REQUEST);
+        }
+
+        return location;
+    }
+
     private void validateStoreProductReservable(StoreProduct storeProduct) {
         if (storeProduct.getExpertProfile() == null
                 || storeProduct.getExpertProfile().getUser() == null
+                || storeProduct.getServiceType() == null
                 || storeProduct.getPrice() == null
                 || storeProduct.getPrice().signum() < 0
                 || storeProduct.getStatus() != StoreProductStatus.ACTIVE
                 || storeProduct.getDeletedAt() != null) {
             throw GeneralException.of(ErrorCode.BAD_REQUEST);
         }
+    }
+
+    private void validateBookingLocation(
+            StoreProduct storeProduct,
+            Location bookingLocation
+    ) {
+        if (bookingLocation == null) {
+            if (storeProduct.getServiceType() == StoreProductServiceType.ONLINE) {
+                return;
+            }
+
+            throw GeneralException.of(ErrorCode.BAD_REQUEST);
+        }
+
+        Location expertLocation = storeProduct.getExpertProfile().getMainLocation();
+
+        if (expertLocation == null || !"Y".equals(expertLocation.getActiveYn())) {
+            throw GeneralException.of(ErrorCode.BAD_REQUEST);
+        }
+
+        if (!isSameOrChildLocation(bookingLocation, expertLocation)) {
+            throw GeneralException.of(ErrorCode.BAD_REQUEST);
+        }
+    }
+
+    private boolean isSameOrChildLocation(
+            Location bookingLocation,
+            Location expertLocation
+    ) {
+        Location current = bookingLocation;
+
+        while (current != null) {
+            if (current.getLocationId().equals(expertLocation.getLocationId())) {
+                return true;
+            }
+
+            current = current.getParent();
+        }
+
+        return false;
     }
 
     private void validateStoreProductSlotAvailable(

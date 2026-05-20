@@ -39,6 +39,7 @@ public enum ErrorCode implements BaseCode {
     PAYMENT_AMOUNT_MISMATCH(HttpStatus.BAD_REQUEST, "PAYMENT_400_2", "결제 금액이 일치하지 않습니다."),
     PAYMENT_INVALID_STATUS(HttpStatus.BAD_REQUEST, "PAYMENT_400_3", "현재 결제 상태에서 처리할 수 없습니다."),
     PAYMENT_DUPLICATE_KEY(HttpStatus.CONFLICT, "PAYMENT_409_1", "이미 처리된 PG 결제 키입니다."),
+    PAYMENT_COUPON_NOT_ALLOWED(HttpStatus.BAD_REQUEST, "PAYMENT_400_4", "해당 결제에는 쿠폰을 사용할 수 없습니다."),
 
     // COUPON
     COUPON_NOT_AVAILABLE(HttpStatus.BAD_REQUEST, "COUPON_400_1", "사용할 수 없는 쿠폰입니다.");
