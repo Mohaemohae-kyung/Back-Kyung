@@ -45,4 +45,19 @@ public class ChatMessage extends BaseCreatedEntity {
 
     @Column(name = "READ_YN", nullable = false, length = 1)
     private String readYn;
+
+    public static ChatMessage create(
+            ChatRoom chatRoom,
+            User sender,
+            String messageType,
+            String content
+    ) {
+        ChatMessage chatMessage = new ChatMessage();
+        chatMessage.chatRoom = chatRoom;
+        chatMessage.sender = sender;
+        chatMessage.messageType = messageType;
+        chatMessage.content = content;
+        chatMessage.readYn = "N";
+        return chatMessage;
+    }
 }

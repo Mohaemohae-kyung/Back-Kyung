@@ -27,6 +27,8 @@ public class ServiceRequestResponse {
     private Long categoryId;
     private Long locationId;
 
+    private Long chatRoomId;
+
     private String title;
     private String content;
     private BigDecimal budget;
@@ -36,6 +38,10 @@ public class ServiceRequestResponse {
     private LocalDateTime updatedAt;
 
     public static ServiceRequestResponse from(ServiceRequest serviceRequest) {
+        return from(serviceRequest, null);
+    }
+
+    public static ServiceRequestResponse from(ServiceRequest serviceRequest, Long chatRoomId) {
         ExpertService expertService = serviceRequest.getExpertService();
         Location mainLocation = null;
 
@@ -46,21 +52,19 @@ public class ServiceRequestResponse {
         return ServiceRequestResponse.builder()
                 .requestId(serviceRequest.getRequestId())
                 .userId(serviceRequest.getUser().getUserId())
-
                 .expertServiceId(expertService != null
                         ? expertService.getExpertServiceId()
                         : null)
                 .expertProfileId(expertService != null && expertService.getExpertProfile() != null
                         ? expertService.getExpertProfile().getExpertProfileId()
                         : null)
-
                 .categoryId(expertService != null && expertService.getCategory() != null
                         ? expertService.getCategory().getCategoryId()
                         : null)
                 .locationId(mainLocation != null
                         ? mainLocation.getLocationId()
                         : null)
-
+                .chatRoomId(chatRoomId)
                 .title(serviceRequest.getTitle())
                 .content(serviceRequest.getContent())
                 .budget(serviceRequest.getBudget())
