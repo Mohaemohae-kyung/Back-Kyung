@@ -11,6 +11,7 @@ import kyung.kung_backend.domain.category.entity.ServiceCategory;
 import kyung.kung_backend.domain.category.repository.ServiceCategoryRepository;
 import kyung.kung_backend.domain.location.entity.Location;
 import kyung.kung_backend.domain.location.repository.LocationRepository;
+import kyung.kung_backend.domain.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -25,8 +26,12 @@ public class ExpertService {
     private final ExpertProfileRepository expertProfileRepository;
     private final ServiceCategoryRepository serviceCategoryRepository;
     private final LocationRepository locationRepository;
+    private final UserRepository userRepository;
 
-    public void createProfile(User user, ExpertProfileCreateRequest request) {
+    @Transactional
+    public void createProfile(User currentUser, ExpertProfileCreateRequest request) {
+        User user = userRepository.findById(currentUser.getUserId())
+                .orElseThrow(() -> new IllegalArgumentException("사용자가 존재하지 않습니다."));
 
         if (expertProfileRepository.existsByUser(user)) {
             throw new IllegalArgumentException("이미 고수 프로필이 존재합니다.");
@@ -48,6 +53,8 @@ public class ExpertService {
         );
 
         expertProfileRepository.save(expertProfile);
+
+        user.becomeExpert();
     }
 
     public void updateProfile(User user, ExpertProfileUpdateRequest request) {
