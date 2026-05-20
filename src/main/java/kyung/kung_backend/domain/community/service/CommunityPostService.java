@@ -19,7 +19,10 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.Collections;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -60,14 +63,16 @@ public class CommunityPostService {
 
         CommunityPost savedPost = communityPostRepository.save(post);
 
+        List<String> fileUrls = Collections.emptyList();
         if (request.getImageFileIds() != null && !request.getImageFileIds().isEmpty()) {
             List<FileUpload> files = fileUploadRepository.findAllById(request.getImageFileIds());
             for (FileUpload file : files) {
                 file.updateTarget("COMMUNITY_POST", savedPost.getCommunityPostId());
             }
+            fileUrls = files.stream().map(FileUpload::getFileUrl).collect(Collectors.toList());
         }
 
-        return PostResponse.from(savedPost);
+        return PostResponse.from(savedPost, fileUrls);
     }
 
     @Transactional
@@ -80,13 +85,28 @@ public class CommunityPostService {
         }
 
         post.incrementViewCount();
-        return PostResponse.from(post);
+
+        List<FileUpload> files = fileUploadRepository.findByTargetTypeAndTargetIdAndStatus("COMMUNITY_POST", postId, "ACTIVE");
+        List<String> fileUrls = files.stream().map(FileUpload::getFileUrl).collect(Collectors.toList());
+
+        return PostResponse.from(post, fileUrls);
     }
 
     @Transactional(readOnly = true)
     public Page<PostResponse> getPosts(Pageable pageable) {
-        return communityPostRepository.findByStatus("ACTIVE", pageable)
-                .map(PostResponse::from);
+        Page<CommunityPost> posts = communityPostRepository.findByStatus("ACTIVE", pageable);
+
+        List<Long> postIds = posts.stream().map(CommunityPost::getCommunityPostId).collect(Collectors.toList());
+
+        List<FileUpload> files = fileUploadRepository.findByTargetTypeAndTargetIdInAndStatus("COMMUNITY_POST", postIds, "ACTIVE");
+
+        Map<Long, List<String>> fileUrlMap = files.stream()
+                .collect(Collectors.groupingBy(
+                        FileUpload::getTargetId,
+                        Collectors.mapping(FileUpload::getFileUrl, Collectors.toList())
+                ));
+
+        return posts.map(post -> PostResponse.from(post, fileUrlMap.getOrDefault(post.getCommunityPostId(), Collections.emptyList())));
     }
 
     @Transactional
@@ -123,7 +143,10 @@ public class CommunityPostService {
             }
         }
 
-        return PostResponse.from(post);
+        List<FileUpload> updatedFiles = fileUploadRepository.findByTargetTypeAndTargetIdAndStatus("COMMUNITY_POST", postId, "ACTIVE");
+        List<String> fileUrls = updatedFiles.stream().map(FileUpload::getFileUrl).collect(Collectors.toList());
+
+        return PostResponse.from(post, fileUrls);
     }
 
     @Transactional
