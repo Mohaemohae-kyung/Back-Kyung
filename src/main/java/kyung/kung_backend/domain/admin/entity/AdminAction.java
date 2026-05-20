@@ -38,4 +38,14 @@ public class AdminAction extends BaseCreatedEntity {
 
     @Column(name = "REASON", length = 500)
     private String reason;
+
+    public static AdminAction create(User admin, String targetType, Long targetId, String actionType, String reason) {
+        AdminAction adminAction = new AdminAction();
+        adminAction.admin = admin;
+        adminAction.targetType = targetType;
+        adminAction.targetId = targetId;
+        adminAction.actionType = actionType;
+        adminAction.reason = reason;
+        return adminAction;
+    }
 }

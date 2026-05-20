@@ -56,6 +56,9 @@ public class SecurityConfig {
                         // 회원가입, 로그인 등 인증 전 접근이 필요한 API
                         .requestMatchers(AUTH_WHITE_LIST).permitAll()
 
+                        // 관리자 전용 API
+                        .requestMatchers("/api/admin/**").hasRole("ADMIN")
+
                         // 인증이 필요한 모든 API는 JWT 인증을 요구합니다.
                         .anyRequest().authenticated()
                 )
