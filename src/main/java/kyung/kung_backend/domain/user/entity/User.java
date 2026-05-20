@@ -96,4 +96,8 @@ public class User extends BaseEntity {
     public void suspend() {
         this.status = "SUSPENDED";
     }
+
+    public void becomeExpert() {
+        this.role = "EXPERT";
+    }
 }

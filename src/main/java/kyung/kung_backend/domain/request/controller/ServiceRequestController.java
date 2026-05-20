@@ -50,6 +50,19 @@ public class ServiceRequestController {
     }
 
     @Operation(
+            summary = "받은 견적 요청 목록 조회",
+            description = "로그인한 고수가 본인 서비스로 받은 견적 요청 목록을 조회합니다."
+    )
+    @GetMapping("/received")
+    public ApiResponse<List<ServiceRequestResponse>> getReceivedServiceRequests(
+            @AuthenticationPrincipal User user
+    ) {
+        List<ServiceRequestResponse> response = serviceRequestService.getReceivedServiceRequests(user);
+        return ApiResponse.onSuccess(SuccessCode.OK, response);
+    }
+
+
+    @Operation(
             summary = "견적 요청 상세 조회",
             description = "견적 요청 상세 정보를 조회합니다. 작성자 본인 또는 관리자만 조회할 수 있습니다."
     )

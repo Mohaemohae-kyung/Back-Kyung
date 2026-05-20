@@ -62,6 +62,17 @@ public class ServiceRequestService {
                 .toList();
     }
 
+    public List<ServiceRequestResponse> getReceivedServiceRequests(User loginUser) {
+        User user = findLoginUser(loginUser);
+
+        validateExpert(user);
+
+        return serviceRequestRepository.findAllReceivedByExpertUserId(user.getUserId())
+                .stream()
+                .map(ServiceRequestResponse::from)
+                .toList();
+    }
+
     public ServiceRequestResponse getServiceRequestDetail(
             User loginUser,
             Long requestId
