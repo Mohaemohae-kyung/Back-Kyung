@@ -1,6 +1,7 @@
 package kyung.kung_backend.domain.payment.controller;
 
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import kyung.kung_backend.domain.payment.dto.BookingCheckoutResponse;
 import kyung.kung_backend.domain.payment.dto.ServiceRequestCheckoutResponse;
 import kyung.kung_backend.domain.payment.service.PaymentService;
@@ -17,6 +18,7 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/api/checkout")
+@Tag(name = "Checkout API", description = "마켓 예약과 견적 요청의 결제 화면 정보 조회 API")
 public class CheckoutController {
 
     private final PaymentService paymentService;

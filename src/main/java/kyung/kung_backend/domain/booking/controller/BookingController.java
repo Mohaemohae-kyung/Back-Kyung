@@ -1,6 +1,7 @@
 package kyung.kung_backend.domain.booking.controller;
 
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import kyung.kung_backend.domain.booking.dto.BookingPrepareRequest;
 import kyung.kung_backend.domain.booking.dto.BookingResponse;
@@ -24,6 +25,7 @@ import java.util.List;
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/api/bookings")
+@Tag(name = "Booking API", description = "마켓 상품 예약 생성, 예약 목록 조회, 예약 상세 조회 API")
 public class BookingController {
 
     private final BookingService bookingService;

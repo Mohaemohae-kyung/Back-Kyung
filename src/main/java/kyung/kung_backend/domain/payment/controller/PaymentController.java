@@ -1,6 +1,7 @@
 package kyung.kung_backend.domain.payment.controller;
 
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import kyung.kung_backend.domain.payment.dto.PaymentCancelRequest;
 import kyung.kung_backend.domain.payment.dto.PaymentConfirmRequest;
@@ -27,6 +28,7 @@ import java.util.List;
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/api/payments")
+@Tag(name = "Payment API", description = "결제 준비, 승인 확정, 취소/환불, 결제 내역 조회 API")
 public class PaymentController {
 
     private final PaymentService paymentService;
@@ -39,6 +41,7 @@ public class PaymentController {
             summary = "결제 준비 및 주문번호 발급",
             description = "PG 결제창을 열기 직전에 호출하는 API입니다. " +
                     "마켓 예약 결제는 targetType=BOOKING과 bookingId를 사용하고, 견적 요청 결제는 targetType=SERVICE_REQUEST와 requestId를 사용합니다. " +
+                    "쿠폰은 마켓 예약 결제에서만 사용할 수 있으며, 견적 요청 결제에서 userCouponId를 보내면 거절됩니다. " +
                     "서버가 금액과 쿠폰을 다시 계산한 뒤 TRANSACTIONS와 PAYMENTS를 READY 상태로 생성하고 orderId를 발급합니다."
     )
     @PostMapping("/prepare")

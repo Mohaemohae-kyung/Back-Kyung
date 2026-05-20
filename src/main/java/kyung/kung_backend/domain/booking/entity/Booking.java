@@ -10,6 +10,7 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.SequenceGenerator;
 import jakarta.persistence.Table;
+import kyung.kung_backend.domain.location.entity.Location;
 import kyung.kung_backend.domain.store.entity.StoreProduct;
 import kyung.kung_backend.domain.user.entity.User;
 import kyung.kung_backend.global.common.BaseEntity;
@@ -49,6 +50,10 @@ public class Booking extends BaseEntity {
     @Column(name = "END_AT")
     private LocalDateTime endAt;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "LOCATION_ID")
+    private Location location;
+
     @Column(name = "LOCATION_TEXT", length = 255)
     private String locationText;
 
@@ -71,6 +76,7 @@ public class Booking extends BaseEntity {
             StoreProduct storeProduct,
             LocalDateTime startAt,
             LocalDateTime endAt,
+            Location location,
             String locationText,
             LocalDateTime paymentExpiresAt
     ) {
@@ -80,6 +86,7 @@ public class Booking extends BaseEntity {
         booking.storeProduct = storeProduct;
         booking.startAt = startAt;
         booking.endAt = endAt;
+        booking.location = location;
         booking.locationText = locationText;
         booking.status = STATUS_PENDING_PAYMENT;
         booking.paymentExpiresAt = paymentExpiresAt;
