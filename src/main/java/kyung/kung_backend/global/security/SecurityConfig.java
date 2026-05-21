@@ -13,6 +13,12 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.web.cors.CorsConfiguration;
+import org.springframework.web.cors.CorsConfigurationSource;
+import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
+import org.springframework.http.HttpMethod;
+
+import java.util.List;
 
 @Configuration
 @EnableWebSecurity
@@ -39,6 +45,9 @@ public class SecurityConfig {
                 // REST API + JWT 예정 구조이므로 CSRF는 비활성화합니다.
                 .csrf(AbstractHttpConfigurer::disable)
 
+                // 프론트엔드에서 백엔드 API 호출을 허용하기 위한 CORS 설정
+                .cors(cors -> cors.configurationSource(corsConfigurationSource()))
+
                 // 추후 JWT 기반 인증을 사용할 예정이므로 세션을 생성하지 않습니다.
                 .sessionManagement(session ->
                         session.sessionCreationPolicy(SessionCreationPolicy.STATELESS)
@@ -56,6 +65,18 @@ public class SecurityConfig {
 
                         // 회원가입, 로그인 등 인증 전 접근이 필요한 API
                         .requestMatchers(AUTH_WHITE_LIST).permitAll()
+
+                        // 조회는 로그인 없이 허용
+                        .requestMatchers(HttpMethod.GET, "/api/experts/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/expert-services/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/store-products/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/community/**").permitAll()
+
+                        // 파일 업로드는 로그인한 사용자만 허용
+                        .requestMatchers(HttpMethod.POST, "/api/files").authenticated()
+
+                        // 요청관리는 내가 보낸 요청/받은 요청이라 로그인 필요
+                        .requestMatchers("/api/service-requests/**").authenticated()
 
                         // 관리자 전용 API
                         .requestMatchers("/api/admin/**").hasRole("ADMIN")
@@ -77,25 +98,34 @@ public class SecurityConfig {
     }
 
 
-    /*
-    // 추후 프론트엔드 연동 시 CORS 설정이 필요하면 추가 예정
+
+    // CORS 허용 도메인 및 요청 방식을 설정
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration config = new CorsConfiguration();
 
+        // 로컬 프론트엔드 개발 서버 허용
         config.setAllowedOriginPatterns(List.of(
-                "http://localhost:3000"
-                // "https://추후-배포-프론트-URL"
+                "http://localhost:3000",
+                "http://localhost:5173"
         ));
+
+        // 허용할 HTTP 메서드 설정
         config.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
+
+        // 모든 요청 헤더 허용
         config.setAllowedHeaders(List.of("*"));
+
+        // Authorization 헤더 및 쿠키 포함 요청 허용
         config.setAllowCredentials(true);
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+
+        // 모든 API 경로에 CORS 설정 적용
         source.registerCorsConfiguration("/**", config);
+
         return source;
     }
-    */
 
     /*
     // 추후 @PreAuthorize, @PostAuthorize 등 메서드 단위 권한 제어가 필요하면
