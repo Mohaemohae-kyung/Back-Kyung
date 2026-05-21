@@ -45,13 +45,13 @@ public class FileService {
         FileUpload savedFile = fileUploadRepository.save(fileUpload);
 
         return FileUploadResponse.builder()
-                .fileId(savedFile.getFileId())
+                .storedName(savedFile.getStoredName())
                 .fileUrl(savedFile.getFileUrl())
                 .build();
     }
 
-    public Resource downloadFile(Long fileId) {
-        FileUpload fileUpload = getFileInfo(fileId);
+    public Resource downloadFile(String storedName) {
+        FileUpload fileUpload = getFileInfo(storedName);
 
         if ("DELETED".equals(fileUpload.getStatus())) {
             throw new IllegalArgumentException("삭제된 파일입니다.");
@@ -60,14 +60,14 @@ public class FileService {
         return storageProvider.loadAsResource(fileUpload.getStoredName());
     }
 
-    public FileUpload getFileInfo(Long fileId) {
-        return fileUploadRepository.findById(fileId)
+    public FileUpload getFileInfo(String storedName) {
+        return fileUploadRepository.findByStoredName(storedName)
                 .orElseThrow(() -> new IllegalArgumentException("파일을 찾을 수 없습니다."));
     }
 
     @Transactional
-    public void deleteFile(User user, Long fileId) {
-        FileUpload fileUpload = getFileInfo(fileId);
+    public void deleteFile(User user, String storedName) {
+        FileUpload fileUpload = getFileInfo(storedName);
 
         if (!fileUpload.getUploader().getUserId().equals(user.getUserId())) {
             throw new IllegalArgumentException("파일을 삭제할 권한이 없습니다.");

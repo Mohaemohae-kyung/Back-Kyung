@@ -44,14 +44,14 @@ public class FileController {
 
     @Operation(
             summary = "파일 다운로드",
-            description = "파일 ID를 통해 업로드된 파일을 다운로드합니다."
+            description = "저장된 파일명을 통해 업로드된 파일을 다운로드합니다."
     )
-    @GetMapping("/{fileId}")
+    @GetMapping("/{storedName}")
     public ResponseEntity<Resource> downloadFile(
-            @PathVariable Long fileId
+            @PathVariable String storedName
     ) {
-        Resource resource = fileService.downloadFile(fileId);
-        FileUpload fileInfo = fileService.getFileInfo(fileId);
+        Resource resource = fileService.downloadFile(storedName);
+        FileUpload fileInfo = fileService.getFileInfo(storedName);
 
         String encodedFileName = UriUtils.encode(fileInfo.getOriginalName(), StandardCharsets.UTF_8);
         String contentDisposition = "attachment; filename=\"" + encodedFileName + "\"";
@@ -66,12 +66,12 @@ public class FileController {
             summary = "파일 삭제",
             description = "로그인한 사용자가 업로드한 파일을 삭제합니다."
     )
-    @DeleteMapping("/{fileId}")
+    @DeleteMapping("/{storedName}")
     public ApiResponse<Void> deleteFile(
             @AuthenticationPrincipal User user,
-            @PathVariable Long fileId
+            @PathVariable String storedName
     ) {
-        fileService.deleteFile(user, fileId);
+        fileService.deleteFile(user, storedName);
         return ApiResponse.onSuccess(SuccessCode.NO_CONTENT);
     }
 }

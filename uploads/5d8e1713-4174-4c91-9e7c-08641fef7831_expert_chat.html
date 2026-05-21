@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <title>전문가 채팅 화면 (Room 11)</title>
+    <style>
+        body { font-family: sans-serif; padding: 20px; background-color: #f4f4f4; }
+        .chat-container { width: 400px; height: 500px; border: 1px solid #ccc; background: #fff; display: flex; flex-direction: column; }
+        .header { background: #333; color: #fff; padding: 10px; text-align: center; font-weight: bold; }
+        .messages { flex: 1; padding: 10px; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; }
+        .msg { max-width: 70%; padding: 8px 12px; border-radius: 15px; font-size: 14px; }
+        .my-msg { background: #fee500; align-self: flex-end; }
+        .other-msg { background: #e9ecef; align-self: flex-start; }
+        .input-area { display: flex; border-top: 1px solid #ccc; }
+        .input-area input { flex: 1; padding: 10px; border: none; outline: none; }
+        .input-area button { padding: 10px 15px; background: #333; color: #fff; border: none; cursor: pointer; }
+    </style>
+</head>
+<body>
+    <div class="chat-container">
+        <div class="header">전문가 화면 (Room: 1)</div>
+        <div class="messages" id="messages"></div>
+        <div class="input-area">
+            <input type="text" id="messageInput" placeholder="메시지를 입력하세요" onkeypress="handleKeyPress(event)">
+            <button onclick="sendMessage()">전송</button>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/sockjs-client@1/dist/sockjs.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/stompjs@2.3.3/lib/stomp.min.js"></script>
+    <script>
+        var roomId = "1";
+        /* 전문가의 실제 USER_ID를 입력해야 합니다. 여기서는 1로 가정합니다. */
+        var mySenderId = "1"; 
+        /* 전문가의 유효한 JWT 토큰으로 교체해야 합니다. */
+        var accessToken = "Bearer eyJhbGciOiJIUzM4NCJ9.eyJzdWIiOiIzIiwiZW1haWwiOiIzZXhwZXJ0QGcuY29tIiwicm9sZSI6IlVTRVIiLCJpYXQiOjE3NzkyNTIxOTUsImV4cCI6MTc3OTI1NTc5NX0.Y2xq20QruD41e79haRWR6zVL9XL-MJ81GHXnxh72CG_b90gF0O-Q0hUTRrq27rOk";
+
+        var stompClient = null;
+
+        function connect() {
+            var socket = new SockJS('http://localhost:8080/ws-stomp');
+            stompClient = Stomp.over(socket);
+            stompClient.debug = null; /* 디버그 로그 숨김 */
+
+            stompClient.connect({'Authorization': accessToken}, function () {
+                appendMessage("시스템", "채팅 서버에 연결되었습니다.", "other-msg");
+                
+                stompClient.subscribe('/sub/chat/room/' + roomId, function (response) {
+                    var data = JSON.parse(response.body);
+                    var msgClass = (String(data.senderId) === mySenderId) ? "my-msg" : "other-msg";
+                    var senderName = (String(data.senderId) === mySenderId) ? "나(전문가)" : "상대방";
+                    appendMessage(senderName, data.content, msgClass);
+                });
+            }, function(error) {
+                appendMessage("시스템", "연결 실패: " + error, "other-msg");
+            });
+        }
+
+        function sendMessage() {
+            var input = document.getElementById("messageInput");
+            var content = input.value.trim();
+            if (content && stompClient) {
+                var chatMessage = {
+                    roomId: roomId,
+                    senderId: mySenderId,
+                    message: content,
+                    type: "TALK"
+                };
+                stompClient.send("/pub/chat/message", {}, JSON.stringify(chatMessage));
+                input.value = "";
+            }
+        }
+
+        function handleKeyPress(e) {
+            if (e.keyCode === 13) sendMessage();
+        }
+
+        function appendMessage(sender, text, className) {
+            var msgDiv = document.createElement("div");
+            msgDiv.className = "msg " + className;
+            msgDiv.innerText = sender + ": " + text;
+            
+            var container = document.getElementById("messages");
+            container.appendChild(msgDiv);
+            container.scrollTop = container.scrollHeight;
+        }
+
+        window.onload = connect;
+    </script>
+</body>
+</html>
