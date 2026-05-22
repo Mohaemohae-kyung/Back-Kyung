@@ -37,8 +37,9 @@ public class CommunityPostController {
     @GetMapping("/posts")
     public ApiResponse<Page<PostResponse>> getPosts(
             Pageable pageable,
-            @RequestParam(value = "rawSort", required = false) String rawSort) {
-        Page<PostResponse> response = communityPostService.getPosts(pageable, rawSort);
+            @RequestParam(value = "sortColumn", required = false) String sortColumn,
+            @RequestParam(value = "sortDirection", required = false, defaultValue = "DESC") String sortDirection) {
+        Page<PostResponse> response = communityPostService.getPosts(pageable, sortColumn, sortDirection);
         return ApiResponse.onSuccess(SuccessCode.OK, response);
     }
 
