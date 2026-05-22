@@ -1,9 +1,7 @@
 package kyung.kung_backend.global.jwt;
 
-import io.jsonwebtoken.Jwts;
+import io.jsonwebtoken.*;
 import io.jsonwebtoken.security.Keys;
-import io.jsonwebtoken.Claims;
-import io.jsonwebtoken.JwtException;
 import kyung.kung_backend.domain.user.entity.User;
 import org.springframework.stereotype.Component;
 
@@ -14,15 +12,25 @@ import java.util.Date;
 @Component
 public class JwtProvider {
 
-    private static final String SECRET_KEY = "kung-backend-secret-key-for-jwt-token-test-1234567890";
-    private static final long ACCESS_TOKEN_EXPIRE_TIME = 1000L * 60 * 60; // 1시간
-    private static final long REFRESH_TOKEN_EXPIRE_TIME = 1000L * 60 * 60 * 24 * 7; // 7일
+    private static final String SECRET_KEY =
+            "kung-backend-secret-key-for-jwt-token-test-1234567890";
 
-    private final SecretKey key = Keys.hmacShaKeyFor(SECRET_KEY.getBytes(StandardCharsets.UTF_8));
+    private static final long ACCESS_TOKEN_EXPIRE_TIME =
+            1000L * 60 * 60;
+
+    private static final long REFRESH_TOKEN_EXPIRE_TIME =
+            1000L * 60 * 60 * 24 * 7;
+
+    private final SecretKey key =
+            Keys.hmacShaKeyFor(
+                    SECRET_KEY.getBytes(StandardCharsets.UTF_8)
+            );
 
     public String createAccessToken(User user) {
+
         Date now = new Date();
-        Date expiredAt = new Date(now.getTime() + ACCESS_TOKEN_EXPIRE_TIME);
+        Date expiredAt =
+                new Date(now.getTime() + ACCESS_TOKEN_EXPIRE_TIME);
 
         return Jwts.builder()
                 .setSubject(String.valueOf(user.getUserId()))
@@ -30,37 +38,58 @@ public class JwtProvider {
                 .claim("role", user.getRole())
                 .setIssuedAt(now)
                 .setExpiration(expiredAt)
-                .signWith(key)
+
+                // 중요
+                .signWith(key, SignatureAlgorithm.HS256)
+
                 .compact();
     }
 
     public String createRefreshToken(User user) {
+
         Date now = new Date();
-        Date expiredAt = new Date(now.getTime() + REFRESH_TOKEN_EXPIRE_TIME);
+        Date expiredAt =
+                new Date(now.getTime() + REFRESH_TOKEN_EXPIRE_TIME);
 
         return Jwts.builder()
                 .setSubject(String.valueOf(user.getUserId()))
                 .claim("type", "refresh")
                 .setIssuedAt(now)
                 .setExpiration(expiredAt)
-                .signWith(key)
+
+                // 중요
+                .signWith(key, SignatureAlgorithm.HS256)
+
                 .compact();
     }
 
     public boolean validateToken(String token) {
+
         try {
+
             Jwts.parserBuilder()
                     .setSigningKey(key)
                     .build()
                     .parseClaimsJws(token);
 
             return true;
-        } catch (JwtException | IllegalArgumentException e) {
+
+        } catch (JwtException e) {
+
+            System.out.println("JWT ERROR = " + e.getMessage());
+
+            return false;
+
+        } catch (IllegalArgumentException e) {
+
+            System.out.println("JWT EMPTY");
+
             return false;
         }
     }
 
     public Long getUserId(String token) {
+
         Claims claims = Jwts.parserBuilder()
                 .setSigningKey(key)
                 .build()

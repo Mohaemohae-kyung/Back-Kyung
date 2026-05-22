@@ -9,7 +9,6 @@ import kyung.kung_backend.domain.servicepost.dto.ExpertServiceResponse;
 import kyung.kung_backend.domain.servicepost.entity.ExpertService;
 import kyung.kung_backend.domain.servicepost.repository.ExpertServiceRepository;
 import kyung.kung_backend.domain.user.entity.User;
-import kyung.kung_backend.domain.user.repository.UserRepository;
 
 import lombok.RequiredArgsConstructor;
 
@@ -24,31 +23,34 @@ public class ExpertServicePostService {
     private final ExpertServiceRepository expertServiceRepository;
     private final ExpertProfileRepository expertProfileRepository;
     private final ServiceCategoryRepository serviceCategoryRepository;
-    private final UserRepository userRepository;
 
     public ExpertServiceResponse createExpertService(
             User user,
             ExpertServiceCreateRequest request
     ) {
 
-        // 테스트용 고정 유저
-        User fixedUser = userRepository.findById(1L)
-                .orElseThrow(() -> new IllegalArgumentException("사용자가 존재하지 않습니다."));
-
-        ExpertProfile expertProfile = expertProfileRepository.findByUser(fixedUser)
-                .orElseThrow(() -> new IllegalArgumentException("고수 프로필이 존재하지 않습니다."));
+        // 현재 로그인한 유저의 고수 프로필 조회
+        ExpertProfile expertProfile = expertProfileRepository.findByUser(user)
+                .orElseThrow(() ->
+                        new IllegalArgumentException("고수 프로필이 존재하지 않습니다.")
+                );
 
         ServiceCategory category = serviceCategoryRepository.findById(request.getCategoryId())
-                .orElseThrow(() -> new IllegalArgumentException("카테고리가 존재하지 않습니다."));
+                .orElseThrow(() ->
+                        new IllegalArgumentException("카테고리가 존재하지 않습니다.")
+                );
 
+        // 중복 서비스 체크
         if (expertServiceRepository.existsByExpertProfileAndCategoryAndStatus(
                 expertProfile,
                 category,
                 "ACTIVE"
         )) {
+
             throw new IllegalArgumentException("이미 등록된 고수 서비스입니다.");
         }
 
+        // 서비스 생성
         ExpertService expertService = ExpertService.create(
                 expertProfile,
                 category,
@@ -67,9 +69,12 @@ public class ExpertServicePostService {
     public ExpertServiceResponse getExpertServiceDetail(Long serviceId) {
 
         ExpertService expertService = expertServiceRepository.findById(serviceId)
-                .orElseThrow(() -> new IllegalArgumentException("고수 서비스가 존재하지 않습니다."));
+                .orElseThrow(() ->
+                        new IllegalArgumentException("고수 서비스가 존재하지 않습니다.")
+                );
 
         if (!expertService.isActive()) {
+
             throw new IllegalArgumentException("비활성화된 고수 서비스입니다.");
         }
 

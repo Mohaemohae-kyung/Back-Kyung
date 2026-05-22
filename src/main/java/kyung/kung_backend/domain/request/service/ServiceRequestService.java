@@ -36,8 +36,11 @@ public class ServiceRequestService {
             User loginUser,
             ServiceRequestCreateRequest request
     ) {
+
         User user = findLoginUser(loginUser);
-        ExpertService expertService = findExpertService(request.getExpertServiceId());
+
+        ExpertService expertService =
+                findExpertService(request.getExpertServiceId());
 
         ServiceRequest serviceRequest = ServiceRequest.create(
                 user,
@@ -48,26 +51,37 @@ public class ServiceRequestService {
                 request.getPreferredDate()
         );
 
-        ServiceRequest savedServiceRequest = serviceRequestRepository.save(serviceRequest);
+        ServiceRequest savedServiceRequest =
+                serviceRequestRepository.save(serviceRequest);
 
         return ServiceRequestResponse.from(savedServiceRequest);
     }
 
-    public List<ServiceRequestResponse> getMyServiceRequests(User loginUser) {
+    public List<ServiceRequestResponse> getMyServiceRequests(
+            User loginUser
+    ) {
+
         User user = findLoginUser(loginUser);
 
-        return serviceRequestRepository.findAllByUserUserIdAndDeletedAtIsNullOrderByCreatedAtDesc(user.getUserId())
+        return serviceRequestRepository
+                .findAllByUserUserIdAndDeletedAtIsNullOrderByCreatedAtDesc(
+                        user.getUserId()
+                )
                 .stream()
                 .map(ServiceRequestResponse::from)
                 .toList();
     }
 
-    public List<ServiceRequestResponse> getReceivedServiceRequests(User loginUser) {
+    public List<ServiceRequestResponse> getReceivedServiceRequests(
+            User loginUser
+    ) {
+
         User user = findLoginUser(loginUser);
 
         validateExpert(user);
 
-        return serviceRequestRepository.findAllReceivedByExpertUserId(user.getUserId())
+        return serviceRequestRepository
+                .findAllReceivedByExpertUserId(user.getUserId())
                 .stream()
                 .map(ServiceRequestResponse::from)
                 .toList();
@@ -77,8 +91,11 @@ public class ServiceRequestService {
             User loginUser,
             Long requestId
     ) {
+
         User user = findLoginUser(loginUser);
-        ServiceRequest serviceRequest = findServiceRequest(requestId);
+
+        ServiceRequest serviceRequest =
+                findServiceRequest(requestId);
 
         validateOwnerOrAdmin(user, serviceRequest);
 
@@ -91,10 +108,14 @@ public class ServiceRequestService {
             Long requestId,
             ServiceRequestUpdateRequest request
     ) {
+
         User user = findLoginUser(loginUser);
-        ServiceRequest serviceRequest = findServiceRequest(requestId);
+
+        ServiceRequest serviceRequest =
+                findServiceRequest(requestId);
 
         validateOwner(user, serviceRequest);
+
         validateUpdatable(serviceRequest);
 
         serviceRequest.update(
@@ -112,10 +133,14 @@ public class ServiceRequestService {
             User loginUser,
             Long requestId
     ) {
+
         User user = findLoginUser(loginUser);
-        ServiceRequest serviceRequest = findServiceRequest(requestId);
+
+        ServiceRequest serviceRequest =
+                findServiceRequest(requestId);
 
         validateOwner(user, serviceRequest);
+
         validateCancelable(serviceRequest);
 
         serviceRequest.cancel();
@@ -128,10 +153,14 @@ public class ServiceRequestService {
             User loginUser,
             Long requestId
     ) {
+
         User user = findLoginUser(loginUser);
-        ServiceRequest serviceRequest = findServiceRequest(requestId);
+
+        ServiceRequest serviceRequest =
+                findServiceRequest(requestId);
 
         validateExpert(user);
+
         validateApprovable(serviceRequest);
 
         serviceRequest.startChatting();
@@ -139,12 +168,17 @@ public class ServiceRequestService {
         ChatRoom chatRoom = ChatRoom.create(
                 serviceRequest,
                 serviceRequest.getUser(),
-                serviceRequest.getExpertService().getExpertProfile()
+                serviceRequest.getExpertService()
+                        .getExpertProfile()
         );
 
-        ChatRoom savedChatRoom = chatRoomRepository.save(chatRoom);
+        ChatRoom savedChatRoom =
+                chatRoomRepository.save(chatRoom);
 
-        return ServiceRequestResponse.from(serviceRequest, savedChatRoom.getChatRoomId());
+        return ServiceRequestResponse.from(
+                serviceRequest,
+                savedChatRoom.getChatRoomId()
+        );
     }
 
     @Transactional
@@ -152,10 +186,14 @@ public class ServiceRequestService {
             User loginUser,
             Long requestId
     ) {
+
         User user = findLoginUser(loginUser);
-        ServiceRequest serviceRequest = findServiceRequest(requestId);
+
+        ServiceRequest serviceRequest =
+                findServiceRequest(requestId);
 
         validateExpert(user);
+
         validateRejectable(serviceRequest);
 
         serviceRequest.reject(null);
@@ -164,73 +202,126 @@ public class ServiceRequestService {
     }
 
     private User findLoginUser(User loginUser) {
+
         if (loginUser == null || loginUser.getUserId() == null) {
             throw GeneralException.of(ErrorCode.UNAUTHORIZED);
         }
 
         return userRepository.findById(loginUser.getUserId())
-                .orElseThrow(() -> GeneralException.of(ErrorCode.UNAUTHORIZED));
+                .orElseThrow(() ->
+                        GeneralException.of(ErrorCode.UNAUTHORIZED)
+                );
     }
 
-    private ExpertService findExpertService(Long expertServiceId) {
+    private ExpertService findExpertService(
+            Long expertServiceId
+    ) {
+
         return expertServiceRepository.findById(expertServiceId)
-                .orElseThrow(() -> GeneralException.of(ErrorCode.NOT_FOUND));
+                .orElseThrow(() ->
+                        GeneralException.of(ErrorCode.NOT_FOUND)
+                );
     }
 
-    private ServiceRequest findServiceRequest(Long requestId) {
-        return serviceRequestRepository.findByRequestIdAndDeletedAtIsNull(requestId)
-                .orElseThrow(() -> GeneralException.of(ErrorCode.NOT_FOUND));
+    private ServiceRequest findServiceRequest(
+            Long requestId
+    ) {
+
+        return serviceRequestRepository
+                .findByRequestIdAndDeletedAtIsNull(requestId)
+                .orElseThrow(() ->
+                        GeneralException.of(ErrorCode.NOT_FOUND)
+                );
     }
 
     private void validateOwner(
             User user,
             ServiceRequest serviceRequest
     ) {
-        if (!serviceRequest.getUser().getUserId().equals(user.getUserId())) {
+
+        if (!serviceRequest.getUser()
+                .getUserId()
+                .equals(user.getUserId())) {
+
             throw GeneralException.of(ErrorCode.FORBIDDEN);
         }
     }
 
+    // =========================
+    // 수정된 부분
+    // =========================
     private void validateOwnerOrAdmin(
             User user,
             ServiceRequest serviceRequest
     ) {
+
+        // 관리자
         if (isAdmin(user)) {
             return;
         }
 
-        validateOwner(user, serviceRequest);
+        // 요청 작성자
+        boolean isRequester =
+                serviceRequest.getUser()
+                        .getUserId()
+                        .equals(user.getUserId());
+
+        // 요청 받은 고수
+        boolean isExpert =
+                serviceRequest.getExpertService()
+                        .getExpertProfile()
+                        .getUser()
+                        .getUserId()
+                        .equals(user.getUserId());
+
+        if (!isRequester && !isExpert) {
+            throw GeneralException.of(ErrorCode.FORBIDDEN);
+        }
     }
 
     private boolean isAdmin(User user) {
+
         return ROLE_ADMIN.equals(user.getRole());
     }
 
-    private void validateUpdatable(ServiceRequest serviceRequest) {
+    private void validateUpdatable(
+            ServiceRequest serviceRequest
+    ) {
+
         if (!serviceRequest.isPending()) {
             throw GeneralException.of(ErrorCode.BAD_REQUEST);
         }
     }
 
-    private void validateCancelable(ServiceRequest serviceRequest) {
+    private void validateCancelable(
+            ServiceRequest serviceRequest
+    ) {
+
         if (!serviceRequest.isPending()) {
             throw GeneralException.of(ErrorCode.BAD_REQUEST);
         }
     }
 
-    private void validateApprovable(ServiceRequest serviceRequest) {
+    private void validateApprovable(
+            ServiceRequest serviceRequest
+    ) {
+
         if (!serviceRequest.isPending()) {
             throw GeneralException.of(ErrorCode.BAD_REQUEST);
         }
     }
 
-    private void validateRejectable(ServiceRequest serviceRequest) {
+    private void validateRejectable(
+            ServiceRequest serviceRequest
+    ) {
+
         if (!serviceRequest.isPending()) {
             throw GeneralException.of(ErrorCode.BAD_REQUEST);
         }
     }
 
     private void validateExpert(User user) {
+
         if (!"EXPERT".equals(user.getRole())) {
             throw GeneralException.of(ErrorCode.FORBIDDEN);
         }

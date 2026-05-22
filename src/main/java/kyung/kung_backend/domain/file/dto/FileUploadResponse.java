@@ -7,5 +7,6 @@ import lombok.Getter;
 @Builder
 public class FileUploadResponse {
     private Long fileId;
+    private String storedName;
     private String fileUrl;
 }

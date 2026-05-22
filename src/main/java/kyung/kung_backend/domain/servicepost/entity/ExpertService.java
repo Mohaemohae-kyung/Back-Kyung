@@ -34,11 +34,11 @@ public class ExpertService extends BaseEntity {
     @Column(name = "EXPERT_SERVICE_ID", nullable = false)
     private Long expertServiceId;
 
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @ManyToOne(fetch = FetchType.EAGER, optional = false)
     @JoinColumn(name = "EXPERT_PROFILE_ID", nullable = false)
     private ExpertProfile expertProfile;
 
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @ManyToOne(fetch = FetchType.EAGER, optional = false)
     @JoinColumn(name = "CATEGORY_ID", nullable = false)
     private ServiceCategory category;
 
