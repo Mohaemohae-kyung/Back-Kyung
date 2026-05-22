@@ -41,6 +41,11 @@ public enum ErrorCode implements BaseCode {
     PAYMENT_DUPLICATE_KEY(HttpStatus.CONFLICT, "PAYMENT_409_1", "이미 처리된 PG 결제 키입니다."),
     PAYMENT_COUPON_NOT_ALLOWED(HttpStatus.BAD_REQUEST, "PAYMENT_400_4", "해당 결제에는 쿠폰을 사용할 수 없습니다."),
 
+    // MOCK PG
+    MOCK_PG_NOT_FOUND(HttpStatus.NOT_FOUND, "MOCK_PG_404_1", "Mock PG 승인 정보를 찾을 수 없습니다."),
+    MOCK_PG_INVALID_APPROVAL(HttpStatus.BAD_REQUEST, "MOCK_PG_400_1", "Mock PG 승인 정보가 결제 요청과 일치하지 않습니다."),
+    MOCK_PG_DUPLICATE_APPROVAL(HttpStatus.CONFLICT, "MOCK_PG_409_1", "이미 Mock PG 승인이 완료된 주문입니다."),
+
     // COUPON
     COUPON_NOT_AVAILABLE(HttpStatus.BAD_REQUEST, "COUPON_400_1", "사용할 수 없는 쿠폰입니다.");
 

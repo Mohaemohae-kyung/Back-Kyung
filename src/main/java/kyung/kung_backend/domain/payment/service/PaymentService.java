@@ -13,6 +13,7 @@ import kyung.kung_backend.domain.payment.dto.PaymentPrepareResponse;
 import kyung.kung_backend.domain.payment.dto.PaymentResponse;
 import kyung.kung_backend.domain.payment.dto.ServiceRequestCheckoutResponse;
 import kyung.kung_backend.domain.payment.entity.Payment;
+import kyung.kung_backend.domain.payment.pg.service.MockPgService;
 import kyung.kung_backend.domain.payment.repository.PaymentRepository;
 import kyung.kung_backend.domain.request.entity.ServiceRequest;
 import kyung.kung_backend.domain.request.repository.ServiceRequestRepository;
@@ -50,6 +51,7 @@ public class PaymentService {
     private final UserCouponRepository userCouponRepository;
     private final ServiceRequestRepository serviceRequestRepository;
     private final UserRepository userRepository;
+    private final MockPgService mockPgService;
 
     @Transactional
     public BookingCheckoutResponse getBookingCheckout(
@@ -226,6 +228,11 @@ public class PaymentService {
         }
 
         validatePgPaymentKeyNotUsed(request.getPaymentKey(), payment);
+        mockPgService.verifyApprovedPayment(
+                request.getOrderId(),
+                request.getPaymentKey(),
+                request.getAmount()
+        );
 
         LocalDateTime paidAt = now;
         payment.complete(request.getPaymentKey(), paidAt);
