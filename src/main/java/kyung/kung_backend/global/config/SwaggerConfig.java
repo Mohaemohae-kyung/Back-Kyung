@@ -23,9 +23,7 @@ public class SwaggerConfig {
                 .info(apiInfo())
                 .addSecurityItem(securityRequirement())
                 .components(components())
-                .servers(List.of(localServer()));
-        // 배포 환경 추가 시 아래처럼 서버를 추가하면 됩니다.
-        // .servers(List.of(localServer(), devServer()));
+                .servers(List.of(prodServer(), localServer()));
     }
 
     private Info apiInfo() {
@@ -53,19 +51,17 @@ public class SwaggerConfig {
                 .bearerFormat("JWT");
     }
 
+    private Server prodServer() {
+        return new Server()
+                .url("https://can-fly.shop")
+                .description("Kung Production Server");
+    }
+
     private Server localServer() {
         return new Server()
                 .url("http://localhost:8080")
-                .description("Kyung Local Server");
+                .description("Kung Local Server");
     }
-
-    /*
-    private Server devServer() {
-        return new Server()
-                .url("https://추후-AWS-배포-URL")
-                .description("Kung Develop Server");
-    }
-    */
 
     @Bean
     public GroupedOpenApi allGroup() {
