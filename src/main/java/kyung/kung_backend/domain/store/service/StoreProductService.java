@@ -4,6 +4,8 @@ import kyung.kung_backend.domain.category.entity.ServiceCategory;
 import kyung.kung_backend.domain.category.repository.ServiceCategoryRepository;
 import kyung.kung_backend.domain.expert.entity.ExpertProfile;
 import kyung.kung_backend.domain.expert.repository.ExpertProfileRepository;
+import kyung.kung_backend.domain.file.entity.FileUpload;
+import kyung.kung_backend.domain.file.repository.FileUploadRepository;
 import kyung.kung_backend.domain.store.dto.StoreProductCreateRequest;
 import kyung.kung_backend.domain.store.dto.StoreProductResponse;
 import kyung.kung_backend.domain.store.dto.StoreProductUpdateRequest;
@@ -11,8 +13,8 @@ import kyung.kung_backend.domain.store.entity.StoreProduct;
 import kyung.kung_backend.domain.store.entity.enums.StoreProductStatus;
 import kyung.kung_backend.domain.store.repository.StoreProductRepository;
 import kyung.kung_backend.domain.user.entity.User;
-import kyung.kung_backend.global.response.ErrorCode;
 import kyung.kung_backend.global.exception.GeneralException;
+import kyung.kung_backend.global.response.ErrorCode;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -24,9 +26,12 @@ import java.util.List;
 @Transactional(readOnly = true)
 public class StoreProductService {
 
+    private static final String STORE_PRODUCT_TARGET_TYPE = "STORE_PRODUCT";
+
     private final StoreProductRepository storeProductRepository;
     private final ExpertProfileRepository expertProfileRepository;
     private final ServiceCategoryRepository serviceCategoryRepository;
+    private final FileUploadRepository fileUploadRepository;
 
     @Transactional
     public StoreProductResponse createStoreProduct(
@@ -38,11 +43,13 @@ public class StoreProductService {
         ServiceCategory category = serviceCategoryRepository.findById(request.getCategoryId())
                 .orElseThrow(() -> GeneralException.of(ErrorCode.CATEGORY_NOT_FOUND));
 
+        FileUpload thumbnailImage = getUsableThumbnailImage(user, request.getThumbnailImageFileId());
+
         StoreProduct storeProduct = StoreProduct.builder()
                 .expertProfile(expertProfile)
                 .category(category)
                 .title(request.getTitle())
-                .thumbnailImageUrl(request.getThumbnailImageUrl())
+                .thumbnailImageUrl(thumbnailImage.getFileUrl())
                 .description(request.getDescription())
                 .price(request.getPrice())
                 .serviceType(request.getServiceType())
@@ -51,6 +58,11 @@ public class StoreProductService {
                 .build();
 
         StoreProduct savedStoreProduct = storeProductRepository.save(storeProduct);
+
+        thumbnailImage.updateTarget(
+                STORE_PRODUCT_TARGET_TYPE,
+                savedStoreProduct.getStoreProductId()
+        );
 
         return StoreProductResponse.from(savedStoreProduct);
     }
@@ -117,10 +129,23 @@ public class StoreProductService {
                     .orElseThrow(() -> GeneralException.of(ErrorCode.CATEGORY_NOT_FOUND));
         }
 
+        String thumbnailImageUrl = null;
+
+        if (request.getThumbnailImageFileId() != null) {
+            FileUpload thumbnailImage = getUsableThumbnailImage(user, request.getThumbnailImageFileId());
+
+            thumbnailImage.updateTarget(
+                    STORE_PRODUCT_TARGET_TYPE,
+                    storeProduct.getStoreProductId()
+            );
+
+            thumbnailImageUrl = thumbnailImage.getFileUrl();
+        }
+
         storeProduct.update(
                 category,
                 request.getTitle(),
-                request.getThumbnailImageUrl(),
+                thumbnailImageUrl,
                 request.getDescription(),
                 request.getPrice(),
                 request.getServiceType(),
@@ -146,6 +171,25 @@ public class StoreProductService {
         validateOwner(storeProduct, expertProfile);
 
         storeProduct.delete();
+    }
+
+    private FileUpload getUsableThumbnailImage(User user, Long fileId) {
+        FileUpload fileUpload = fileUploadRepository.findById(fileId)
+                .orElseThrow(() -> new IllegalArgumentException("대표 이미지 파일을 찾을 수 없습니다."));
+
+        if (!fileUpload.getUploader().getUserId().equals(user.getUserId())) {
+            throw new IllegalArgumentException("본인이 업로드한 이미지만 대표 이미지로 설정할 수 있습니다.");
+        }
+
+        if ("DELETED".equals(fileUpload.getStatus())) {
+            throw new IllegalArgumentException("삭제된 이미지는 대표 이미지로 설정할 수 없습니다.");
+        }
+
+        if (fileUpload.getTargetId() != null) {
+            throw new IllegalArgumentException("이미 다른 대상에 연결된 이미지입니다.");
+        }
+
+        return fileUpload;
     }
 
     private ExpertProfile getExpertProfileByUser(User user) {

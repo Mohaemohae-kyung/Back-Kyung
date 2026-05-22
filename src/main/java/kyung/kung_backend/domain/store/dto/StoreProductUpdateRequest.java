@@ -14,7 +14,7 @@ public class StoreProductUpdateRequest {
 
     private String title;
 
-    private String thumbnailImageUrl;
+    private Long thumbnailImageFileId;
 
     private String description;
 
