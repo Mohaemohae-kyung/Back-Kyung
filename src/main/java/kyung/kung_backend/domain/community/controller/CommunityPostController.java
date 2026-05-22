@@ -35,8 +35,10 @@ public class CommunityPostController {
             description = "커뮤니티 게시글 목록을 페이지 단위로 조회합니다."
     )
     @GetMapping("/posts")
-    public ApiResponse<Page<PostResponse>> getPosts(Pageable pageable) {
-        Page<PostResponse> response = communityPostService.getPosts(pageable);
+    public ApiResponse<Page<PostResponse>> getPosts(
+            Pageable pageable,
+            @RequestParam(value = "rawSort", required = false) String rawSort) {
+        Page<PostResponse> response = communityPostService.getPosts(pageable, rawSort);
         return ApiResponse.onSuccess(SuccessCode.OK, response);
     }
 
