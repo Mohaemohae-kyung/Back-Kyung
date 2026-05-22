@@ -37,10 +37,10 @@ public class FileUpload extends BaseEntity {
     @Column(name = "ORIGINAL_NAME", nullable = false, length = 255)
     private String originalName;
 
-    @Column(name = "STORED_NAME", nullable = false, length = 255)
+    @Column(name = "STORED_NAME", nullable = false, length = 500)
     private String storedName;
 
-    @Column(name = "FILE_URL", nullable = false, length = 500)
+    @Column(name = "FILE_URL", nullable = false, length = 1000)
     private String fileUrl;
 
     @Column(name = "CONTENT_TYPE", length = 100)
