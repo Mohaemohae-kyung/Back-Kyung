@@ -68,7 +68,10 @@ public class SecurityConfig {
 
                         // 조회는 로그인 없이 허용
                         .requestMatchers(HttpMethod.GET, "/api/experts/**").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/api/experts/profile").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/expert-services/**").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/api/expert-services/**").permitAll()
+                        .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/store-products/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/community/**").permitAll()
 

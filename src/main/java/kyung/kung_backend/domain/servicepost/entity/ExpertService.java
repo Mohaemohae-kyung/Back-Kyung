@@ -48,14 +48,32 @@ public class ExpertService extends BaseEntity {
     @Column(name = "DELETED_AT")
     private LocalDateTime deletedAt;
 
+    @Column(name = "SERVICE_TITLE", nullable = false, length = 200)
+    private String serviceTitle;
+
+    @Column(name = "SERVICE_DESCRIPTION", nullable = false, columnDefinition = "CLOB")
+    private String serviceDescription;
+
+    @Column(name = "PRICE")
+    private Integer price;
+
     public static ExpertService create(
             ExpertProfile expertProfile,
-            ServiceCategory category
+            ServiceCategory category,
+            String serviceTitle,
+            String serviceDescription,
+            Integer price
     ) {
+
         ExpertService expertService = new ExpertService();
 
         expertService.expertProfile = expertProfile;
         expertService.category = category;
+
+        expertService.serviceTitle = serviceTitle;
+        expertService.serviceDescription = serviceDescription;
+        expertService.price = price;
+
         expertService.status = "ACTIVE";
         expertService.deletedAt = null;
 

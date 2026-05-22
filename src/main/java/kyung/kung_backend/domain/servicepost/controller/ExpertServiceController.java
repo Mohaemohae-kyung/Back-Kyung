@@ -16,8 +16,7 @@ import org.springframework.web.bind.annotation.*;
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/api/expert-services")
-public class ExpertServiceController {
-
+public class ExpertServiceController{
     private final ExpertServicePostService expertServicePostService;
 
     @Operation(summary = "고수 서비스 등록")

@@ -9,7 +9,10 @@ import kyung.kung_backend.domain.servicepost.dto.ExpertServiceResponse;
 import kyung.kung_backend.domain.servicepost.entity.ExpertService;
 import kyung.kung_backend.domain.servicepost.repository.ExpertServiceRepository;
 import kyung.kung_backend.domain.user.entity.User;
+import kyung.kung_backend.domain.user.repository.UserRepository;
+
 import lombok.RequiredArgsConstructor;
+
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -21,12 +24,18 @@ public class ExpertServicePostService {
     private final ExpertServiceRepository expertServiceRepository;
     private final ExpertProfileRepository expertProfileRepository;
     private final ServiceCategoryRepository serviceCategoryRepository;
+    private final UserRepository userRepository;
 
     public ExpertServiceResponse createExpertService(
             User user,
             ExpertServiceCreateRequest request
     ) {
-        ExpertProfile expertProfile = expertProfileRepository.findByUser(user)
+
+        // 테스트용 고정 유저
+        User fixedUser = userRepository.findById(1L)
+                .orElseThrow(() -> new IllegalArgumentException("사용자가 존재하지 않습니다."));
+
+        ExpertProfile expertProfile = expertProfileRepository.findByUser(fixedUser)
                 .orElseThrow(() -> new IllegalArgumentException("고수 프로필이 존재하지 않습니다."));
 
         ServiceCategory category = serviceCategoryRepository.findById(request.getCategoryId())
@@ -40,14 +49,23 @@ public class ExpertServicePostService {
             throw new IllegalArgumentException("이미 등록된 고수 서비스입니다.");
         }
 
-        ExpertService expertService = ExpertService.create(expertProfile, category);
-        ExpertService savedExpertService = expertServiceRepository.save(expertService);
+        ExpertService expertService = ExpertService.create(
+                expertProfile,
+                category,
+                request.getServiceTitle(),
+                request.getServiceDescription(),
+                request.getPrice()
+        );
+
+        ExpertService savedExpertService =
+                expertServiceRepository.save(expertService);
 
         return ExpertServiceResponse.from(savedExpertService);
     }
 
     @Transactional(readOnly = true)
     public ExpertServiceResponse getExpertServiceDetail(Long serviceId) {
+
         ExpertService expertService = expertServiceRepository.findById(serviceId)
                 .orElseThrow(() -> new IllegalArgumentException("고수 서비스가 존재하지 않습니다."));
 

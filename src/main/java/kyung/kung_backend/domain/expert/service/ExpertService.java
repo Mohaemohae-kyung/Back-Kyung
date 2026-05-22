@@ -30,7 +30,7 @@ public class ExpertService {
 
     @Transactional
     public void createProfile(User currentUser, ExpertProfileCreateRequest request) {
-        User user = userRepository.findById(currentUser.getUserId())
+        User user = userRepository.findById(1L)
                 .orElseThrow(() -> new IllegalArgumentException("사용자가 존재하지 않습니다."));
 
         if (expertProfileRepository.existsByUser(user)) {

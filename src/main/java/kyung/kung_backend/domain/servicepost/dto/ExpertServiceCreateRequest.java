@@ -8,4 +8,10 @@ import lombok.NoArgsConstructor;
 public class ExpertServiceCreateRequest {
 
     private Long categoryId;
+
+    private String serviceTitle;
+
+    private String serviceDescription;
+
+    private Integer price;
 }
