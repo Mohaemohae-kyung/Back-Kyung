@@ -6,6 +6,8 @@ import kyung.kung_backend.global.response.ApiResponse;
 import kyung.kung_backend.global.response.ErrorCode;
 import kyung.kung_backend.global.response.ReasonDto;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
@@ -21,18 +23,20 @@ public class GlobalExceptionHandler {
 
     // GeneralException 처리
     @ExceptionHandler(GeneralException.class)
-    public ApiResponse<?> handleGeneralException(GeneralException e) {
+    public ResponseEntity<ApiResponse<?>> handleGeneralException(GeneralException e) {
         ReasonDto reason = e.getReason();
 
-        return ApiResponse.onFailure(
-                reason.getCode(),
-                reason.getMessage()
-        );
+        return ResponseEntity
+                .status(reason.getHttpStatus())
+                .body(ApiResponse.onFailure(
+                        reason.getCode(),
+                        reason.getMessage()
+                ));
     }
 
     // @RequestBody 검증 실패 처리
     @ExceptionHandler(MethodArgumentNotValidException.class)
-    public ApiResponse<?> handleMethodArgumentNotValidException(
+    public ResponseEntity<ApiResponse<?>> handleMethodArgumentNotValidException(
             MethodArgumentNotValidException e
     ) {
         Map<String, String> errors = new LinkedHashMap<>();
@@ -45,12 +49,14 @@ public class GlobalExceptionHandler {
             errors.put(fieldName, errorMessage);
         });
 
-        return ApiResponse.onFailure(ErrorCode.BAD_REQUEST, errors);
+        return ResponseEntity
+                .status(HttpStatus.BAD_REQUEST)
+                .body(ApiResponse.onFailure(ErrorCode.BAD_REQUEST, errors));
     }
 
     // @RequestParam, @PathVariable 검증 실패 처리
     @ExceptionHandler(ConstraintViolationException.class)
-    public ApiResponse<?> handleConstraintViolationException(
+    public ResponseEntity<ApiResponse<?>> handleConstraintViolationException(
             ConstraintViolationException e
     ) {
         String errorMessage = e.getConstraintViolations()
@@ -59,37 +65,44 @@ public class GlobalExceptionHandler {
                 .findFirst()
                 .orElse("잘못된 요청입니다.");
 
-        return ApiResponse.onFailure(ErrorCode.BAD_REQUEST, errorMessage);
+        return ResponseEntity
+                .status(HttpStatus.BAD_REQUEST)
+                .body(ApiResponse.onFailure(ErrorCode.BAD_REQUEST, errorMessage));
     }
 
     // IllegalArgumentException 처리
     @ExceptionHandler(IllegalArgumentException.class)
-    public ApiResponse<?> handleIllegalArgumentException(
+    public ResponseEntity<ApiResponse<?>> handleIllegalArgumentException(
             IllegalArgumentException e
     ) {
-        return ApiResponse.onFailure(ErrorCode.BAD_REQUEST, e.getMessage());
+        return ResponseEntity
+                .status(HttpStatus.BAD_REQUEST)
+                .body(ApiResponse.onFailure(ErrorCode.BAD_REQUEST, e.getMessage()));
     }
 
     // ResponseStatusException 처리
     @ExceptionHandler(ResponseStatusException.class)
-    public ApiResponse<?> handleResponseStatusException(
+    public ResponseEntity<ApiResponse<?>> handleResponseStatusException(
             ResponseStatusException e
     ) {
-        return ApiResponse.onFailure(
-                ErrorCode.UNAUTHORIZED,
-                e.getReason()
-        );
+        return ResponseEntity
+                .status(e.getStatusCode())
+                .body(ApiResponse.onFailure(
+                        ErrorCode.UNAUTHORIZED,
+                        e.getReason()
+                ));
     }
-
 
     // 그 외 예상하지 못한 예외 처리
     @ExceptionHandler(Exception.class)
-    public ApiResponse<?> handleUnhandledException(Exception e) {
+    public ResponseEntity<ApiResponse<?>> handleUnhandledException(Exception e) {
         log.error("Unhandled exception occurred", e);
 
-        return ApiResponse.onFailure(
-                ErrorCode.INTERNAL_SERVER_ERROR,
-                e.getMessage()
-        );
+        return ResponseEntity
+                .status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(ApiResponse.onFailure(
+                        ErrorCode.INTERNAL_SERVER_ERROR,
+                        e.getMessage()
+                ));
     }
 }
