@@ -15,8 +15,8 @@ import kyung.kung_backend.domain.user.entity.User;
 import kyung.kung_backend.domain.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -24,7 +24,11 @@ import javax.sql.DataSource;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 @Service
@@ -38,15 +42,18 @@ public class CommunityPostService {
     private final FileUploadRepository fileUploadRepository;
     private final DataSource dataSource;
 
-//    private static final Map<String, String> SORT_COLUMN_MAP = Map.of(
-//            "postId", "p.COMMUNITY_POST_ID",
-//            "title", "p.TITLE",
-//            "viewCount", "p.VIEW_COUNT"
-//    );
-//    private static final Map<String, String> SORT_DIRECTION_MAP = Map.of(
-//            "asc", "ASC",
-//            "desc", "DESC"
-//    );
+    // 컬럼명 화이트리스트 검증용 해시맵
+    private static final Map<String, String> SORT_COLUMN_MAP = Map.of(
+            "postId", "p.COMMUNITY_POST_ID",
+            "title", "p.TITLE",
+            "viewCount", "p.VIEW_COUNT"
+    );
+
+    // 정렬 방향 화이트리스트 검증용 해시맵
+    // private static final Map<String, String> SORT_DIRECTION_MAP = Map.of(
+    //         "asc", "ASC",
+    //         "desc", "DESC"
+    // );
 
     @Transactional
     public PostResponse createPost(Long userId, PostCreateRequest request) {
@@ -106,9 +113,9 @@ public class CommunityPostService {
         return PostResponse.from(post, fileUrls);
     }
 
-    //  Orderby 이용 SQLI 공격 가능 취약 코드
+    // SQLI 취약점 존재 코드
     @Transactional(readOnly = true)
-    public Page<PostResponse> getPosts(Pageable pageable, String rawSort) {
+    public Page<PostResponse> getPosts(Pageable pageable, String sortColumn, String sortDirection) {
         List<Map<String, Object>> postDataList = new ArrayList<>();
         List<Long> postIds = new ArrayList<>();
         long total = 0;
@@ -119,13 +126,26 @@ public class CommunityPostService {
         queryBuilder.append("JOIN USERS u ON p.USER_ID = u.USER_ID ");
         queryBuilder.append("WHERE p.STATUS = 'ACTIVE' ");
 
-        if (rawSort != null && !rawSort.trim().isEmpty()) {
-            queryBuilder.append("ORDER BY ").append(rawSort).append(" ");
-        } else {
-            queryBuilder.append("ORDER BY p.COMMUNITY_POST_ID DESC ");
+        String orderColumn = "p.COMMUNITY_POST_ID";
+        String orderDirection = "DESC";
+
+        // 컬럼명 화이트리스트 기반 안전한 치환
+        if (sortColumn != null && !sortColumn.trim().isEmpty()) {
+            orderColumn = SORT_COLUMN_MAP.getOrDefault(sortColumn.trim(), "p.COMMUNITY_POST_ID");
         }
 
-        // Oracle 12c 이상 표준 페이지네이션 규격 적용
+        // 방향 입력값 검증 누락 (취약점)
+        if (sortDirection != null && !sortDirection.trim().isEmpty()) {
+            orderDirection = sortDirection;
+        }
+
+        // 방향 입력값 검증 (시큐어 코딩 적용 시 참고용)
+        // if (sortDirection != null && !sortDirection.trim().isEmpty()) {
+        //     orderDirection = SORT_DIRECTION_MAP.getOrDefault(sortDirection.trim().toLowerCase(), "DESC");
+        // }
+
+        // 쿼리 결합
+        queryBuilder.append("ORDER BY ").append(orderColumn).append(" ").append(orderDirection).append(" ");
         queryBuilder.append("OFFSET ? ROWS FETCH NEXT ? ROWS ONLY");
 
         String countQuery = "SELECT COUNT(*) FROM COMMUNITY_POSTS WHERE STATUS = 'ACTIVE'";
@@ -134,7 +154,6 @@ public class CommunityPostService {
              PreparedStatement pstmt = conn.prepareStatement(queryBuilder.toString());
              PreparedStatement countPstmt = conn.prepareStatement(countQuery)) {
 
-            // Oracle 문법 위치 규칙에 따라 Offset 바인딩 후 Fetch 크기 지정
             pstmt.setLong(1, pageable.getOffset());
             pstmt.setInt(2, pageable.getPageSize());
 
@@ -183,97 +202,6 @@ public class CommunityPostService {
 
         return new PageImpl<>(posts, pageable, total);
     }
-
-
-    //  Orderby 이용 SQLI 공격 불가능 시큐어코딩
-//    @Transactional(readOnly = true)
-//    public Page<PostResponse> getPosts(Pageable pageable, String rawSort) {
-//        List<Map<String, Object>> postDataList = new ArrayList<>();
-//        List<Long> postIds = new ArrayList<>();
-//        long total = 0;
-//
-//        StringBuilder queryBuilder = new StringBuilder();
-//        queryBuilder.append("SELECT p.COMMUNITY_POST_ID, p.TITLE, p.CONTENT, p.VIEW_COUNT, u.NAME AS WRITER_NAME ");
-//        queryBuilder.append("FROM COMMUNITY_POSTS p ");
-//        queryBuilder.append("JOIN USERS u ON p.USER_ID = u.USER_ID ");
-//        queryBuilder.append("WHERE p.STATUS = 'ACTIVE' ");
-//
-//        // 기본 정렬 기준 설정
-//        String orderColumn = "p.COMMUNITY_POST_ID";
-//        String orderDirection = "DESC";
-//
-//        // 클라이언트 입력값 검증 및 안전한 치환
-//        if (rawSort != null && !rawSort.trim().isEmpty()) {
-//            String[] sortParams = rawSort.split(",");
-//            String reqColumn = sortParams[0].trim();
-//
-//            // Map에 존재하지 않는 키가 들어오면 기본값 반환
-//            orderColumn = SORT_COLUMN_MAP.getOrDefault(reqColumn, "p.COMMUNITY_POST_ID");
-//
-//            if (sortParams.length > 1) {
-//                String reqDirection = sortParams[1].trim().toLowerCase();
-//                orderDirection = SORT_DIRECTION_MAP.getOrDefault(reqDirection, "DESC");
-//            }
-//        }
-//
-//        // 검증된 안전한 문자열만 쿼리에 결합
-//        queryBuilder.append("ORDER BY ").append(orderColumn).append(" ").append(orderDirection).append(" ");
-//        queryBuilder.append("OFFSET ? ROWS FETCH NEXT ? ROWS ONLY");
-//
-//        String countQuery = "SELECT COUNT(*) FROM COMMUNITY_POSTS WHERE STATUS = 'ACTIVE'";
-//
-//        try (Connection conn = dataSource.getConnection();
-//             PreparedStatement pstmt = conn.prepareStatement(queryBuilder.toString());
-//             PreparedStatement countPstmt = conn.prepareStatement(countQuery)) {
-//
-//            pstmt.setLong(1, pageable.getOffset());
-//            pstmt.setInt(2, pageable.getPageSize());
-//
-//            try (ResultSet rs = pstmt.executeQuery()) {
-//                while (rs.next()) {
-//                    Map<String, Object> data = new HashMap<>();
-//                    Long postId = rs.getLong("COMMUNITY_POST_ID");
-//                    data.put("postId", postId);
-//                    data.put("title", rs.getString("TITLE"));
-//                    data.put("content", rs.getString("CONTENT"));
-//                    data.put("viewCount", rs.getLong("VIEW_COUNT"));
-//                    data.put("writerName", rs.getString("WRITER_NAME"));
-//
-//                    postIds.add(postId);
-//                    postDataList.add(data);
-//                }
-//            }
-//
-//            try (ResultSet rsCount = countPstmt.executeQuery()) {
-//                if (rsCount.next()) {
-//                    total = rsCount.getLong(1);
-//                }
-//            }
-//        } catch (Exception e) {
-//            throw new RuntimeException("게시글 목록 조회 중 데이터베이스 오류가 발생했습니다.", e);
-//        }
-//
-//        List<FileUpload> files = fileUploadRepository.findByTargetTypeAndTargetIdInAndStatus("COMMUNITY_POST", postIds, "ACTIVE");
-//        Map<Long, List<String>> fileUrlMap = files.stream()
-//                .collect(Collectors.groupingBy(
-//                        FileUpload::getTargetId,
-//                        Collectors.mapping(FileUpload::getFileUrl, Collectors.toList())
-//                ));
-//
-//        List<PostResponse> posts = postDataList.stream().map(data -> {
-//            Long id = (Long) data.get("postId");
-//            return PostResponse.builder()
-//                    .postId(id)
-//                    .title((String) data.get("title"))
-//                    .content((String) data.get("content"))
-//                    .viewCount((Long) data.get("viewCount"))
-//                    .writerName((String) data.get("writerName"))
-//                    .imageUrls(fileUrlMap.getOrDefault(id, Collections.emptyList()))
-//                    .build();
-//        }).collect(Collectors.toList());
-//
-//        return new PageImpl<>(posts, pageable, total);
-//    }
 
     @Transactional
     public PostResponse updatePost(Long userId, Long postId, PostUpdateRequest request) {
