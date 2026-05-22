@@ -5,6 +5,7 @@ import io.jsonwebtoken.security.Keys;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.JwtException;
 import kyung.kung_backend.domain.user.entity.User;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 import javax.crypto.SecretKey;
@@ -14,15 +15,23 @@ import java.util.Date;
 @Component
 public class JwtProvider {
 
-    private static final String SECRET_KEY = "kung-backend-secret-key-for-jwt-token-test-1234567890";
-    private static final long ACCESS_TOKEN_EXPIRE_TIME = 1000L * 60 * 60; // 1시간
-    private static final long REFRESH_TOKEN_EXPIRE_TIME = 1000L * 60 * 60 * 24 * 7; // 7일
+    private final SecretKey key;
+    private final long accessTokenExpireTime;
+    private final long refreshTokenExpireTime;
 
-    private final SecretKey key = Keys.hmacShaKeyFor(SECRET_KEY.getBytes(StandardCharsets.UTF_8));
+    public JwtProvider(
+            @Value("${jwt.secret}") String secretKey,
+            @Value("${jwt.access-expiration-ms}") long accessTokenExpireTime,
+            @Value("${jwt.refresh-expiration-ms}") long refreshTokenExpireTime
+    ) {
+        this.key = Keys.hmacShaKeyFor(secretKey.getBytes(StandardCharsets.UTF_8));
+        this.accessTokenExpireTime = accessTokenExpireTime;
+        this.refreshTokenExpireTime = refreshTokenExpireTime;
+    }
 
     public String createAccessToken(User user) {
         Date now = new Date();
-        Date expiredAt = new Date(now.getTime() + ACCESS_TOKEN_EXPIRE_TIME);
+        Date expiredAt = new Date(now.getTime() + accessTokenExpireTime);
 
         return Jwts.builder()
                 .setSubject(String.valueOf(user.getUserId()))
@@ -36,7 +45,7 @@ public class JwtProvider {
 
     public String createRefreshToken(User user) {
         Date now = new Date();
-        Date expiredAt = new Date(now.getTime() + REFRESH_TOKEN_EXPIRE_TIME);
+        Date expiredAt = new Date(now.getTime() + refreshTokenExpireTime);
 
         return Jwts.builder()
                 .setSubject(String.valueOf(user.getUserId()))

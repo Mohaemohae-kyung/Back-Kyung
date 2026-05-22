@@ -20,6 +20,10 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 @RequiredArgsConstructor
 public class SecurityConfig {
 
+    private static final String[] HEALTH_WHITE_LIST = {
+            "/health"
+    };
+
     private static final String[] SWAGGER_WHITE_LIST = {
             "/swagger-ui/**",
             "/swagger-ui.html",
@@ -36,10 +40,10 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
-                // REST API + JWT 예정 구조이므로 CSRF는 비활성화합니다.
+                // REST API + JWT 인증 구조이므로 CSRF는 비활성화합니다.
                 .csrf(AbstractHttpConfigurer::disable)
 
-                // 추후 JWT 기반 인증을 사용할 예정이므로 세션을 생성하지 않습니다.
+                // JWT 기반 인증을 사용하므로 서버 세션을 생성하지 않습니다.
                 .sessionManagement(session ->
                         session.sessionCreationPolicy(SessionCreationPolicy.STATELESS)
                 )
@@ -51,6 +55,9 @@ public class SecurityConfig {
                 .httpBasic(AbstractHttpConfigurer::disable)
 
                 .authorizeHttpRequests(auth -> auth
+                        // 배포 및 서버 상태 확인용 health check 경로
+                        .requestMatchers(HEALTH_WHITE_LIST).permitAll()
+
                         // Swagger 문서 확인용 경로
                         .requestMatchers(SWAGGER_WHITE_LIST).permitAll()
 
@@ -60,15 +67,15 @@ public class SecurityConfig {
                         // 관리자 전용 API
                         .requestMatchers("/api/admin/**").hasRole("ADMIN")
 
-                        // 인증이 필요한 모든 API는 JWT 인증을 요구합니다.
+                        // 그 외 모든 요청은 JWT 인증을 요구합니다.
                         .anyRequest().authenticated()
                 )
-                // JWT 인증 필터 등록
+
+                // 요청의 Authorization 헤더에서 JWT를 검증하고 인증 객체를 주입합니다.
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
     }
-
 
     // 회원가입/로그인 시 비밀번호 암호화를 위해 사용합니다.
     @Bean

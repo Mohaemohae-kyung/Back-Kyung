@@ -32,6 +32,9 @@ ext {
 	// JWT 구현용
 	// 0.12.x는 현재 많이 쓰이지만, 더 낮고 예제/자료가 많은 0.11.5 사용
 	jjwtVersion = '0.11.5'
+
+	// AWS SDK for Java v2
+	awsSdkVersion = '2.44.9'
 }
 
 dependencies {
@@ -59,6 +62,12 @@ dependencies {
 	// Oracle JDBC Driver
 	// Oracle DB 연결용
 	runtimeOnly 'com.oracle.database.jdbc:ojdbc11'
+
+	// AWS SDK v2 BOM
+	implementation platform("software.amazon.awssdk:bom:${awsSdkVersion}")
+
+	// AWS S3
+	implementation 'software.amazon.awssdk:s3'
 
 	// Lombok: Getter, Builder, RequiredArgsConstructor 등 반복 코드 감소
 	compileOnly 'org.projectlombok:lombok'
