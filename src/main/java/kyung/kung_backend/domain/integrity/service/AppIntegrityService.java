@@ -1,9 +1,9 @@
 package kyung.kung_backend.domain.integrity.service;
 
-import your.package.integrity.domain.RiskLevel;
-import your.package.integrity.dto.AppIntegrityReportRequest;
-import your.package.integrity.dto.AppIntegrityReportResponse;
-import your.package.integrity.dto.RootSignals;
+import kyung.kung_backend.domain.integrity.model.RiskLevel;
+import kyung.kung_backend.domain.integrity.dto.AppIntegrityReportRequest;
+import kyung.kung_backend.domain.integrity.dto.AppIntegrityReportResponse;
+import kyung.kung_backend.domain.integrity.dto.RootSignals;
 import org.springframework.stereotype.Service;
 
 import java.util.HashSet;

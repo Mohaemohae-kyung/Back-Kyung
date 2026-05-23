@@ -1,8 +1,8 @@
 package kyung.kung_backend.domain.integrity.controller;
 
-import your.package.integrity.dto.AppIntegrityReportRequest;
-import your.package.integrity.dto.AppIntegrityReportResponse;
-import your.package.integrity.service.AppIntegrityService;
+import kyung.kung_backend.domain.integrity.dto.AppIntegrityReportRequest;
+import kyung.kung_backend.domain.integrity.dto.AppIntegrityReportResponse;
+import kyung.kung_backend.domain.integrity.service.AppIntegrityService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
