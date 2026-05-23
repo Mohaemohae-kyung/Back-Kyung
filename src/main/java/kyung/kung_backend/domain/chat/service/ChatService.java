@@ -8,7 +8,9 @@ import kyung.kung_backend.domain.chat.repository.ChatMessageRepository;
 import kyung.kung_backend.domain.chat.repository.ChatRoomRepository;
 import kyung.kung_backend.domain.user.entity.User;
 import kyung.kung_backend.domain.user.repository.UserRepository;
+
 import lombok.RequiredArgsConstructor;
+
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -20,38 +22,189 @@ import java.util.stream.Collectors;
 @Transactional(readOnly = true)
 public class ChatService {
 
-    private final ChatRoomRepository chatRoomRepository;
-    private final ChatMessageRepository chatMessageRepository;
-    private final UserRepository userRepository;
+    private final ChatRoomRepository
+            chatRoomRepository;
 
+    private final ChatMessageRepository
+            chatMessageRepository;
+
+    private final UserRepository
+            userRepository;
+
+    // =========================
+    // 메시지 저장
+    // =========================
     @Transactional
-    public ChatDto.MessageResponse saveMessage(ChatMessageRequest request) {
-        ChatRoom room = chatRoomRepository.findById(Long.valueOf(request.getRoomId()))
-                .orElseThrow(() -> new IllegalArgumentException("채팅방을 찾을 수 없습니다. ID: " + request.getRoomId()));
+    public ChatDto.MessageResponse saveMessage(
+            ChatMessageRequest request
+    ) {
 
-        User sender = userRepository.findById(Long.valueOf(request.getSenderId()))
-                .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다. ID: " + request.getSenderId()));
+        ChatRoom room =
 
-        ChatMessage message = ChatMessage.create(room, sender, request.getType(), request.getMessage());
+                chatRoomRepository.findById(
 
-        ChatMessage savedMessage = chatMessageRepository.save(message);
+                        Long.valueOf(
+                                request.getRoomId()
+                        )
 
-        return ChatDto.MessageResponse.from(savedMessage);
+                ).orElseThrow(() ->
+
+                        new IllegalArgumentException(
+                                "채팅방 없음"
+                        )
+                );
+
+        User sender =
+
+                userRepository.findById(
+
+                        Long.valueOf(
+                                request.getSenderId()
+                        )
+
+                ).orElseThrow(() ->
+
+                        new IllegalArgumentException(
+                                "유저 없음"
+                        )
+                );
+
+        ChatMessage message =
+
+                ChatMessage.create(
+
+                        room,
+
+                        sender,
+
+                        request.getType(),
+
+                        request.getMessage()
+                );
+
+        ChatMessage saved =
+
+                chatMessageRepository.save(
+                        message
+                );
+
+        return ChatDto.MessageResponse.from(
+                saved
+        );
     }
 
-    public List<ChatDto.RoomResponse> getMyRoomsAsUser(Long userId) {
-        List<ChatRoom> rooms = chatRoomRepository.findByUserUserId(userId);
+    // =========================
+    // 내 채팅방 목록 조회
+    // =========================
+    public List<ChatDto.RoomResponse>
+    getMyRoomsAsUser(Long userId) {
 
-        return rooms.stream()
-                .map(ChatDto.RoomResponse::from)
+        return chatRoomRepository
+
+                .findMyRooms(userId)
+
+                .stream()
+
+                .map(room -> {
+
+                    Long unreadCount =
+
+                            chatMessageRepository
+                                    .countUnread(
+
+                                            room.getChatRoomId(),
+
+                                            userId
+                                    );
+
+                    String lastMessage =
+
+                            chatMessageRepository
+
+                                    .findTopByChatRoomOrderByChatMessageIdDesc(
+                                            room
+                                    )
+
+                                    .map(
+                                            ChatMessage::getContent
+                                    )
+
+                                    .orElse(null);
+
+                    return ChatDto.RoomResponse.from(
+
+                            room,
+
+                            lastMessage,
+
+                            unreadCount
+                    );
+                })
+
                 .collect(Collectors.toList());
     }
 
-    public List<ChatDto.MessageResponse> getRoomMessages(Long chatRoomId) {
-        List<ChatMessage> messages = chatMessageRepository.findByChatRoomChatRoomIdOrderByCreatedAtAsc(chatRoomId);
+    // =========================
+    // 채팅 메시지 조회
+    // =========================
+    public List<ChatDto.MessageResponse>
+    getRoomMessages(Long roomId) {
 
-        return messages.stream()
-                .map(ChatDto.MessageResponse::from)
+        return chatMessageRepository
+
+                .findByChatRoomChatRoomIdOrderByCreatedAtAsc(
+                        roomId
+                )
+
+                .stream()
+
+                .map(
+                        ChatDto.MessageResponse::from
+                )
+
                 .collect(Collectors.toList());
+    }
+
+    // =========================
+    // 채팅방 조회 (fetch join으로 Lazy 문제 해결)
+    // =========================
+    public ChatRoom getRoom(Long roomId) {
+
+        return chatRoomRepository
+
+                .findByIdWithUsers(roomId)  // ✅ fetch join 쿼리 사용
+
+                .orElseThrow(() ->
+
+                        new IllegalArgumentException(
+                                "채팅방 없음"
+                        )
+                );
+    }
+
+    // =========================
+    // 읽음 처리
+    // =========================
+    @Transactional
+    public void readMessages(
+
+            Long roomId,
+
+            Long userId
+    ) {
+
+        List<ChatMessage> messages =
+
+                chatMessageRepository
+                        .findUnreadMessages(
+
+                                roomId,
+
+                                userId
+                        );
+
+        messages.forEach(
+                ChatMessage::read
+        );
     }
 }

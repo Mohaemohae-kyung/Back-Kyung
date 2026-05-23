@@ -13,6 +13,7 @@ import kyung.kung_backend.global.response.SuccessCode;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.http.ResponseEntity;
 
 import java.util.List;
 
@@ -70,11 +71,16 @@ public class ExpertController {
             summary = "고수 상세 조회",
             description = "선택한 고수의 프로필 상세 정보를 조회합니다."
     )
-    @GetMapping("/{expertId}")
-    public ApiResponse<ExpertDetailResponse> getExpertDetail(
-            @PathVariable Long expertId
+    @GetMapping("/{serviceId}")
+    public ResponseEntity<ApiResponse<ExpertDetailResponse>> getExpertDetail(
+            @PathVariable Long serviceId
     ) {
-        ExpertDetailResponse response = expertService.getExpertDetail(expertId);
-        return ApiResponse.onSuccess(response);
+
+        ExpertDetailResponse response =
+                expertService.getExpertDetail(serviceId);
+
+        return ResponseEntity.ok(
+                ApiResponse.onSuccess(response)
+        );
     }
 }

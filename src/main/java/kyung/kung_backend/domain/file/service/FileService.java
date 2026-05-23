@@ -44,8 +44,8 @@ public class FileService {
         FileUpload savedFile = fileUploadRepository.save(fileUpload);
 
         return FileUploadResponse.builder()
-                .fileId(savedFile.getFileId())
                 .storedName(savedFile.getStoredName())
+                .fileId(savedFile.getFileId())
                 .fileUrl(savedFile.getFileUrl())
                 .build();
     }

@@ -37,9 +37,11 @@ public class CommunityPostController {
     @GetMapping("/posts")
     public ApiResponse<Page<PostResponse>> getPosts(
             Pageable pageable,
-            @RequestParam(value = "sortColumn", required = false) String sortColumn,
-            @RequestParam(value = "sortDirection", required = false, defaultValue = "DESC") String sortDirection) {
-        Page<PostResponse> response = communityPostService.getPosts(pageable, sortColumn, sortDirection);
+            @RequestParam(required = false) String sortColumn,
+            @RequestParam(required = false) String sortDirection
+    ) {
+        Page<PostResponse> response =
+                communityPostService.getPosts(pageable, sortColumn, sortDirection);
         return ApiResponse.onSuccess(SuccessCode.OK, response);
     }
 
@@ -82,7 +84,7 @@ public class CommunityPostController {
 
     @Operation(
             summary = "게시글 삭제",
-            description = "작성자 본인이 게시글을 삭제합니다."
+            description = "작성자 본인 또는 관리자가 게시글을 삭제합니다."
     )
     @DeleteMapping("/posts/{postId}")
     public ApiResponse<Void> deletePost(
@@ -133,7 +135,7 @@ public class CommunityPostController {
 
     @Operation(
             summary = "댓글 삭제",
-            description = "작성자 본인이 댓글을 삭제합니다."
+            description = "작성자 본인 또는 관리자가 댓글을 삭제합니다."
     )
     @DeleteMapping("/comments/{commentId}")
     public ApiResponse<Void> deleteComment(
