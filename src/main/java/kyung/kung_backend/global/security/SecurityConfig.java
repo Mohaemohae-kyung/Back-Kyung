@@ -124,8 +124,6 @@ public class SecurityConfig {
                         // 조회는 로그인 없이 허용
                         .requestMatchers(HttpMethod.GET, "/api/experts/**").permitAll()
 
-                        .requestMatchers(HttpMethod.POST, "/api/experts/profile").permitAll()
-
                         .requestMatchers(HttpMethod.GET, "/api/expert-services/**").permitAll()
 
                         // 고수 서비스 등록은 로그인 필요
