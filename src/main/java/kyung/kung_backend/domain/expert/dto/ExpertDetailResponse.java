@@ -10,22 +10,32 @@ import lombok.Getter;
 public class ExpertDetailResponse {
 
     private Long expertServiceId;
+
     private Long expertProfileId;
 
+    // =========================
+    // 게시글 작성자 USER ID
+    // =========================
+    private Long ownerUserId;
+
     private String displayName;
+
     private String introduction;
 
     private String serviceTitle;
+
     private String serviceDescription;
 
     private Integer price;
 
-    private Long careerYears;
+    private Double careerYears;
 
     private String mainCategoryName;
+
     private String mainLocationName;
 
     private String verifiedYn;
+
     private String status;
 
     public static ExpertDetailResponse from(
@@ -41,6 +51,11 @@ public class ExpertDetailResponse {
 
                 expertProfile.getExpertProfileId(),
 
+                // =========================
+                // 작성자 USER ID
+                // =========================
+                expertProfile.getUser().getUserId(),
+
                 expertProfile.getDisplayName(),
 
                 expertProfile.getIntroduction(),
@@ -53,12 +68,18 @@ public class ExpertDetailResponse {
 
                 expertProfile.getCareerYears(),
 
-                expertProfile.getMainCategory() != null
-                        ? expertProfile.getMainCategory().getName()
+                // =========================
+                // 서비스 카테고리 사용
+                // =========================
+                expertService.getCategory() != null
+                        ? expertService.getCategory().getName()
                         : null,
 
-                expertProfile.getMainLocation() != null
-                        ? expertProfile.getMainLocation().getName()
+                // =========================
+                // 서비스 지역 사용
+                // =========================
+                expertService.getLocation() != null
+                        ? expertService.getLocation().getName()
                         : null,
 
                 expertProfile.getVerifiedYn(),

@@ -70,7 +70,8 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/api/experts/**").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/experts/profile").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/expert-services/**").permitAll()
-                        .requestMatchers(HttpMethod.POST, "/api/expert-services/**").permitAll()
+                        // 고수 서비스 등록은 로그인 필요
+                        .requestMatchers(HttpMethod.POST, "/api/expert-services/**").authenticated()
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/store-products/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/community/**").permitAll()

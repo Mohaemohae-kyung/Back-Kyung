@@ -1,9 +1,13 @@
 package kyung.kung_backend.domain.servicepost.entity;
 
 import jakarta.persistence.*;
+
 import kyung.kung_backend.domain.category.entity.ServiceCategory;
 import kyung.kung_backend.domain.expert.entity.ExpertProfile;
+import kyung.kung_backend.domain.location.entity.Location;
+
 import kyung.kung_backend.global.common.BaseEntity;
+
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -42,6 +46,14 @@ public class ExpertService extends BaseEntity {
     @JoinColumn(name = "CATEGORY_ID", nullable = false)
     private ServiceCategory category;
 
+    // =========================
+    // 서비스별 활동 지역 추가
+    // =========================
+
+    @ManyToOne(fetch = FetchType.EAGER)
+    @JoinColumn(name = "LOCATION_ID")
+    private Location location;
+
     @Column(name = "STATUS", nullable = false, length = 20)
     private String status;
 
@@ -60,6 +72,7 @@ public class ExpertService extends BaseEntity {
     public static ExpertService create(
             ExpertProfile expertProfile,
             ServiceCategory category,
+            Location location,
             String serviceTitle,
             String serviceDescription,
             Integer price
@@ -68,7 +81,14 @@ public class ExpertService extends BaseEntity {
         ExpertService expertService = new ExpertService();
 
         expertService.expertProfile = expertProfile;
+
         expertService.category = category;
+
+        // =========================
+        // 서비스별 지역 저장
+        // =========================
+
+        expertService.location = location;
 
         expertService.serviceTitle = serviceTitle;
         expertService.serviceDescription = serviceDescription;
@@ -81,15 +101,19 @@ public class ExpertService extends BaseEntity {
     }
 
     public void delete() {
+
         this.status = "DELETED";
+
         this.deletedAt = LocalDateTime.now();
     }
 
     public boolean isActive() {
+
         return "ACTIVE".equals(this.status);
     }
 
     public boolean isDeleted() {
+
         return "DELETED".equals(this.status);
     }
 }

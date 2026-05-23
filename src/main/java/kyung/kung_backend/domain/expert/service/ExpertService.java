@@ -10,8 +10,11 @@ import kyung.kung_backend.domain.expert.dto.ExpertProfileUpdateRequest;
 import kyung.kung_backend.domain.servicepost.repository.ExpertServiceRepository;
 
 import kyung.kung_backend.domain.user.entity.User;
+import kyung.kung_backend.domain.user.repository.UserRepository;
+
 import kyung.kung_backend.domain.category.entity.ServiceCategory;
 import kyung.kung_backend.domain.category.repository.ServiceCategoryRepository;
+
 import kyung.kung_backend.domain.location.entity.Location;
 import kyung.kung_backend.domain.location.repository.LocationRepository;
 
@@ -33,6 +36,8 @@ public class ExpertService {
     private final ServiceCategoryRepository serviceCategoryRepository;
     private final LocationRepository locationRepository;
 
+    private final UserRepository userRepository;
+
     @Transactional
     public void createProfile(
             User currentUser,
@@ -43,14 +48,6 @@ public class ExpertService {
         User user = currentUser;
 
         System.out.println("현재 로그인 유저 ID = " + user.getUserId());
-
-        // 이미 프로필 존재하는지 체크
-        if (expertProfileRepository.existsByUser(user)) {
-
-            throw new IllegalArgumentException(
-                    "이미 고수 프로필이 존재합니다."
-            );
-        }
 
         ServiceCategory mainCategory =
                 serviceCategoryRepository
@@ -66,6 +63,36 @@ public class ExpertService {
                                 new IllegalArgumentException("지역이 존재하지 않습니다.")
                         );
 
+        // =========================
+        // 이미 프로필 존재
+        // → 수정 처리
+        // =========================
+
+        if (expertProfileRepository.existsByUser(user)) {
+
+            ExpertProfile existingProfile =
+                    expertProfileRepository.findByUser(user)
+                            .orElseThrow(() ->
+                                    new IllegalArgumentException("고수 프로필이 존재하지 않습니다.")
+                            );
+
+            existingProfile.updateProfile(
+                    request.getDisplayName(),
+                    request.getIntroduction(),
+                    request.getCareerYears(),
+                    mainCategory,
+                    mainLocation
+            );
+
+            System.out.println("고수 프로필 수정 완료");
+
+            return;
+        }
+
+        // =========================
+        // 신규 생성
+        // =========================
+
         ExpertProfile expertProfile = new ExpertProfile(
                 user,
                 request.getDisplayName(),
@@ -79,6 +106,9 @@ public class ExpertService {
 
         // USER → EXPERT 변경
         user.becomeExpert();
+
+        // USER 저장
+        userRepository.save(user);
 
         System.out.println("고수 프로필 생성 완료");
     }
@@ -162,7 +192,7 @@ public class ExpertService {
     public ExpertDetailResponse getExpertDetail(Long serviceId) {
 
         kyung.kung_backend.domain.servicepost.entity.ExpertService expertService =
-                expertServiceRepository.findById(serviceId)
+                expertServiceRepository.findDetailById(serviceId)
                         .orElseThrow(() ->
                                 new IllegalArgumentException("고수 서비스가 존재하지 않습니다.")
                         );

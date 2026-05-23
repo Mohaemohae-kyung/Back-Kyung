@@ -20,9 +20,12 @@ public class ExpertSearchResponse {
 
     private Integer price;
 
-    private Long careerYears;
+    private Double careerYears;
 
+    // 서비스 기준 카테고리
     private String mainCategoryName;
+
+    // 서비스 기준 지역
     private String mainLocationName;
 
     private String verifiedYn;
@@ -32,31 +35,45 @@ public class ExpertSearchResponse {
             kyung.kung_backend.domain.servicepost.entity.ExpertService expertService
     ) {
 
-        ExpertProfile expertProfile = expertService.getExpertProfile();
+        ExpertProfile expertProfile =
+                expertService.getExpertProfile();
 
         return new ExpertSearchResponse(
+
                 expertService.getExpertServiceId(),
+
                 expertProfile.getExpertProfileId(),
 
                 expertProfile.getDisplayName(),
+
                 expertProfile.getIntroduction(),
 
                 expertService.getServiceTitle(),
+
                 expertService.getServiceDescription(),
 
                 expertService.getPrice(),
 
                 expertProfile.getCareerYears(),
 
-                expertProfile.getMainCategory() != null
-                        ? expertProfile.getMainCategory().getName()
+                // =========================
+                // 서비스 카테고리 사용
+                // =========================
+
+                expertService.getCategory() != null
+                        ? expertService.getCategory().getName()
                         : null,
 
-                expertProfile.getMainLocation() != null
-                        ? expertProfile.getMainLocation().getName()
+                // =========================
+                // 서비스 지역 사용
+                // =========================
+
+                expertService.getLocation() != null
+                        ? expertService.getLocation().getName()
                         : null,
 
                 expertProfile.getVerifiedYn(),
+
                 expertProfile.getStatus()
         );
     }
