@@ -32,9 +32,9 @@ public class ExpertServicePostService {
         ServiceCategory category = serviceCategoryRepository.findById(request.getCategoryId())
                 .orElseThrow(() -> new IllegalArgumentException("카테고리가 존재하지 않습니다."));
 
-        if (expertServiceRepository.existsByExpertProfileAndCategoryAndStatus(
+        if (expertServiceRepository.existsByExpertProfileAndCategory_CategoryIdAndStatus(
                 expertProfile,
-                category,
+                category.getCategoryId(),
                 "ACTIVE"
         )) {
             throw new IllegalArgumentException("이미 등록된 고수 서비스입니다.");

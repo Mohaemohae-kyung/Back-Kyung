@@ -4,6 +4,8 @@ import kyung.kung_backend.domain.expert.entity.ExpertProfile;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 
+import java.util.List;
+
 @Getter
 @AllArgsConstructor
 public class ExpertDetailResponse {
@@ -17,7 +19,13 @@ public class ExpertDetailResponse {
     private String verifiedYn;
     private String status;
 
-    public static ExpertDetailResponse from(ExpertProfile expertProfile) {
+    // 견적 요청 생성 시 프론트가 선택해서 넘길 수 있는 expertServiceId 목록
+    private List<Long> expertServiceIds;
+
+    public static ExpertDetailResponse from(
+            ExpertProfile expertProfile,
+            List<Long> expertServiceIds
+    ) {
         return new ExpertDetailResponse(
                 expertProfile.getExpertProfileId(),
                 expertProfile.getDisplayName(),
@@ -26,7 +34,8 @@ public class ExpertDetailResponse {
                 expertProfile.getMainCategory() != null ? expertProfile.getMainCategory().getName() : null,
                 expertProfile.getMainLocation() != null ? expertProfile.getMainLocation().getName() : null,
                 expertProfile.getVerifiedYn(),
-                expertProfile.getStatus()
+                expertProfile.getStatus(),
+                expertServiceIds
         );
     }
 }
