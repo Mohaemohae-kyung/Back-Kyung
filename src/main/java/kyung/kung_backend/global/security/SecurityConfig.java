@@ -1,6 +1,10 @@
 package kyung.kung_backend.global.security;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import jakarta.servlet.http.HttpServletResponse;
 import kyung.kung_backend.global.jwt.JwtAuthenticationFilter;
+import kyung.kung_backend.global.response.ApiResponse;
+import kyung.kung_backend.global.response.ErrorCode;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -36,6 +40,7 @@ public class SecurityConfig {
     };
 
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
+    private final ObjectMapper objectMapper;
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
@@ -54,8 +59,37 @@ public class SecurityConfig {
                 // HTTP Basic 인증은 사용하지 않습니다.
                 .httpBasic(AbstractHttpConfigurer::disable)
 
+                // Spring Security Filter 단계에서 발생하는 인증/인가 예외를 JSON으로 처리합니다.
+                .exceptionHandling(exception -> exception
+                        // 인증 실패: 토큰 없음, 토큰 만료, 토큰 이상 등
+                        .authenticationEntryPoint((request, response, authException) -> {
+                            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+                            response.setContentType("application/json;charset=UTF-8");
+
+                            ApiResponse<?> body = ApiResponse.onFailure(
+                                    ErrorCode.UNAUTHORIZED,
+                                    "인증이 필요합니다."
+                            );
+
+                            response.getWriter().write(objectMapper.writeValueAsString(body));
+                        })
+
+                        // 인가 실패: 로그인은 했지만 권한이 부족한 경우
+                        .accessDeniedHandler((request, response, accessDeniedException) -> {
+                            response.setStatus(HttpServletResponse.SC_FORBIDDEN);
+                            response.setContentType("application/json;charset=UTF-8");
+
+                            ApiResponse<?> body = ApiResponse.onFailure(
+                                    ErrorCode.FORBIDDEN,
+                                    "접근 권한이 없습니다."
+                            );
+
+                            response.getWriter().write(objectMapper.writeValueAsString(body));
+                        })
+                )
+
                 .authorizeHttpRequests(auth -> auth
-                        // 배포 및 서버 상태 확인용 health check 경로
+                        // health check 확인용 경로
                         .requestMatchers(HEALTH_WHITE_LIST).permitAll()
 
                         // Swagger 문서 확인용 경로
@@ -82,46 +116,4 @@ public class SecurityConfig {
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
     }
-
-
-    /*
-    // 추후 프론트엔드 연동 시 CORS 설정이 필요하면 추가 예정
-    @Bean
-    public CorsConfigurationSource corsConfigurationSource() {
-        CorsConfiguration config = new CorsConfiguration();
-
-        config.setAllowedOriginPatterns(List.of(
-                "http://localhost:3000"
-                // "https://추후-배포-프론트-URL"
-        ));
-        config.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
-        config.setAllowedHeaders(List.of("*"));
-        config.setAllowCredentials(true);
-
-        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
-        source.registerCorsConfiguration("/**", config);
-        return source;
-    }
-    */
-
-    /*
-    // 추후 @PreAuthorize, @PostAuthorize 등 메서드 단위 권한 제어가 필요하면
-    // 클래스 상단에 아래 어노테이션 추가 예정
-    //
-    // @EnableMethodSecurity
-    */
-
-    /*
-    // 추후 JWT 인증 실패 응답을 ApiResponse 형식으로 통일할 때 exceptionHandling 추가 예정
-    //
-    // .exceptionHandling(exception -> exception
-    //         .authenticationEntryPoint((request, response, authException) -> {
-    //             response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
-    //             response.setContentType("application/json;charset=UTF-8");
-    //             response.getWriter().write(
-    //                     "{\"isSuccess\":false,\"code\":\"AUTH_401\",\"message\":\"인증이 필요합니다.\"}"
-    //             );
-    //         })
-    // )
-    */
 }
