@@ -107,9 +107,6 @@ public class ChatService {
 
                 .map(room -> {
 
-                    // =========================
-                    // 안 읽은 메시지 수
-                    // =========================
                     Long unreadCount =
 
                             chatMessageRepository
@@ -120,9 +117,6 @@ public class ChatService {
                                             userId
                                     );
 
-                    // =========================
-                    // 마지막 메시지
-                    // =========================
                     String lastMessage =
 
                             chatMessageRepository
@@ -172,13 +166,13 @@ public class ChatService {
     }
 
     // =========================
-    // 채팅방 조회
+    // 채팅방 조회 (fetch join으로 Lazy 문제 해결)
     // =========================
     public ChatRoom getRoom(Long roomId) {
 
         return chatRoomRepository
 
-                .findById(roomId)
+                .findByIdWithUsers(roomId)  // ✅ fetch join 쿼리 사용
 
                 .orElseThrow(() ->
 

@@ -3,6 +3,7 @@ package kyung.kung_backend.domain.chat.repository;
 import kyung.kung_backend.domain.chat.entity.ChatRoom;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
 import java.util.List;
 import java.util.Optional;
@@ -30,5 +31,20 @@ public interface ChatRoomRepository
     Optional<ChatRoom>
     findByServiceRequest_RequestId(
             Long requestId
+    );
+
+    // =========================
+    // WebSocket용 fetch join 조회
+    // (LazyInitializationException 방지)
+    // =========================
+    @Query("""
+        select r from ChatRoom r
+        join fetch r.user
+        join fetch r.expertProfile ep
+        join fetch ep.user
+        where r.chatRoomId = :roomId
+    """)
+    Optional<ChatRoom> findByIdWithUsers(
+            @Param("roomId") Long roomId
     );
 }

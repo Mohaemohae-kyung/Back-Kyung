@@ -37,9 +37,11 @@ public class CommunityPostController {
     @GetMapping("/posts")
     public ApiResponse<Page<PostResponse>> getPosts(
             Pageable pageable,
-            @RequestParam(value = "sortColumn", required = false) String sortColumn,
-            @RequestParam(value = "sortDirection", required = false, defaultValue = "DESC") String sortDirection) {
-        Page<PostResponse> response = communityPostService.getPosts(pageable, sortColumn, sortDirection);
+            @RequestParam(required = false) String sortColumn,
+            @RequestParam(required = false) String sortDirection
+    ) {
+        Page<PostResponse> response =
+                communityPostService.getPosts(pageable, sortColumn, sortDirection);
         return ApiResponse.onSuccess(SuccessCode.OK, response);
     }
 
@@ -139,10 +141,8 @@ public class CommunityPostController {
     public ApiResponse<Void> deleteComment(
             @AuthenticationPrincipal User user,
             @PathVariable Long commentId) {
-
         Long currentUserId = user.getUserId();
         communityCommentService.deleteComment(currentUserId, commentId);
-
         return ApiResponse.onSuccess(SuccessCode.NO_CONTENT);
     }
 }
