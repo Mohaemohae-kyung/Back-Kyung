@@ -35,9 +35,9 @@ springdoc:
     operations-sorter: method
 
 jwt:
-  secret: kung-backend-secret-key-for-jwt-token-test-1234567890
-  access-expiration-ms: 3600000
-  refresh-expiration-ms: 604800000
+  secret: ${JWT_SECRET}
+  access-expiration-ms: ${JWT_ACCESS_EXPIRATION_MS:3600000}
+  refresh-expiration-ms: ${JWT_REFRESH_EXPIRATION_MS:1209600000}
 
 security:
   cors:

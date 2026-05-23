@@ -47,8 +47,6 @@ public class ExpertService {
         // 현재 로그인 유저 사용
         User user = currentUser;
 
-        System.out.println("현재 로그인 유저 ID = " + user.getUserId());
-
         ServiceCategory mainCategory =
                 serviceCategoryRepository
                         .findById(request.getMainCategoryId())
@@ -84,8 +82,6 @@ public class ExpertService {
                     mainLocation
             );
 
-            System.out.println("고수 프로필 수정 완료");
-
             return;
         }
 
@@ -109,8 +105,6 @@ public class ExpertService {
 
         // USER 저장
         userRepository.save(user);
-
-        System.out.println("고수 프로필 생성 완료");
     }
 
     public void updateProfile(

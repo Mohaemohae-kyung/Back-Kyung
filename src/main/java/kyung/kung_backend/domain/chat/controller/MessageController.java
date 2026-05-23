@@ -56,13 +56,6 @@ public class MessageController {
             User user
     ) {
 
-        System.out.println(
-
-                "현재 로그인 유저 = " +
-
-                        user.getUserId()
-        );
-
         List<ChatDto.RoomResponse>
                 response =
 
@@ -96,13 +89,6 @@ public class MessageController {
             @PathVariable
             Long chatRoomId
     ) {
-
-        System.out.println(
-
-                "메시지 조회 roomId = " +
-
-                        chatRoomId
-        );
 
         List<ChatDto.MessageResponse>
                 response =
@@ -156,27 +142,6 @@ public class MessageController {
 
         try {
 
-            System.out.println(
-
-                    "메시지 수신 = " +
-
-                            request
-            );
-
-            // =========================
-            // 입장 메시지 처리
-            // =========================
-            if (
-                    "ENTER".equals(
-                            request.getType()
-                    )
-            ) {
-
-                System.out.println(
-                        "채팅방 입장"
-                );
-            }
-
             // =========================
             // 메시지 저장
             // =========================
@@ -186,10 +151,6 @@ public class MessageController {
                     chatService.saveMessage(
                             request
                     );
-
-            System.out.println(
-                    "메시지 저장 완료"
-            );
 
             // =========================
             // room 조회
@@ -264,10 +225,6 @@ public class MessageController {
                             "message",
                             savedMessage.getContent()
                     )
-            );
-
-            System.out.println(
-                    "WebSocket 전송 완료"
             );
 
         } catch (Exception e) {

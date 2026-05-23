@@ -94,8 +94,6 @@ public class JwtProvider {
 
         } catch (JwtException | IllegalArgumentException e) {
 
-            System.out.println("JWT ERROR = " + e.getMessage());
-
             return false;
         }
     }

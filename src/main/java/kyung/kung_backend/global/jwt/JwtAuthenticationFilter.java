@@ -30,33 +30,19 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             FilterChain filterChain
     ) throws ServletException, IOException {
 
-        System.out.println("========== JWT FILTER ==========");
-        System.out.println("REQUEST URI = " + request.getRequestURI());
-
         String token = resolveToken(request);
-
-        System.out.println("TOKEN = " + token);
 
         if (token != null) {
 
             boolean valid = jwtProvider.validateToken(token);
 
-            System.out.println("TOKEN VALID = " + valid);
-
             if (valid) {
 
                 Long userId = jwtProvider.getUserId(token);
 
-                System.out.println("USER ID = " + userId);
-
                 User user = userRepository.findById(userId).orElse(null);
 
-                System.out.println("USER = " + user);
-
                 if (user != null) {
-
-                    System.out.println("USER STATUS = " + user.getStatus());
-                    System.out.println("USER ROLE = " + user.getRole());
 
                     if ("ACTIVE".equals(user.getStatus())) {
 
@@ -74,22 +60,12 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                         SecurityContextHolder
                                 .getContext()
                                 .setAuthentication(authentication);
-
-                        System.out.println("AUTHENTICATION SUCCESS");
-                    } else {
-                        System.out.println("USER STATUS NOT ACTIVE");
                     }
 
-                } else {
-                    System.out.println("USER NOT FOUND");
                 }
 
-            } else {
-                System.out.println("TOKEN INVALID");
             }
 
-        } else {
-            System.out.println("TOKEN NULL");
         }
 
         filterChain.doFilter(request, response);
@@ -98,8 +74,6 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     private String resolveToken(HttpServletRequest request) {
 
         String authorization = request.getHeader("Authorization");
-
-        System.out.println("AUTH HEADER = " + authorization);
 
         if (authorization != null && authorization.startsWith("Bearer ")) {
             return authorization.substring(7);
