@@ -84,6 +84,24 @@ public class ExpertServicePostService {
                         );
 
         // =========================
+        // 중복 서비스 등록 방지
+        // =========================
+
+        if (
+                expertServiceRepository
+                        .existsByExpertProfileAndCategory_CategoryIdAndStatus(
+                                expertProfile,
+                                category.getCategoryId(),
+                                "ACTIVE"
+                        )
+        ) {
+
+            throw new IllegalArgumentException(
+                    "이미 등록된 고수 서비스입니다."
+            );
+        }
+
+        // =========================
         // 서비스 생성
         // =========================
 

@@ -46,7 +46,6 @@ public class FileService {
         return FileUploadResponse.builder()
                 .storedName(savedFile.getStoredName())
                 .fileId(savedFile.getFileId())
-                .storedName(savedFile.getStoredName())
                 .fileUrl(savedFile.getFileUrl())
                 .build();
     }

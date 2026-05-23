@@ -4,6 +4,7 @@ import kyung.kung_backend.domain.expert.entity.ExpertProfile;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;
+import java.util.List;
 
 @Getter
 @AllArgsConstructor
@@ -38,8 +39,12 @@ public class ExpertDetailResponse {
 
     private String status;
 
+    // 견적 요청 생성 시 사용할 서비스 ID 목록
+    private List<Long> expertServiceIds;
+
     public static ExpertDetailResponse from(
-            kyung.kung_backend.domain.servicepost.entity.ExpertService expertService
+            kyung.kung_backend.domain.servicepost.entity.ExpertService expertService,
+            List<Long> expertServiceIds
     ) {
 
         ExpertProfile expertProfile =
@@ -84,7 +89,9 @@ public class ExpertDetailResponse {
 
                 expertProfile.getVerifiedYn(),
 
-                expertProfile.getStatus()
+                expertProfile.getStatus(),
+
+                expertServiceIds
         );
     }
 }

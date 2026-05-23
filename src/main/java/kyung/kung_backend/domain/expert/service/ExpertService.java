@@ -143,6 +143,18 @@ public class ExpertService {
                 mainCategory,
                 mainLocation
         );
+
+        // =========================
+        // ACTIVE 서비스 없으면 자동 생성
+        // =========================
+
+        boolean existsActiveExpertService =
+                expertServiceRepository
+                        .existsByExpertProfileAndCategory_CategoryIdAndStatus(
+                                expertProfile,
+                                mainCategory.getCategoryId(),
+                                "ACTIVE"
+                        );
     }
 
     @Transactional(readOnly = true)
@@ -197,6 +209,25 @@ public class ExpertService {
                                 new IllegalArgumentException("고수 서비스가 존재하지 않습니다.")
                         );
 
-        return ExpertDetailResponse.from(expertService);
+        // =========================
+        // 견적 요청용 서비스 ID 목록
+        // =========================
+
+        List<Long> expertServiceIds =
+                expertServiceRepository
+                        .findAllByExpertProfileAndStatus(
+                                expertService.getExpertProfile(),
+                                "ACTIVE"
+                        )
+                        .stream()
+                        .map(
+                                kyung.kung_backend.domain.servicepost.entity.ExpertService::getExpertServiceId
+                        )
+                        .toList();
+
+        return ExpertDetailResponse.from(
+                expertService,
+                expertServiceIds
+        );
     }
 }
