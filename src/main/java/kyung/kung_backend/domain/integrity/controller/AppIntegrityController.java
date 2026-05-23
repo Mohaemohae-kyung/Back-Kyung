@@ -1,4 +1,4 @@
-package your.package.integrity.controller;
+package kyung.kung_backend.domain.integrity.controller;
 
 import your.package.integrity.dto.AppIntegrityReportRequest;
 import your.package.integrity.dto.AppIntegrityReportResponse;
