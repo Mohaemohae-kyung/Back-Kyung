@@ -10,7 +10,7 @@ public class FavoriteExpertResponse {
 
     private Long expertProfileId;
     private String displayName;
-    private Long careerYears;
+    private Double careerYears;
     private String mainCategoryName;
     private boolean favorite;
 

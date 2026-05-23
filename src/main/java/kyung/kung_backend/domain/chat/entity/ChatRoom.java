@@ -13,69 +13,99 @@ import java.time.LocalDateTime;
 
 @Getter
 @Entity
-@Table(
-        name = "CHAT_ROOMS",
-        uniqueConstraints = {
-                @UniqueConstraint(name = "UK_CHAT_ROOMS_REQUEST", columnNames = "REQUEST_ID")
-        }
-)
+@Table(name = "CHAT_ROOMS")
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-@SequenceGenerator(
-        name = "CHAT_ROOMS_SEQ_GENERATOR",
-        sequenceName = "CHAT_ROOMS_SEQ",
-        allocationSize = 1
-)
 public class ChatRoom extends BaseEntity {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "CHAT_ROOMS_SEQ_GENERATOR")
-    @Column(name = "CHAT_ROOM_ID", nullable = false)
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "CHAT_ROOM_ID")
     private Long chatRoomId;
 
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    // =========================
+    // 채팅방 이름
+    // =========================
+    @Column(name = "ROOM_NAME", nullable = false)
+    private String roomName;
+
+    // =========================
+    // 요청 정보
+    // =========================
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "REQUEST_ID", nullable = false)
     private ServiceRequest serviceRequest;
 
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    // =========================
+    // 요청 사용자
+    // =========================
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "USER_ID", nullable = false)
     private User user;
 
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    // =========================
+    // 고수 프로필
+    // =========================
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "EXPERT_PROFILE_ID", nullable = false)
     private ExpertProfile expertProfile;
 
-    @Column(name = "STATUS", nullable = false, length = 20)
+    // =========================
+    // 상태
+    // =========================
+    @Column(name = "STATUS")
     private String status;
 
-    @Column(name = "CLOSED_AT")
-    private LocalDateTime closedAt;
+    // =========================
+    // 마지막 메시지 시간
+    // =========================
+    @Column(name = "LAST_MESSAGE_AT")
+    private LocalDateTime lastMessageAt;
 
+    // =========================
+    // 채팅방 생성
+    // =========================
     public static ChatRoom create(
             ServiceRequest serviceRequest,
             User user,
             ExpertProfile expertProfile
     ) {
-        ChatRoom chatRoom = new ChatRoom();
 
-        chatRoom.serviceRequest = serviceRequest;
-        chatRoom.user = user;
-        chatRoom.expertProfile = expertProfile;
-        chatRoom.status = "ACTIVE";
-        chatRoom.closedAt = null;
+        ChatRoom chatRoom =
+                new ChatRoom();
+
+        // 요청 정보
+        chatRoom.serviceRequest =
+                serviceRequest;
+
+        // 요청 제목을 채팅방 이름으로 사용
+        chatRoom.roomName =
+                serviceRequest.getTitle();
+
+        // 요청 사용자
+        chatRoom.user =
+                user;
+
+        // 고수 프로필
+        chatRoom.expertProfile =
+                expertProfile;
+
+        // 상태
+        chatRoom.status =
+                "ACTIVE";
+
+        // 마지막 메시지 시간
+        chatRoom.lastMessageAt =
+                LocalDateTime.now();
 
         return chatRoom;
     }
 
-    public void close() {
-        this.status = "CLOSED";
-        this.closedAt = LocalDateTime.now();
-    }
+    // =========================
+    // 마지막 메시지 시간 갱신
+    // =========================
+    public void updateLastMessageAt() {
 
-    public boolean isActive() {
-        return "ACTIVE".equals(this.status);
-    }
-
-    public boolean isClosed() {
-        return "CLOSED".equals(this.status);
+        this.lastMessageAt =
+                LocalDateTime.now();
     }
 }

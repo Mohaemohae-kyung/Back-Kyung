@@ -82,7 +82,7 @@ public class CommunityPostController {
 
     @Operation(
             summary = "게시글 삭제",
-            description = "작성자 본인이 게시글을 삭제합니다."
+            description = "작성자 본인 또는 관리자가 게시글을 삭제합니다."
     )
     @DeleteMapping("/posts/{postId}")
     public ApiResponse<Void> deletePost(
@@ -133,14 +133,16 @@ public class CommunityPostController {
 
     @Operation(
             summary = "댓글 삭제",
-            description = "작성자 본인이 댓글을 삭제합니다."
+            description = "작성자 본인 또는 관리자가 댓글을 삭제합니다."
     )
     @DeleteMapping("/comments/{commentId}")
     public ApiResponse<Void> deleteComment(
             @AuthenticationPrincipal User user,
             @PathVariable Long commentId) {
+
         Long currentUserId = user.getUserId();
         communityCommentService.deleteComment(currentUserId, commentId);
+
         return ApiResponse.onSuccess(SuccessCode.NO_CONTENT);
     }
 }

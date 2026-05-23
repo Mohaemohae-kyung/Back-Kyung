@@ -7,7 +7,7 @@ public class ExpertProfileCreateRequest {
 
     private String displayName;
     private String introduction;
-    private Long careerYears;
+    private Double careerYears;
     private Long mainCategoryId;
     private Long mainLocationId;
 }
