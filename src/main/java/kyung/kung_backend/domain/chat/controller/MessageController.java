@@ -111,7 +111,7 @@ public class MessageController {
     @PatchMapping(
             "/api/chat/rooms/{roomId}/read"
     )
-    public ResponseEntity<Void> readRoom(
+    public ApiResponse<Void> readRoom(
 
             @PathVariable
             Long roomId,
@@ -127,7 +127,7 @@ public class MessageController {
                 user.getUserId()
         );
 
-        return ResponseEntity.ok().build();
+        return ApiResponse.onSuccess(SuccessCode.OK);
     }
 
     // =========================
