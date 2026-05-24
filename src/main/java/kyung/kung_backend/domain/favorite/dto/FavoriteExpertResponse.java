@@ -14,6 +14,7 @@ public class FavoriteExpertResponse {
     private Double careerYears;
     private String mainCategoryName;
     private boolean favorite;
+    private String profileImageUrl;
 
     public static FavoriteExpertResponse from(ExpertProfile expertProfile, Long expertServiceId) {
         return FavoriteExpertResponse.builder()
@@ -27,6 +28,11 @@ public class FavoriteExpertResponse {
                                 : null
                 )
                 .favorite(true)
+                .profileImageUrl(
+                        expertProfile.getUser() != null
+                                ? expertProfile.getUser().getProfileImageUrl()
+                                : null
+                )
                 .build();
     }
 }
