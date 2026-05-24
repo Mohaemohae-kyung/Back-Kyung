@@ -1,5 +1,9 @@
 package kyung.kung_backend.domain.user.service;
 
+import kyung.kung_backend.domain.expert.entity.ExpertProfile;
+import kyung.kung_backend.domain.expert.repository.ExpertProfileRepository;
+import kyung.kung_backend.domain.servicepost.entity.ExpertService;
+import kyung.kung_backend.domain.servicepost.repository.ExpertServiceRepository;
 import kyung.kung_backend.domain.user.dto.UserProfileResponse;
 import kyung.kung_backend.domain.user.dto.UserProfileUpdateRequest;
 import kyung.kung_backend.domain.user.dto.UserWithdrawRequest;
@@ -17,6 +21,8 @@ public class UserService {
 
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
+    private final ExpertProfileRepository expertProfileRepository;
+    private final ExpertServiceRepository expertServiceRepository;
 
     public User getUser(Long userId) {
         User user = userRepository.findById(userId)
@@ -31,6 +37,11 @@ public class UserService {
     public UserProfileResponse getMyProfile(User currentUser) {
         User user = getUser(currentUser.getUserId());
 
+        Long expertServiceId = expertProfileRepository.findByUser(user)
+                .flatMap(expertServiceRepository::findFirstByExpertProfileOrderByExpertServiceIdAsc)
+                .map(ExpertService::getExpertServiceId)
+                .orElse(null);
+
         return UserProfileResponse.builder()
                 .name(user.getName())
                 .email(user.getEmail())
@@ -38,6 +49,7 @@ public class UserService {
                 .nickname(user.getNickname())
                 .role(user.getRole())
                 .profileImageUrl(user.getProfileImageUrl())
+                .expertServiceId(expertServiceId)
                 .build();
     }
 

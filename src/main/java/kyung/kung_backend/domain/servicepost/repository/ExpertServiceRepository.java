@@ -55,4 +55,9 @@ public interface ExpertServiceRepository
     Optional<ExpertService> findDetailById(
             @Param("id") Long id
     );
+
+    // 고수 프로필 기준 첫 번째 서비스 조회
+    Optional<ExpertService> findFirstByExpertProfileOrderByExpertServiceIdAsc(
+            ExpertProfile expertProfile
+    );
 }

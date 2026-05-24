@@ -12,4 +12,5 @@ public class UserProfileResponse {
     private String nickname;
     private String role;
     private String profileImageUrl;
+    private Long expertServiceId;
 }
