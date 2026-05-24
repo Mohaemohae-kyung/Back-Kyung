@@ -31,6 +31,8 @@ public class ExpertSearchResponse {
     private String verifiedYn;
     private String status;
 
+    private String profileImageUrl;
+
     public static ExpertSearchResponse from(
             kyung.kung_backend.domain.servicepost.entity.ExpertService expertService
     ) {
@@ -74,7 +76,11 @@ public class ExpertSearchResponse {
 
                 expertProfile.getVerifiedYn(),
 
-                expertProfile.getStatus()
+                expertProfile.getStatus(),
+
+                expertProfile.getUser() != null
+                        ? expertProfile.getUser().getProfileImageUrl()
+                        : null
         );
     }
 }

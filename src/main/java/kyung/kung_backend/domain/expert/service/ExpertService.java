@@ -164,6 +164,14 @@ public class ExpertService {
         return expertServices.stream()
 
                 .filter(expertService ->
+                        "ACTIVE".equals(expertService.getExpertProfile().getStatus())
+                )
+
+                .filter(expertService ->
+                        !"DELETED".equals(expertService.getExpertProfile().getUser().getStatus())
+                )
+
+                .filter(expertService ->
                         categoryId == null ||
                                 (
                                         expertService.getCategory() != null &&
@@ -202,6 +210,12 @@ public class ExpertService {
                         .orElseThrow(() ->
                                 new IllegalArgumentException("고수 서비스가 존재하지 않습니다.")
                         );
+
+        if (!"ACTIVE".equals(expertService.getStatus()) ||
+                !"ACTIVE".equals(expertService.getExpertProfile().getStatus()) ||
+                "DELETED".equals(expertService.getExpertProfile().getUser().getStatus())) {
+            throw new IllegalArgumentException("고수 서비스가 존재하지 않습니다.");
+        }
 
         // =========================
         // 견적 요청용 서비스 ID 목록

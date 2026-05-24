@@ -89,4 +89,8 @@ public class ExpertProfile extends BaseEntity {
         this.mainCategory = mainCategory;
         this.mainLocation = mainLocation;
     }
+
+    public void delete() {
+        this.status = "DELETED";
+    }
 }

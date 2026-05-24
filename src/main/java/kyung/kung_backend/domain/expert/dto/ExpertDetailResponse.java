@@ -39,6 +39,8 @@ public class ExpertDetailResponse {
 
     private String status;
 
+    private String profileImageUrl;
+
     // 견적 요청 생성 시 사용할 서비스 ID 목록
     private List<Long> expertServiceIds;
 
@@ -90,6 +92,10 @@ public class ExpertDetailResponse {
                 expertProfile.getVerifiedYn(),
 
                 expertProfile.getStatus(),
+
+                expertProfile.getUser() != null
+                        ? expertProfile.getUser().getProfileImageUrl()
+                        : null,
 
                 expertServiceIds
         );
