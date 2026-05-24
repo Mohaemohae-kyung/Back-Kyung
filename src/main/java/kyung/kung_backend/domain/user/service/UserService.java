@@ -43,6 +43,7 @@ public class UserService {
                 .orElse(null);
 
         return UserProfileResponse.builder()
+                .userId(user.getUserId())
                 .name(user.getName())
                 .email(user.getEmail())
                 .phone(user.getPhone())
