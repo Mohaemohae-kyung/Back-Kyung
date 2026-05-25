@@ -53,17 +53,6 @@ public class AppIntegrityAllowlist {
             String buildType,
             String receivedDexHash
     ) {
-        System.out.println("===== DEX CHECK START =====");
-        System.out.println("packageName = [" + packageName + "]");
-        System.out.println("versionCode = [" + versionCode + "]");
-        System.out.println("buildType = [" + buildType + "]");
-        System.out.println("receivedDexHash = [" + receivedDexHash + "]");
-        DexKey dexKey = new DexKey(packageName, versionCode, buildType);
-        System.out.println("dexKey = " + dexKey);
-        System.out.println("containsKey = " + allowedClassesDexHashes.containsKey(dexKey));
-        System.out.println("allowedDexHash = [" + allowedClassesDexHashes.get(dexKey) + "]");
-        System.out.println("allDexKeys = " + allowedClassesDexHashes.keySet());
-        System.out.println("===== DEX CHECK END =====");
         if (receivedDexHash == null || receivedDexHash.isBlank()) {
             return false;
         }
