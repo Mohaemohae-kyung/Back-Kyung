@@ -20,7 +20,7 @@ public class AppIntegrityAllowlist {
     );
 
     private final Map<DexKey, String> allowedClassesDexHashes = Map.of(
-            new DexKey(PACKAGE_NAME, 1L, "debug"),
+            new DexKey(PACKAGE_NAME, 1L, "release"),
             "35fbff45a8867013f2bb0d521d557bb49ff54b9f340ebd921f37bb917d215c09"
     );
 
