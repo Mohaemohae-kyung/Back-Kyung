@@ -35,9 +35,17 @@ public class NoticeController {
     @GetMapping("/api/expert-center/posts")
     @PreAuthorize("hasRole('EXPERT') or hasRole('ADMIN')")
     public ApiResponse<Page<NoticePostResponse>> getNoticePosts(
-            @PageableDefault(size = 10, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable
+            Pageable pageable,
+            @RequestParam(required = false) String sortColumn,
+            @RequestParam(required = false) String sortDirection
     ) {
-        Page<NoticePostResponse> response = noticeService.getNoticePosts(pageable);
+        Page<NoticePostResponse> response =
+                noticeService.getNoticePosts(
+                        pageable,
+                        sortColumn,
+                        sortDirection
+                );
+
         return ApiResponse.onSuccess(SuccessCode.OK, response);
     }
 
