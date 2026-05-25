@@ -15,7 +15,7 @@ public class AppIntegrityAllowlist {
                     "debug 서명 작성"
             ),
             "release", Set.of(
-                    "release 서명 작성"
+                    "04de91848ba99c5c5dd91527f7919568dbba74f1db5ac810ec30f6e735dde865"
             )
     );
 
