@@ -46,6 +46,10 @@ public class SecurityConfig {
             "/ws-stomp-android/**"
     };
 
+    private static final String[] APP_INTEGRITY_WHITE_LIST = {
+            "/api/app-integrity/report"
+    };
+
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
 
     private final ObjectMapper objectMapper;
@@ -141,6 +145,9 @@ public class SecurityConfig {
 
                         // 요청관리
                         .requestMatchers("/api/service-requests/**").authenticated()
+
+                        // 앱 무결성 api
+                        .requestMatchers(APP_INTEGRITY_WHITE_LIST).permitAll()
 
                         // 관리자 API
                         .requestMatchers("/api/admin/**").hasRole("ADMIN")
