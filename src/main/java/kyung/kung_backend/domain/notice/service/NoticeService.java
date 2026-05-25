@@ -12,6 +12,8 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 
 import java.util.List;
 
@@ -23,8 +25,32 @@ public class NoticeService {
     private final NoticeRepository noticeRepository;
     private final FileUploadRepository fileUploadRepository;
 
-    public Page<NoticePostResponse> getNoticePosts(Pageable pageable) {
-        return noticeRepository.findByNoticeTypeAndStatus("EXPERT_NOTICE", "ACTIVE", pageable)
+    public Page<NoticePostResponse> getNoticePosts(
+            Pageable pageable,
+            String sortColumn,
+            String sortDirection
+    ) {
+
+        if (sortColumn != null && sortDirection != null) {
+
+            Sort sort = Sort.by(
+                    Sort.Direction.fromString(sortDirection),
+                    sortColumn
+            );
+
+            pageable = PageRequest.of(
+                    pageable.getPageNumber(),
+                    pageable.getPageSize(),
+                    sort
+            );
+        }
+
+        return noticeRepository
+                .findByNoticeTypeAndStatus(
+                        "EXPERT_NOTICE",
+                        "ACTIVE",
+                        pageable
+                )
                 .map(NoticePostResponse::from);
     }
 
