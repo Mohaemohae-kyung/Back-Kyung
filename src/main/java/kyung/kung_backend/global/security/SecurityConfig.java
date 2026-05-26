@@ -43,7 +43,8 @@ public class SecurityConfig {
     private static final String[] AUTH_WHITE_LIST = {
             "/api/auth/**",
             "/ws-stomp/**",
-            "/ws-stomp-android/**"
+            "/ws-stomp-android/**",
+            "/api/chat/llm"
     };
 
     private static final String[] APP_INTEGRITY_WHITE_LIST = {
