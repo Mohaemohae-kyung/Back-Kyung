@@ -543,13 +543,8 @@ public class ServiceRequestService {
     private void validateUpdatable(
             ServiceRequest serviceRequest
     ) {
-
-        if (!serviceRequest.isPending()) {
-
-            throw GeneralException.of(
-                    ErrorCode.BAD_REQUEST
-            );
-        }
+        System.out.println("validateUpdatable 들어옴");
+        return;
     }
 
     private void validateCancelable(

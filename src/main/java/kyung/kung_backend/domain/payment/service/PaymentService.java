@@ -230,6 +230,12 @@ public class PaymentService {
 
     @Transactional
     public PaymentResponse confirmPayment(PaymentConfirmRequest request) {
+
+        System.out.println("===== confirm request =====");
+        System.out.println(request.getOrderId());
+        System.out.println(request.getPaymentKey());
+        System.out.println(request.getAmount());
+
         Payment payment = paymentRepository.findByTransactionOrderId(request.getOrderId())
                 .orElseThrow(() -> GeneralException.of(ErrorCode.PAYMENT_NOT_FOUND));
 
@@ -333,9 +339,9 @@ public class PaymentService {
             User loginUser,
             Long paymentId
     ) {
-        User user = findLoginUser(loginUser);
+        findLoginUser(loginUser);
 
-        Payment payment = paymentRepository.findByPaymentIdAndUserUserId(paymentId, user.getUserId())
+        Payment payment = paymentRepository.findById(paymentId)
                 .orElseThrow(() -> GeneralException.of(ErrorCode.PAYMENT_NOT_FOUND));
 
         return PaymentResponse.from(payment);
@@ -498,7 +504,6 @@ public class PaymentService {
         if (serviceRequest.getExpertService() == null
                 || serviceRequest.getExpertService().getExpertProfile() == null
                 || serviceRequest.getExpertService().getExpertProfile().getUser() == null
-                || serviceRequest.getPreferredDate() == null
                 || serviceRequest.getBudget() == null
                 || serviceRequest.getBudget().compareTo(ZERO) <= 0) {
             throw GeneralException.of(ErrorCode.BOOKING_NOT_PAYABLE);
