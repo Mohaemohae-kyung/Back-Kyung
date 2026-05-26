@@ -77,8 +77,9 @@ public class BookingService {
     ) {
         User user = findLoginUser(loginUser);
         Booking booking = findBooking(bookingId);
-
-        validateOwner(user, booking);
+        
+        // 예약 조회 권한검증 누락 취약점
+        // validateOwner(user, booking);
 
         return BookingResponse.from(booking);
     }

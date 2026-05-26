@@ -12,6 +12,8 @@ import kyung.kung_backend.domain.category.repository.ServiceCategoryRepository;
 import kyung.kung_backend.domain.location.entity.Location;
 import kyung.kung_backend.domain.location.repository.LocationRepository;
 import kyung.kung_backend.domain.user.repository.UserRepository;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.PersistenceContext;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -27,6 +29,9 @@ public class ExpertService {
     private final ServiceCategoryRepository serviceCategoryRepository;
     private final LocationRepository locationRepository;
     private final UserRepository userRepository;
+    
+    @PersistenceContext
+    private final EntityManager em;
 
     @Transactional
     public void createProfile(User currentUser, ExpertProfileCreateRequest request) {
@@ -83,30 +88,23 @@ public class ExpertService {
             Long locationId,
             String keyword
     ) {
+        StringBuilder jpql = new StringBuilder("SELECT ep FROM ExpertProfile ep WHERE ep.status = 'ACTIVE'");
+        
+        if (categoryId != null) {
+            jpql.append(" AND ep.mainCategory.categoryId = ").append(categoryId);
+        }
+        if (locationId != null) {
+            jpql.append(" AND ep.mainLocation.locationId = ").append(locationId);
+        }
+        if (keyword != null && !keyword.isBlank()) {
+            jpql.append(" AND (ep.displayName LIKE '%").append(keyword).append("%'")
+                .append(" OR ep.introduction LIKE '%").append(keyword).append("%')");
+        }
 
-        List<ExpertProfile> expertProfiles =
-                expertProfileRepository.findByStatus("ACTIVE");
+        List<ExpertProfile> expertProfiles = em.createQuery(jpql.toString(), ExpertProfile.class)
+                                               .getResultList();
 
         return expertProfiles.stream()
-                .filter(expertProfile ->
-                        categoryId == null ||
-                                (
-                                        expertProfile.getMainCategory() != null &&
-                                                expertProfile.getMainCategory().getCategoryId().equals(categoryId)
-                                )
-                )
-                .filter(expertProfile ->
-                        locationId == null ||
-                                (
-                                        expertProfile.getMainLocation() != null &&
-                                                expertProfile.getMainLocation().getLocationId().equals(locationId)
-                                )
-                )
-                .filter(expertProfile ->
-                        keyword == null ||
-                                expertProfile.getDisplayName().contains(keyword) ||
-                                expertProfile.getIntroduction().contains(keyword)
-                )
                 .map(ExpertSearchResponse::from)
                 .toList();
     }
