@@ -184,6 +184,7 @@ public class SecurityConfig {
                 "http://localhost:3000",
                 "http://localhost:5173",
                 "https://can-fly.shop",
+                "https://www.can-fly.shop",
 
                 // Vercel 배포 프론트엔드 허용
                 "https://*.vercel.app"
