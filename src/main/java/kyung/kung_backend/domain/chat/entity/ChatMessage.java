@@ -50,25 +50,21 @@ public class ChatMessage extends BaseCreatedEntity {
 
     // =========================
     // 보낸 사람
+    // SYSTEM 메시지는 null 가능
     // =========================
-    @ManyToOne(
-            fetch = FetchType.LAZY,
-            optional = false
-    )
-    @JoinColumn(
-            name = "SENDER_ID",
-            nullable = false
-    )
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "SENDER_ID")
     private User sender;
 
     // =========================
     // 메시지 타입
     // TEXT / IMAGE / FILE
+    // PAYMENT_REQUEST / SYSTEM
     // =========================
     @Column(
             name = "MESSAGE_TYPE",
             nullable = false,
-            length = 20
+            length = 30
     )
     private String messageType;
 
@@ -78,6 +74,13 @@ public class ChatMessage extends BaseCreatedEntity {
     @Lob
     @Column(name = "CONTENT")
     private String content;
+
+    // =========================
+    // 결제 요청 ID
+    // PAYMENT_REQUEST 타입일 때 사용
+    // =========================
+    @Column(name = "PAYMENT_ID")
+    private Long paymentId;
 
     // =========================
     // 첨부 파일
@@ -99,7 +102,7 @@ public class ChatMessage extends BaseCreatedEntity {
     private String readYn;
 
     // =========================
-    // 메시지 생성
+    // 일반 메시지 생성
     // =========================
     public static ChatMessage create(
             ChatRoom chatRoom,
@@ -126,6 +129,70 @@ public class ChatMessage extends BaseCreatedEntity {
         // 최초 생성 시 읽지 않음
         chatMessage.readYn =
                 "N";
+
+        return chatMessage;
+    }
+
+    // =========================
+    // 결제 요청 메시지 생성
+    // =========================
+    public static ChatMessage createPaymentMessage(
+            ChatRoom chatRoom,
+            User sender,
+            String content,
+            Long paymentId
+    ) {
+
+        ChatMessage chatMessage =
+                new ChatMessage();
+
+        chatMessage.chatRoom =
+                chatRoom;
+
+        chatMessage.sender =
+                sender;
+
+        chatMessage.messageType =
+                "PAYMENT_REQUEST";
+
+        chatMessage.content =
+                content;
+
+        chatMessage.paymentId = paymentId;
+
+        chatMessage.readYn =
+                "N";
+
+        return chatMessage;
+    }
+
+    // =========================
+    // 시스템 메시지 생성
+    // =========================
+    public static ChatMessage createSystemMessage(
+            ChatRoom chatRoom,
+            String content
+    ) {
+
+        ChatMessage chatMessage =
+                new ChatMessage();
+
+        chatMessage.chatRoom =
+                chatRoom;
+
+        // 시스템 메시지는 sender 없음
+        chatMessage.sender =
+                null;
+
+        chatMessage.messageType =
+                "SYSTEM";
+
+        chatMessage.content =
+                content;
+
+        // 시스템 메시지는 읽음 처리
+        chatMessage.readYn =
+                "Y";
 
         return chatMessage;
     }

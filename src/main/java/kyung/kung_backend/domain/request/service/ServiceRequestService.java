@@ -484,11 +484,19 @@ public class ServiceRequestService {
             ServiceRequest serviceRequest
     ) {
 
-        if (
-                !serviceRequest.getUser()
+        boolean isRequester =
+                serviceRequest.getUser()
                         .getUserId()
-                        .equals(user.getUserId())
-        ) {
+                        .equals(user.getUserId());
+
+        boolean isExpert =
+                serviceRequest.getExpertService()
+                        .getExpertProfile()
+                        .getUser()
+                        .getUserId()
+                        .equals(user.getUserId());
+
+        if (!isRequester && !isExpert) {
 
             throw GeneralException.of(
                     ErrorCode.FORBIDDEN

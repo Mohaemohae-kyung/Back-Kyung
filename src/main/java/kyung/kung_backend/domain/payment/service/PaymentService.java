@@ -27,13 +27,18 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Objects;
 import java.util.UUID;
+import java.math.BigDecimal;
+
+import kyung.kung_backend.domain.chat.entity.ChatMessage;
+import kyung.kung_backend.domain.chat.entity.ChatRoom;
+import kyung.kung_backend.domain.chat.repository.ChatMessageRepository;
+import kyung.kung_backend.domain.chat.repository.ChatRoomRepository;
 
 @Service
 @RequiredArgsConstructor
@@ -52,6 +57,8 @@ public class PaymentService {
     private final ServiceRequestRepository serviceRequestRepository;
     private final UserRepository userRepository;
     private final MockPgService mockPgService;
+    private final ChatRoomRepository chatRoomRepository;
+    private final ChatMessageRepository chatMessageRepository;
 
     @Transactional
     public BookingCheckoutResponse getBookingCheckout(
@@ -190,7 +197,35 @@ public class PaymentService {
                 request.getPgProvider()
         );
 
-        return PaymentPrepareResponse.of(payment, transaction, getOrderName(serviceRequest));
+        // =========================
+        // 결제 요청 채팅 메시지 생성
+        // =========================
+        ChatRoom chatRoom = chatRoomRepository
+                .findByServiceRequest_RequestId(serviceRequest.getRequestId())
+                .orElse(null);
+
+        if (chatRoom != null) {
+
+            String paymentMessageContent =
+                    finalAmount.toPlainString()
+                            + "원 결제 요청";
+
+            ChatMessage chatMessage =
+                    ChatMessage.createPaymentMessage(
+                            chatRoom,
+                            seller,
+                            paymentMessageContent,
+                            payment.getPaymentId()
+                    );
+
+            chatMessageRepository.save(chatMessage);
+        }
+
+        return PaymentPrepareResponse.of(
+                payment,
+                transaction,
+                getOrderName(serviceRequest)
+        );
     }
 
     @Transactional
@@ -433,7 +468,22 @@ public class PaymentService {
                 .findByRequestIdAndDeletedAtIsNull(requestId)
                 .orElseThrow(() -> GeneralException.of(ErrorCode.NOT_FOUND));
 
-        if (!serviceRequest.getUser().getUserId().equals(user.getUserId())) {
+        Long requesterId =
+                serviceRequest.getUser().getUserId();
+
+        Long expertId =
+                serviceRequest.getExpertService()
+                        .getExpertProfile()
+                        .getUser()
+                        .getUserId();
+
+        // =========================
+        // 요청자 또는 고수만 접근 가능
+        // =========================
+        if (
+                !requesterId.equals(user.getUserId())
+                        && !expertId.equals(user.getUserId())
+        ) {
             throw GeneralException.of(ErrorCode.FORBIDDEN);
         }
 

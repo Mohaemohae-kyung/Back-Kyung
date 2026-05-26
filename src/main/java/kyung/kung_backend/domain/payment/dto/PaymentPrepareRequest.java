@@ -6,8 +6,11 @@ import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Pattern;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import java.math.BigDecimal;
+import lombok.Setter;
 
 @Getter
+@Setter
 @NoArgsConstructor
 @Schema(description = "결제 준비 요청")
 public class PaymentPrepareRequest {
@@ -39,4 +42,7 @@ public class PaymentPrepareRequest {
 
     @Schema(description = "PG 제공자 이름. PG 연동 전에는 테스트용 문자열로 사용할 수 있습니다.", example = "TEST_PG")
     private String pgProvider;
+
+    @Schema(description = "결제 서비스명", example = "로고 디자인")
+    private String orderName;
 }
