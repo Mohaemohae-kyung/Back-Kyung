@@ -9,14 +9,16 @@ import lombok.Getter;
 public class FavoriteExpertResponse {
 
     private Long expertProfileId;
+    private Long expertServiceId;
     private String displayName;
-    private Long careerYears;
+    private Double careerYears;
     private String mainCategoryName;
     private boolean favorite;
 
-    public static FavoriteExpertResponse from(ExpertProfile expertProfile) {
+    public static FavoriteExpertResponse from(ExpertProfile expertProfile, Long expertServiceId) {
         return FavoriteExpertResponse.builder()
                 .expertProfileId(expertProfile.getExpertProfileId())
+                .expertServiceId(expertServiceId)
                 .displayName(expertProfile.getDisplayName())
                 .careerYears(expertProfile.getCareerYears())
                 .mainCategoryName(

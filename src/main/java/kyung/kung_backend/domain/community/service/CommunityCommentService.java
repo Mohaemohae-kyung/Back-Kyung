@@ -67,8 +67,14 @@ public class CommunityCommentService {
         CommunityComment comment = communityCommentRepository.findById(commentId)
                 .orElseThrow(() -> new IllegalArgumentException("댓글을 찾을 수 없습니다."));
 
-        if (!comment.getUser().getUserId().equals(userId)) {
-            throw new IllegalArgumentException("권한이 없습니다.");
+        User currentUser = userRepository.findById(userId)
+                .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다."));
+
+        boolean isOwner = comment.getUser().getUserId().equals(currentUser.getUserId());
+        boolean isAdmin = "ADMIN".equals(currentUser.getRole());
+
+        if (!isOwner && !isAdmin) {
+            throw new IllegalArgumentException("댓글을 삭제할 권한이 없습니다.");
         }
 
         comment.softDelete();

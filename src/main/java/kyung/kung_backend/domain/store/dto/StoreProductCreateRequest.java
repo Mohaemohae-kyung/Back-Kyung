@@ -19,8 +19,8 @@ public class StoreProductCreateRequest {
     @NotBlank(message = "상품명은 필수입니다.")
     private String title;
 
-    @NotBlank(message = "대표 이미지는 필수입니다.")
-    private String thumbnailImageUrl;
+    @NotNull(message = "대표 이미지 파일 ID는 필수입니다.")
+    private Long thumbnailImageFileId;
 
     @NotBlank(message = "상세 설명은 필수입니다.")
     private String description;

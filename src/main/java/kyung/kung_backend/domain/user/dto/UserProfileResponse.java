@@ -6,10 +6,12 @@ import lombok.Getter;
 @Getter
 @Builder
 public class UserProfileResponse {
+    private Long userId;
     private String name;
     private String email;
     private String phone;
     private String nickname;
     private String role;
     private String profileImageUrl;
+    private Long expertServiceId;
 }

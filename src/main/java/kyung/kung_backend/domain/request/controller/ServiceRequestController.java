@@ -24,6 +24,9 @@ public class ServiceRequestController {
 
     private final ServiceRequestService serviceRequestService;
 
+    // =========================
+    // 견적 요청 생성
+    // =========================
     @Operation(
             summary = "견적 요청 생성",
             description = "로그인 사용자가 선택한 고수 서비스에 대해 견적 요청을 생성합니다."
@@ -33,22 +36,40 @@ public class ServiceRequestController {
             @AuthenticationPrincipal User user,
             @Valid @RequestBody ServiceRequestCreateRequest request
     ) {
-        ServiceRequestResponse response = serviceRequestService.createServiceRequest(user, request);
-        return ApiResponse.onSuccess(SuccessCode.CREATED, response);
+
+        ServiceRequestResponse response =
+                serviceRequestService.createServiceRequest(user, request);
+
+        return ApiResponse.onSuccess(
+                SuccessCode.CREATED,
+                response
+        );
     }
 
+    // =========================
+    // 내가 보낸 요청 조회
+    // =========================
     @Operation(
-            summary = "내 견적 요청 목록 조회",
-            description = "로그인 사용자가 작성한 견적 요청 목록을 조회합니다."
+            summary = "내가 보낸 견적 요청 목록 조회",
+            description = "일반 사용자가 본인이 보낸 견적 요청 목록을 조회합니다."
     )
-    @GetMapping("/me")
-    public ApiResponse<List<ServiceRequestResponse>> getMyServiceRequests(
+    @GetMapping("/sent")
+    public ApiResponse<List<ServiceRequestResponse>> getSentServiceRequests(
             @AuthenticationPrincipal User user
     ) {
-        List<ServiceRequestResponse> response = serviceRequestService.getMyServiceRequests(user);
-        return ApiResponse.onSuccess(SuccessCode.OK, response);
+
+        List<ServiceRequestResponse> response =
+                serviceRequestService.getMyServiceRequests(user);
+
+        return ApiResponse.onSuccess(
+                SuccessCode.OK,
+                response
+        );
     }
 
+    // =========================
+    // 받은 요청 조회
+    // =========================
     @Operation(
             summary = "받은 견적 요청 목록 조회",
             description = "로그인한 고수가 본인 서비스로 받은 견적 요청 목록을 조회합니다."
@@ -57,11 +78,40 @@ public class ServiceRequestController {
     public ApiResponse<List<ServiceRequestResponse>> getReceivedServiceRequests(
             @AuthenticationPrincipal User user
     ) {
-        List<ServiceRequestResponse> response = serviceRequestService.getReceivedServiceRequests(user);
-        return ApiResponse.onSuccess(SuccessCode.OK, response);
+
+        List<ServiceRequestResponse> response =
+                serviceRequestService.getReceivedServiceRequests(user);
+
+        return ApiResponse.onSuccess(
+                SuccessCode.OK,
+                response
+        );
     }
 
+    // =========================
+    // 내 요청 조회 (기존 유지)
+    // =========================
+    @Operation(
+            summary = "내 견적 요청 목록 조회",
+            description = "로그인 사용자가 작성한 견적 요청 목록을 조회합니다."
+    )
+    @GetMapping("/me")
+    public ApiResponse<List<ServiceRequestResponse>> getMyServiceRequests(
+            @AuthenticationPrincipal User user
+    ) {
 
+        List<ServiceRequestResponse> response =
+                serviceRequestService.getMyServiceRequests(user);
+
+        return ApiResponse.onSuccess(
+                SuccessCode.OK,
+                response
+        );
+    }
+
+    // =========================
+    // 요청 상세 조회
+    // =========================
     @Operation(
             summary = "견적 요청 상세 조회",
             description = "견적 요청 상세 정보를 조회합니다. 작성자 본인 또는 관리자만 조회할 수 있습니다."
@@ -71,60 +121,99 @@ public class ServiceRequestController {
             @AuthenticationPrincipal User user,
             @PathVariable Long requestId
     ) {
-        ServiceRequestResponse response = serviceRequestService.getServiceRequestDetail(user, requestId);
-        return ApiResponse.onSuccess(SuccessCode.OK, response);
+
+        ServiceRequestResponse response =
+                serviceRequestService.getServiceRequestDetail(user, requestId);
+
+        return ApiResponse.onSuccess(
+                SuccessCode.OK,
+                response
+        );
     }
 
-    @Operation(
-            summary = "견적 요청 수정",
-            description = "작성자 본인이 견적 요청 내용을 수정합니다. 선택한 고수 서비스는 수정하지 않습니다."
-    )
+    // =========================
+    // 요청 수정
+    // =========================
     @PatchMapping("/{requestId}")
     public ApiResponse<ServiceRequestResponse> updateServiceRequest(
             @AuthenticationPrincipal User user,
             @PathVariable Long requestId,
             @Valid @RequestBody ServiceRequestUpdateRequest request
     ) {
-        ServiceRequestResponse response = serviceRequestService.updateServiceRequest(user, requestId, request);
-        return ApiResponse.onSuccess(SuccessCode.OK, response);
+
+        ServiceRequestResponse response =
+                serviceRequestService.updateServiceRequest(
+                        user,
+                        requestId,
+                        request
+                );
+
+        return ApiResponse.onSuccess(
+                SuccessCode.OK,
+                response
+        );
     }
 
-    @Operation(
-            summary = "견적 요청 취소",
-            description = "작성자 본인이 견적 요청을 취소합니다. 실제 삭제가 아니라 상태를 CANCELLED로 변경합니다."
-    )
+    // =========================
+    // 요청 취소
+    // =========================
     @PatchMapping("/{requestId}/cancel")
     public ApiResponse<ServiceRequestResponse> cancelServiceRequest(
             @AuthenticationPrincipal User user,
             @PathVariable Long requestId
     ) {
-        ServiceRequestResponse response = serviceRequestService.cancelServiceRequest(user, requestId);
-        return ApiResponse.onSuccess(SuccessCode.OK, response);
+
+        ServiceRequestResponse response =
+                serviceRequestService.cancelServiceRequest(
+                        user,
+                        requestId
+                );
+
+        return ApiResponse.onSuccess(
+                SuccessCode.OK,
+                response
+        );
     }
 
-    @Operation(
-            summary = "견적 요청 승인",
-            description = "고수가 견적 요청을 승인합니다. 승인 시 상태가 CHATTING으로 변경되고 채팅방 생성 흐름으로 이어집니다."
-    )
+    // =========================
+    // 요청 승인
+    // =========================
     @PatchMapping("/{requestId}/approve")
     public ApiResponse<ServiceRequestResponse> approveServiceRequest(
             @AuthenticationPrincipal User user,
             @PathVariable Long requestId
     ) {
-        ServiceRequestResponse response = serviceRequestService.approveServiceRequest(user, requestId);
-        return ApiResponse.onSuccess(SuccessCode.OK, response);
+
+        ServiceRequestResponse response =
+                serviceRequestService.approveServiceRequest(
+                        user,
+                        requestId
+                );
+
+        return ApiResponse.onSuccess(
+                SuccessCode.OK,
+                response
+        );
     }
 
-    @Operation(
-            summary = "견적 요청 거절",
-            description = "고수가 견적 요청을 거절합니다. 상태가 REJECTED로 변경됩니다."
-    )
+    // =========================
+    // 요청 거절
+    // =========================
     @PatchMapping("/{requestId}/reject")
     public ApiResponse<ServiceRequestResponse> rejectServiceRequest(
             @AuthenticationPrincipal User user,
             @PathVariable Long requestId
     ) {
-        ServiceRequestResponse response = serviceRequestService.rejectServiceRequest(user, requestId);
-        return ApiResponse.onSuccess(SuccessCode.OK, response);
+
+        ServiceRequestResponse response =
+                serviceRequestService.rejectServiceRequest(
+                        user,
+                        requestId
+                );
+
+        return ApiResponse.onSuccess(
+                SuccessCode.OK,
+                response
+        );
     }
 }

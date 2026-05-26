@@ -84,16 +84,17 @@ public class CommunityPostService {
 
         CommunityPost savedPost = communityPostRepository.save(post);
 
-        List<String> fileUrls = Collections.emptyList();
+        List<FileUpload> files = Collections.emptyList();
+
         if (request.getImageFileIds() != null && !request.getImageFileIds().isEmpty()) {
-            List<FileUpload> files = fileUploadRepository.findAllById(request.getImageFileIds());
+            files = fileUploadRepository.findAllById(request.getImageFileIds());
+
             for (FileUpload file : files) {
                 file.updateTarget("COMMUNITY_POST", savedPost.getCommunityPostId());
             }
-            fileUrls = files.stream().map(FileUpload::getFileUrl).collect(Collectors.toList());
         }
 
-        return PostResponse.from(savedPost, fileUrls);
+        return PostResponse.from(savedPost, files);
     }
 
     @Transactional
@@ -107,10 +108,13 @@ public class CommunityPostService {
 
         post.incrementViewCount();
 
-        List<FileUpload> files = fileUploadRepository.findByTargetTypeAndTargetIdAndStatus("COMMUNITY_POST", postId, "ACTIVE");
-        List<String> fileUrls = files.stream().map(FileUpload::getFileUrl).collect(Collectors.toList());
+        List<FileUpload> files = fileUploadRepository.findByTargetTypeAndTargetIdAndStatus(
+                "COMMUNITY_POST",
+                postId,
+                "ACTIVE"
+        );
 
-        return PostResponse.from(post, fileUrls);
+        return PostResponse.from(post, files);
     }
 
     // SQLI 취약점 존재 코드
@@ -237,10 +241,13 @@ public class CommunityPostService {
             }
         }
 
-        List<FileUpload> updatedFiles = fileUploadRepository.findByTargetTypeAndTargetIdAndStatus("COMMUNITY_POST", postId, "ACTIVE");
-        List<String> fileUrls = updatedFiles.stream().map(FileUpload::getFileUrl).collect(Collectors.toList());
+        List<FileUpload> updatedFiles = fileUploadRepository.findByTargetTypeAndTargetIdAndStatus(
+                "COMMUNITY_POST",
+                postId,
+                "ACTIVE"
+        );
 
-        return PostResponse.from(post, fileUrls);
+        return PostResponse.from(post, updatedFiles);
     }
 
     @Transactional
@@ -248,8 +255,14 @@ public class CommunityPostService {
         CommunityPost post = communityPostRepository.findById(postId)
                 .orElseThrow(() -> new IllegalArgumentException("게시글을 찾을 수 없습니다."));
 
-        if (!post.getUser().getUserId().equals(userId)) {
-            throw new IllegalArgumentException("권한이 없습니다.");
+        User currentUser = userRepository.findById(userId)
+                .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다."));
+
+        boolean isOwner = post.getUser().getUserId().equals(currentUser.getUserId());
+        boolean isAdmin = "ADMIN".equals(currentUser.getRole());
+
+        if (!isOwner && !isAdmin) {
+            throw new IllegalArgumentException("게시글을 삭제할 권한이 없습니다.");
         }
 
         post.softDelete();

@@ -32,27 +32,47 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
         String token = resolveToken(request);
 
-        if (token != null && jwtProvider.validateToken(token)) {
-            Long userId = jwtProvider.getUserId(token);
+        if (token != null) {
 
-            User user = userRepository.findById(userId).orElse(null);
+            boolean valid = jwtProvider.validateToken(token);
 
-            if (user != null && "ACTIVE".equals(user.getStatus())) {
-                UsernamePasswordAuthenticationToken authentication =
-                        new UsernamePasswordAuthenticationToken(
-                                user,
-                                null,
-                                List.of(new SimpleGrantedAuthority("ROLE_" + user.getRole()))
-                        );
+            if (valid) {
 
-                SecurityContextHolder.getContext().setAuthentication(authentication);
+                Long userId = jwtProvider.getUserId(token);
+
+                User user = userRepository.findById(userId).orElse(null);
+
+                if (user != null) {
+
+                    if ("ACTIVE".equals(user.getStatus())) {
+
+                        UsernamePasswordAuthenticationToken authentication =
+                                new UsernamePasswordAuthenticationToken(
+                                        user,
+                                        null,
+                                        List.of(
+                                                new SimpleGrantedAuthority(
+                                                        "ROLE_" + user.getRole()
+                                                )
+                                        )
+                                );
+
+                        SecurityContextHolder
+                                .getContext()
+                                .setAuthentication(authentication);
+                    }
+
+                }
+
             }
+
         }
 
         filterChain.doFilter(request, response);
     }
 
     private String resolveToken(HttpServletRequest request) {
+
         String authorization = request.getHeader("Authorization");
 
         if (authorization != null && authorization.startsWith("Bearer ")) {

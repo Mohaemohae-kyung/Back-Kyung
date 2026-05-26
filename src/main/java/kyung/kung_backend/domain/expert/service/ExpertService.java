@@ -6,15 +6,20 @@ import kyung.kung_backend.domain.expert.dto.ExpertDetailResponse;
 import kyung.kung_backend.domain.expert.entity.ExpertProfile;
 import kyung.kung_backend.domain.expert.repository.ExpertProfileRepository;
 import kyung.kung_backend.domain.expert.dto.ExpertProfileUpdateRequest;
+
+import kyung.kung_backend.domain.servicepost.repository.ExpertServiceRepository;
+
 import kyung.kung_backend.domain.user.entity.User;
+import kyung.kung_backend.domain.user.repository.UserRepository;
+
 import kyung.kung_backend.domain.category.entity.ServiceCategory;
 import kyung.kung_backend.domain.category.repository.ServiceCategoryRepository;
+
 import kyung.kung_backend.domain.location.entity.Location;
 import kyung.kung_backend.domain.location.repository.LocationRepository;
-import kyung.kung_backend.domain.user.repository.UserRepository;
-import jakarta.persistence.EntityManager;
-import jakarta.persistence.PersistenceContext;
+
 import lombok.RequiredArgsConstructor;
+
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -26,27 +31,66 @@ import java.util.List;
 public class ExpertService {
 
     private final ExpertProfileRepository expertProfileRepository;
+    private final ExpertServiceRepository expertServiceRepository;
+
     private final ServiceCategoryRepository serviceCategoryRepository;
     private final LocationRepository locationRepository;
+
     private final UserRepository userRepository;
     
     @PersistenceContext
     private final EntityManager em;
 
     @Transactional
-    public void createProfile(User currentUser, ExpertProfileCreateRequest request) {
-        User user = userRepository.findById(currentUser.getUserId())
-                .orElseThrow(() -> new IllegalArgumentException("사용자가 존재하지 않습니다."));
+    public void createProfile(
+            User currentUser,
+            ExpertProfileCreateRequest request
+    ) {
+
+        // 현재 로그인 유저 사용
+        User user = currentUser;
+
+        ServiceCategory mainCategory =
+                serviceCategoryRepository
+                        .findById(request.getMainCategoryId())
+                        .orElseThrow(() ->
+                                new IllegalArgumentException("카테고리가 존재하지 않습니다.")
+                        );
+
+        Location mainLocation =
+                locationRepository
+                        .findById(request.getMainLocationId())
+                        .orElseThrow(() ->
+                                new IllegalArgumentException("지역이 존재하지 않습니다.")
+                        );
+
+        // =========================
+        // 이미 프로필 존재
+        // → 수정 처리
+        // =========================
 
         if (expertProfileRepository.existsByUser(user)) {
-            throw new IllegalArgumentException("이미 고수 프로필이 존재합니다.");
+
+            ExpertProfile existingProfile =
+                    expertProfileRepository.findByUser(user)
+                            .orElseThrow(() ->
+                                    new IllegalArgumentException("고수 프로필이 존재하지 않습니다.")
+                            );
+
+            existingProfile.updateProfile(
+                    request.getDisplayName(),
+                    request.getIntroduction(),
+                    request.getCareerYears(),
+                    mainCategory,
+                    mainLocation
+            );
+
+            return;
         }
 
-        ServiceCategory mainCategory = serviceCategoryRepository.findById(request.getMainCategoryId())
-                .orElseThrow(() -> new IllegalArgumentException("카테고리가 존재하지 않습니다."));
-
-        Location mainLocation = locationRepository.findById(request.getMainLocationId())
-                .orElseThrow(() -> new IllegalArgumentException("지역이 존재하지 않습니다."));
+        // =========================
+        // 신규 생성
+        // =========================
 
         ExpertProfile expertProfile = new ExpertProfile(
                 user,
@@ -59,19 +103,35 @@ public class ExpertService {
 
         expertProfileRepository.save(expertProfile);
 
+        // USER → EXPERT 변경
         user.becomeExpert();
+
+        // USER 저장
+        userRepository.save(user);
     }
 
-    public void updateProfile(User user, ExpertProfileUpdateRequest request) {
+    public void updateProfile(
+            User user,
+            ExpertProfileUpdateRequest request
+    ) {
 
-        ExpertProfile expertProfile = expertProfileRepository.findByUser(user)
-                .orElseThrow(() -> new IllegalArgumentException("고수 프로필이 존재하지 않습니다."));
+        ExpertProfile expertProfile =
+                expertProfileRepository.findByUser(user)
+                        .orElseThrow(() ->
+                                new IllegalArgumentException("고수 프로필이 존재하지 않습니다.")
+                        );
 
-        ServiceCategory mainCategory = serviceCategoryRepository.findById(request.getMainCategoryId())
-                .orElseThrow(() -> new IllegalArgumentException("카테고리가 존재하지 않습니다."));
+        ServiceCategory mainCategory =
+                serviceCategoryRepository.findById(request.getMainCategoryId())
+                        .orElseThrow(() ->
+                                new IllegalArgumentException("카테고리가 존재하지 않습니다.")
+                        );
 
-        Location mainLocation = locationRepository.findById(request.getMainLocationId())
-                .orElseThrow(() -> new IllegalArgumentException("지역이 존재하지 않습니다."));
+        Location mainLocation =
+                locationRepository.findById(request.getMainLocationId())
+                        .orElseThrow(() ->
+                                new IllegalArgumentException("지역이 존재하지 않습니다.")
+                        );
 
         expertProfile.updateProfile(
                 request.getDisplayName(),
@@ -80,6 +140,18 @@ public class ExpertService {
                 mainCategory,
                 mainLocation
         );
+
+        // =========================
+        // ACTIVE 서비스 없으면 자동 생성
+        // =========================
+
+        boolean existsActiveExpertService =
+                expertServiceRepository
+                        .existsByExpertProfileAndCategory_CategoryIdAndStatus(
+                                expertProfile,
+                                mainCategory.getCategoryId(),
+                                "ACTIVE"
+                        );
     }
 
     @Transactional(readOnly = true)
@@ -88,33 +160,83 @@ public class ExpertService {
             Long locationId,
             String keyword
     ) {
-        StringBuilder jpql = new StringBuilder("SELECT ep FROM ExpertProfile ep WHERE ep.status = 'ACTIVE'");
-        
-        if (categoryId != null) {
-            jpql.append(" AND ep.mainCategory.categoryId = ").append(categoryId);
-        }
-        if (locationId != null) {
-            jpql.append(" AND ep.mainLocation.locationId = ").append(locationId);
-        }
-        if (keyword != null && !keyword.isBlank()) {
-            jpql.append(" AND (ep.displayName LIKE '%").append(keyword).append("%'")
-                .append(" OR ep.introduction LIKE '%").append(keyword).append("%')");
-        }
+        List<kyung.kung_backend.domain.servicepost.entity.ExpertService> expertServices =
+                expertServiceRepository.findByStatus("ACTIVE");
 
-        List<ExpertProfile> expertProfiles = em.createQuery(jpql.toString(), ExpertProfile.class)
-                                               .getResultList();
+        return expertServices.stream()
 
-        return expertProfiles.stream()
+                .filter(expertService ->
+                        "ACTIVE".equals(expertService.getExpertProfile().getStatus())
+                )
+
+                .filter(expertService ->
+                        !"DELETED".equals(expertService.getExpertProfile().getUser().getStatus())
+                )
+
+                .filter(expertService ->
+                        categoryId == null ||
+                                (
+                                        expertService.getCategory() != null &&
+                                                expertService.getCategory().getCategoryId().equals(categoryId)
+                                )
+                )
+
+                .filter(expertService ->
+                        locationId == null ||
+                                (
+                                        expertService.getExpertProfile().getMainLocation() != null &&
+                                                expertService.getExpertProfile().getMainLocation().getLocationId().equals(locationId)
+                                )
+                )
+
+                .filter(expertService ->
+                        keyword == null ||
+
+                                expertService.getExpertProfile().getDisplayName().contains(keyword) ||
+
+                                expertService.getServiceTitle().contains(keyword) ||
+
+                                expertService.getServiceDescription().contains(keyword)
+                )
                 .map(ExpertSearchResponse::from)
+
                 .toList();
     }
 
     @Transactional(readOnly = true)
-    public ExpertDetailResponse getExpertDetail(Long expertId) {
+    public ExpertDetailResponse getExpertDetail(Long serviceId) {
 
-        ExpertProfile expertProfile = expertProfileRepository.findById(expertId)
-                .orElseThrow(() -> new IllegalArgumentException("고수 프로필이 존재하지 않습니다."));
+        kyung.kung_backend.domain.servicepost.entity.ExpertService expertService =
+                expertServiceRepository.findDetailById(serviceId)
+                        .orElseThrow(() ->
+                                new IllegalArgumentException("고수 서비스가 존재하지 않습니다.")
+                        );
 
-        return ExpertDetailResponse.from(expertProfile);
+        if (!"ACTIVE".equals(expertService.getStatus()) ||
+                !"ACTIVE".equals(expertService.getExpertProfile().getStatus()) ||
+                "DELETED".equals(expertService.getExpertProfile().getUser().getStatus())) {
+            throw new IllegalArgumentException("고수 서비스가 존재하지 않습니다.");
+        }
+
+        // =========================
+        // 견적 요청용 서비스 ID 목록
+        // =========================
+
+        List<Long> expertServiceIds =
+                expertServiceRepository
+                        .findAllByExpertProfileAndStatus(
+                                expertService.getExpertProfile(),
+                                "ACTIVE"
+                        )
+                        .stream()
+                        .map(
+                                kyung.kung_backend.domain.servicepost.entity.ExpertService::getExpertServiceId
+                        )
+                        .toList();
+
+        return ExpertDetailResponse.from(
+                expertService,
+                expertServiceIds
+        );
     }
 }

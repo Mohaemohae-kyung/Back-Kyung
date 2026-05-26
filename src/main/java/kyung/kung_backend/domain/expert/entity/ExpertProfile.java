@@ -38,7 +38,7 @@ public class ExpertProfile extends BaseEntity {
     private String introduction;
 
     @Column(name = "CAREER_YEARS")
-    private Long careerYears;
+    private Double careerYears;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "MAIN_CATEGORY_ID")
@@ -62,7 +62,7 @@ public class ExpertProfile extends BaseEntity {
             User user,
             String displayName,
             String introduction,
-            Long careerYears,
+            Double careerYears,
             ServiceCategory mainCategory,
             Location mainLocation
     ) {
@@ -79,7 +79,7 @@ public class ExpertProfile extends BaseEntity {
     public void updateProfile(
             String displayName,
             String introduction,
-            Long careerYears,
+            Double careerYears,
             ServiceCategory mainCategory,
             Location mainLocation
     ) {
@@ -88,5 +88,9 @@ public class ExpertProfile extends BaseEntity {
         this.careerYears = careerYears;
         this.mainCategory = mainCategory;
         this.mainLocation = mainLocation;
+    }
+
+    public void delete() {
+        this.status = "DELETED";
     }
 }
