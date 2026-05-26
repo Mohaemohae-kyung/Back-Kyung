@@ -131,6 +131,8 @@ public class SecurityConfig {
 
                         .requestMatchers(HttpMethod.GET, "/api/expert-services/**").permitAll()
 
+                        .requestMatchers("/api/portfolios/viewer").permitAll()
+
                         // 고수 서비스 등록은 로그인 필요
                         .requestMatchers(HttpMethod.POST, "/api/expert-services/**").authenticated()
 

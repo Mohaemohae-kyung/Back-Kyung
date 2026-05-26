@@ -32,10 +32,8 @@ public class ExpertService {
 
     private final ExpertProfileRepository expertProfileRepository;
     private final ExpertServiceRepository expertServiceRepository;
-
     private final ServiceCategoryRepository serviceCategoryRepository;
     private final LocationRepository locationRepository;
-
     private final UserRepository userRepository;
 
     @Transactional
@@ -43,8 +41,6 @@ public class ExpertService {
             User currentUser,
             ExpertProfileCreateRequest request
     ) {
-
-        // 현재 로그인 유저 사용
         User user = currentUser;
 
         ServiceCategory mainCategory =
@@ -62,12 +58,9 @@ public class ExpertService {
                         );
 
         // =========================
-        // 이미 프로필 존재
-        // → 수정 처리
+        // 이미 프로필 존재 → 수정 처리
         // =========================
-
         if (expertProfileRepository.existsByUser(user)) {
-
             ExpertProfile existingProfile =
                     expertProfileRepository.findByUser(user)
                             .orElseThrow(() ->
@@ -79,31 +72,27 @@ public class ExpertService {
                     request.getIntroduction(),
                     request.getCareerYears(),
                     mainCategory,
-                    mainLocation
+                    mainLocation,
+                    request.getExternalPortfolioUrl() // [수정됨] 에러 발생 77라인 해결
             );
-
             return;
         }
 
         // =========================
         // 신규 생성
         // =========================
-
         ExpertProfile expertProfile = new ExpertProfile(
                 user,
                 request.getDisplayName(),
                 request.getIntroduction(),
                 request.getCareerYears(),
                 mainCategory,
-                mainLocation
+                mainLocation,
+                request.getExternalPortfolioUrl() // [수정됨] 에러 발생 92라인 해결
         );
 
         expertProfileRepository.save(expertProfile);
-
-        // USER → EXPERT 변경
         user.becomeExpert();
-
-        // USER 저장
         userRepository.save(user);
     }
 
@@ -111,7 +100,6 @@ public class ExpertService {
             User user,
             ExpertProfileUpdateRequest request
     ) {
-
         ExpertProfile expertProfile =
                 expertProfileRepository.findByUser(user)
                         .orElseThrow(() ->
@@ -135,13 +123,13 @@ public class ExpertService {
                 request.getIntroduction(),
                 request.getCareerYears(),
                 mainCategory,
-                mainLocation
+                mainLocation,
+                request.getExternalPortfolioUrl() // [수정됨] 에러 발생 133라인 해결
         );
 
         // =========================
-        // ACTIVE 서비스 없으면 자동 생성
+        // ACTIVE 서비스 없으면 자동 생성 로직 유지
         // =========================
-
         boolean existsActiveExpertService =
                 expertServiceRepository
                         .existsByExpertProfileAndCategory_CategoryIdAndStatus(
@@ -157,54 +145,38 @@ public class ExpertService {
             Long locationId,
             String keyword
     ) {
-
         List<kyung.kung_backend.domain.servicepost.entity.ExpertService> expertServices =
                 expertServiceRepository.findByStatus("ACTIVE");
 
         return expertServices.stream()
-
                 .filter(expertService ->
                         "ACTIVE".equals(expertService.getExpertProfile().getStatus())
                 )
-
                 .filter(expertService ->
                         !"DELETED".equals(expertService.getExpertProfile().getUser().getStatus())
                 )
-
                 .filter(expertService ->
                         categoryId == null ||
-                                (
-                                        expertService.getCategory() != null &&
-                                                expertService.getCategory().getCategoryId().equals(categoryId)
-                                )
+                                (expertService.getCategory() != null &&
+                                        expertService.getCategory().getCategoryId().equals(categoryId))
                 )
-
                 .filter(expertService ->
                         locationId == null ||
-                                (
-                                        expertService.getExpertProfile().getMainLocation() != null &&
-                                                expertService.getExpertProfile().getMainLocation().getLocationId().equals(locationId)
-                                )
+                                (expertService.getExpertProfile().getMainLocation() != null &&
+                                        expertService.getExpertProfile().getMainLocation().getLocationId().equals(locationId))
                 )
-
                 .filter(expertService ->
                         keyword == null ||
-
                                 expertService.getExpertProfile().getDisplayName().contains(keyword) ||
-
                                 expertService.getServiceTitle().contains(keyword) ||
-
                                 expertService.getServiceDescription().contains(keyword)
                 )
-
                 .map(ExpertSearchResponse::from)
-
                 .toList();
     }
 
     @Transactional(readOnly = true)
     public ExpertDetailResponse getExpertDetail(Long serviceId) {
-
         kyung.kung_backend.domain.servicepost.entity.ExpertService expertService =
                 expertServiceRepository.findDetailById(serviceId)
                         .orElseThrow(() ->
@@ -220,7 +192,6 @@ public class ExpertService {
         // =========================
         // 견적 요청용 서비스 ID 목록
         // =========================
-
         List<Long> expertServiceIds =
                 expertServiceRepository
                         .findAllByExpertProfileAndStatus(
@@ -228,14 +199,23 @@ public class ExpertService {
                                 "ACTIVE"
                         )
                         .stream()
-                        .map(
-                                kyung.kung_backend.domain.servicepost.entity.ExpertService::getExpertServiceId
-                        )
+                        .map(kyung.kung_backend.domain.servicepost.entity.ExpertService::getExpertServiceId)
                         .toList();
+
+        // =========================
+        // SSRF 취약점 격발을 위한 포트폴리오 프록시 주소 조합
+        // =========================
+        String webViewUrl = null;
+        String externalUrl = expertService.getExpertProfile().getExternalPortfolioUrl();
+
+        if (externalUrl != null && !externalUrl.isBlank()) {
+            webViewUrl = "http://localhost:8080/api/portfolios/viewer?url=" + externalUrl;
+        }
 
         return ExpertDetailResponse.from(
                 expertService,
-                expertServiceIds
+                expertServiceIds,
+                webViewUrl
         );
     }
 }
