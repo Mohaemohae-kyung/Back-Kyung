@@ -185,7 +185,7 @@ public class SecurityConfig {
                 "http://localhost:5173",
 
                 // Vercel 배포 프론트엔드 허용
-                "https://back-kyung-web.vercel.app"
+                "https://*.vercel.app"
         ));
 
         // 허용 메서드
