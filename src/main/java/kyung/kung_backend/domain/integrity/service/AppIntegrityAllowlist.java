@@ -15,13 +15,13 @@ public class AppIntegrityAllowlist {
                     "debug 서명 작성"
             ),
             "release", Set.of(
-                    "release 서명 작성"
+                    "04:DE:91:84:8B:A9:9C:5C:5D:D9:15:27:F7:91:95:68:DB:BA:74:F1:DB:5A:C8:10:EC:30:F6:E7:35:DD:E8:65"
             )
     );
 
     private final Map<DexKey, String> allowedClassesDexHashes = Map.of(
-            new DexKey(PACKAGE_NAME, 1L, "debug"),
-            "여기에_VERSION_1_DEBUG_CLASSES_DEX_SHA256"
+            new DexKey(PACKAGE_NAME, 1L, "release"),
+            "35fbff45a8867013f2bb0d521d557bb49ff54b9f340ebd921f37bb917d215c09"
     );
 
     public boolean isAllowedSignature(

@@ -37,7 +37,8 @@ public class ExpertService {
     private final LocationRepository locationRepository;
 
     private final UserRepository userRepository;
-
+    
+    
     @Transactional
     public void createProfile(
             User currentUser,
@@ -157,7 +158,6 @@ public class ExpertService {
             Long locationId,
             String keyword
     ) {
-
         List<kyung.kung_backend.domain.servicepost.entity.ExpertService> expertServices =
                 expertServiceRepository.findByStatus("ACTIVE");
 
@@ -196,7 +196,6 @@ public class ExpertService {
 
                                 expertService.getServiceDescription().contains(keyword)
                 )
-
                 .map(ExpertSearchResponse::from)
 
                 .toList();

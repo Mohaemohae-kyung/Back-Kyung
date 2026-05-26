@@ -4,6 +4,7 @@ import kyung.kung_backend.domain.chat.entity.ChatRoom;
 import kyung.kung_backend.domain.chat.repository.ChatMessageRepository;
 import kyung.kung_backend.domain.chat.repository.ChatRoomRepository;
 
+import kyung.kung_backend.domain.expert.entity.ExpertProfile;
 import kyung.kung_backend.domain.request.dto.ServiceRequestCreateRequest;
 import kyung.kung_backend.domain.request.dto.ServiceRequestResponse;
 import kyung.kung_backend.domain.request.dto.ServiceRequestUpdateRequest;
@@ -251,7 +252,6 @@ public class ServiceRequestService {
                 unreadCount
         );
     }
-
     // =========================
     // 요청 수정
     // =========================
@@ -267,7 +267,7 @@ public class ServiceRequestService {
         ServiceRequest serviceRequest =
                 findServiceRequest(requestId);
 
-        validateOwner(
+        validateExpert(
                 user,
                 serviceRequest
         );
@@ -584,6 +584,31 @@ public class ServiceRequestService {
 
             throw GeneralException.of(
                     ErrorCode.BAD_REQUEST
+            );
+        }
+    }
+
+    private void validateExpert(
+            User user,
+            ServiceRequest serviceRequest
+    ) {
+
+        ExpertService expertService =
+                serviceRequest.getExpertService();
+
+        ExpertProfile expertProfile =
+                expertService.getExpertProfile();
+
+        User expertUser =
+                expertProfile.getUser();
+
+        if (
+                !expertUser.getUserId()
+                        .equals(user.getUserId())
+        ) {
+
+            throw GeneralException.of(
+                    ErrorCode.FORBIDDEN
             );
         }
     }

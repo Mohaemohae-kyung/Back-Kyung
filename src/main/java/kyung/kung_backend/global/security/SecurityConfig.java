@@ -43,7 +43,12 @@ public class SecurityConfig {
     private static final String[] AUTH_WHITE_LIST = {
             "/api/auth/**",
             "/ws-stomp/**",
-            "/ws-stomp-android/**"
+            "/ws-stomp-android/**",
+            "/api/chat/llm"
+    };
+
+    private static final String[] APP_INTEGRITY_WHITE_LIST = {
+            "/api/app-integrity/report"
     };
 
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
@@ -142,6 +147,9 @@ public class SecurityConfig {
                         // 요청관리
                         .requestMatchers("/api/service-requests/**").authenticated()
 
+                        // 앱 무결성 api
+                        .requestMatchers(APP_INTEGRITY_WHITE_LIST).permitAll()
+
                         // 관리자 API
                         .requestMatchers("/api/admin/**").hasRole("ADMIN")
 
@@ -177,7 +185,7 @@ public class SecurityConfig {
                 "http://localhost:5173",
 
                 // Vercel 배포 프론트엔드 허용
-                "https://back-kyung-web.vercel.app"
+                "https://*.vercel.app"
         ));
 
         // 허용 메서드
