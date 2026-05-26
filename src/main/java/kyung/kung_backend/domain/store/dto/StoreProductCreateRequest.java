@@ -32,5 +32,5 @@ public class StoreProductCreateRequest {
     @NotNull(message = "진행 방식은 필수입니다.")
     private StoreProductServiceType serviceType;
 
-    private String serviceRegion;
+    private Long locationId;
 }

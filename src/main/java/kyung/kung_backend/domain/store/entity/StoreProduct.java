@@ -3,6 +3,7 @@ package kyung.kung_backend.domain.store.entity;
 import jakarta.persistence.*;
 import kyung.kung_backend.domain.category.entity.ServiceCategory;
 import kyung.kung_backend.domain.expert.entity.ExpertProfile;
+import kyung.kung_backend.domain.location.entity.Location;
 import kyung.kung_backend.domain.store.entity.enums.StoreProductServiceType;
 import kyung.kung_backend.domain.store.entity.enums.StoreProductStatus;
 import kyung.kung_backend.global.common.BaseEntity;
@@ -55,8 +56,9 @@ public class StoreProduct extends BaseEntity {
     @Column(name = "SERVICE_TYPE", nullable = false, length = 20)
     private StoreProductServiceType serviceType;
 
-    @Column(name = "SERVICE_REGION", length = 100)
-    private String serviceRegion;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "LOCATION_ID")
+    private Location location;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "STATUS", nullable = false, length = 20)
@@ -74,7 +76,7 @@ public class StoreProduct extends BaseEntity {
             String description,
             BigDecimal price,
             StoreProductServiceType serviceType,
-            String serviceRegion,
+            Location location,
             StoreProductStatus status
     ) {
         this.expertProfile = expertProfile;
@@ -84,7 +86,7 @@ public class StoreProduct extends BaseEntity {
         this.description = description;
         this.price = price;
         this.serviceType = serviceType;
-        this.serviceRegion = serviceRegion;
+        this.location = location;
         this.status = status;
     }
 
@@ -95,7 +97,7 @@ public class StoreProduct extends BaseEntity {
             String description,
             BigDecimal price,
             StoreProductServiceType serviceType,
-            String serviceRegion
+            Location location
     ) {
         if (category != null) {
             this.category = category;
@@ -121,8 +123,8 @@ public class StoreProduct extends BaseEntity {
             this.serviceType = serviceType;
         }
 
-        if (serviceRegion != null) {
-            this.serviceRegion = serviceRegion;
+        if (location != null) {
+            this.location = location;
         }
     }
 
@@ -133,6 +135,10 @@ public class StoreProduct extends BaseEntity {
 
     public void hide() {
         this.status = StoreProductStatus.HIDDEN;
+    }
+
+    public void clearLocation() {
+        this.location = null;
     }
 
     public void activate() {

@@ -22,5 +22,5 @@ public class StoreProductUpdateRequest {
 
     private StoreProductServiceType serviceType;
 
-    private String serviceRegion;
+    private Long locationId;
 }
