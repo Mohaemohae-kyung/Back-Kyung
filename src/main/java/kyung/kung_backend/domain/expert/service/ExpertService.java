@@ -38,9 +38,7 @@ public class ExpertService {
 
     private final UserRepository userRepository;
     
-    @PersistenceContext
-    private final EntityManager em;
-
+    
     @Transactional
     public void createProfile(
             User currentUser,
