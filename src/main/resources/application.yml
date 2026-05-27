@@ -1,0 +1,116 @@
+spring:
+  config:
+    import: optional:file:.env[.properties]
+
+  profiles:
+    active: ${SPRING_PROFILES_ACTIVE:local}
+
+  application:
+    name: kyung-backend
+
+  servlet:
+    multipart:
+      max-file-size: 30MB
+      max-request-size: 100MB
+
+  jpa:
+    open-in-view: false
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.OracleDialect
+        format_sql: true
+        use_sql_comments: true
+
+server:
+  port: ${SERVER_PORT:8080}
+
+# Swagger
+springdoc:
+  api-docs:
+    path: /v3/api-docs
+
+  swagger-ui:
+    path: /swagger-ui.html
+    display-request-duration: true
+    operations-sorter: method
+
+jwt:
+  secret: ${JWT_SECRET}
+  access-expiration-ms: ${JWT_ACCESS_EXPIRATION_MS:3600000}
+  refresh-expiration-ms: ${JWT_REFRESH_EXPIRATION_MS:1209600000}
+
+security:
+  cors:
+    allowed-origins:
+      - ${CORS_ALLOWED_ORIGIN_1:http://localhost:3000}
+      - ${CORS_ALLOWED_ORIGIN_2:http://localhost:5173}
+    allowed-methods:
+      - GET
+      - POST
+      - PUT
+      - PATCH
+      - DELETE
+      - OPTIONS
+    allowed-headers:
+      - "*"
+    allow-credentials: true
+
+file:
+  upload:
+    max-size: 30MB
+    allowed-extensions:
+      - jpg
+      - jpeg
+      - png
+      - pdf
+
+logging:
+  level:
+    root: info
+    org.springframework.security: info
+    org.hibernate.SQL: debug
+    org.hibernate.orm.jdbc.bind: trace
+
+app:
+  aws:
+    credentials:
+      access-key: ${AWS_ACCESS_KEY}
+      secret-key: ${AWS_SECRET_KEY}
+    region: ${AWS_REGION:ap-northeast-2}
+    s3:
+      bucket: ${S3_BUCKET}
+      upload-path: ${S3_UPLOAD_PATH:uploads}
+
+---
+spring:
+  config:
+    activate:
+      on-profile: local
+
+  datasource:
+    url: ${LOCAL_DB_URL:jdbc:oracle:thin:@//localhost:1521/FREEPDB1}
+    username: ${LOCAL_DB_USERNAME:KYUNG_USER}
+    password: ${LOCAL_DB_PASSWORD:kyung_password}
+    driver-class-name: oracle.jdbc.OracleDriver
+
+  jpa:
+    hibernate:
+      ddl-auto: ${LOCAL_JPA_DDL_AUTO:update}
+    show-sql: ${LOCAL_JPA_SHOW_SQL:true}
+
+---
+spring:
+  config:
+    activate:
+      on-profile: main
+
+  datasource:
+    url: ${AWS_DB_URL}
+    username: ${AWS_DB_USERNAME}
+    password: ${AWS_DB_PASSWORD}
+    driver-class-name: oracle.jdbc.OracleDriver
+
+  jpa:
+    hibernate:
+      ddl-auto: ${AWS_JPA_DDL_AUTO:update}
+    show-sql: ${AWS_JPA_SHOW_SQL:false}
