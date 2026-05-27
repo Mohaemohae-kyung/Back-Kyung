@@ -12,7 +12,7 @@ public class AppIntegrityAllowlist {
 
     private final Map<String, Set<String>> allowedSignaturesByBuildType = Map.of(
             "debug", Set.of(
-                    "debug 서명 작성"
+                    "04:DE:91:84:8B:A9:9C:5C:5D:D9:15:27:F7:91:95:68:DB:BA:74:F1:DB:5A:C8:10:EC:30:F6:E7:35:DD:E8:65"
             ),
             "release", Set.of(
                     "04:DE:91:84:8B:A9:9C:5C:5D:D9:15:27:F7:91:95:68:DB:BA:74:F1:DB:5A:C8:10:EC:30:F6:E7:35:DD:E8:65"
