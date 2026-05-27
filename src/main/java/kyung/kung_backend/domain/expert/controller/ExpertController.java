@@ -1,19 +1,19 @@
 package kyung.kung_backend.domain.expert.controller;
 
-import io.swagger.v3.oas.annotations.tags.Tag;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import kyung.kung_backend.domain.expert.dto.ExpertDetailResponse;
 import kyung.kung_backend.domain.expert.dto.ExpertProfileCreateRequest;
 import kyung.kung_backend.domain.expert.dto.ExpertProfileUpdateRequest;
 import kyung.kung_backend.domain.expert.dto.ExpertSearchResponse;
-import kyung.kung_backend.domain.expert.dto.ExpertDetailResponse;
 import kyung.kung_backend.domain.expert.service.ExpertService;
 import kyung.kung_backend.domain.user.entity.User;
 import kyung.kung_backend.global.response.ApiResponse;
 import kyung.kung_backend.global.response.SuccessCode;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.http.ResponseEntity;
 
 import java.util.List;
 
@@ -71,13 +71,13 @@ public class ExpertController {
             summary = "고수 상세 조회",
             description = "선택한 고수의 프로필 상세 정보를 조회합니다."
     )
-    @GetMapping("/{serviceId}")
+    @GetMapping("/{expertProfileId}")
     public ResponseEntity<ApiResponse<ExpertDetailResponse>> getExpertDetail(
-            @PathVariable Long serviceId
+            @PathVariable Long expertProfileId
     ) {
 
         ExpertDetailResponse response =
-                expertService.getExpertDetail(serviceId);
+                expertService.getExpertDetail(expertProfileId);
 
         return ResponseEntity.ok(
                 ApiResponse.onSuccess(response)

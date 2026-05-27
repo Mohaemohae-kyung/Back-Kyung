@@ -1,18 +1,12 @@
 package kyung.kung_backend.domain.servicepost.entity;
 
 import jakarta.persistence.*;
-
 import kyung.kung_backend.domain.category.entity.ServiceCategory;
 import kyung.kung_backend.domain.expert.entity.ExpertProfile;
-import kyung.kung_backend.domain.location.entity.Location;
-
 import kyung.kung_backend.global.common.BaseEntity;
-
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-
-import java.time.LocalDateTime;
 
 @Getter
 @Entity
@@ -46,74 +40,16 @@ public class ExpertService extends BaseEntity {
     @JoinColumn(name = "CATEGORY_ID", nullable = false)
     private ServiceCategory category;
 
-    // =========================
-    // 서비스별 활동 지역 추가
-    // =========================
-
-    @ManyToOne(fetch = FetchType.EAGER)
-    @JoinColumn(name = "LOCATION_ID")
-    private Location location;
-
-    @Column(name = "STATUS", nullable = false, length = 20)
-    private String status;
-
-    @Column(name = "DELETED_AT")
-    private LocalDateTime deletedAt;
-
-    @Column(name = "SERVICE_TITLE", nullable = false, length = 200)
-    private String serviceTitle;
-
-    @Column(name = "SERVICE_DESCRIPTION", nullable = false, columnDefinition = "CLOB")
-    private String serviceDescription;
-
-    @Column(name = "PRICE")
-    private Integer price;
-
     public static ExpertService create(
             ExpertProfile expertProfile,
-            ServiceCategory category,
-            Location location,
-            String serviceTitle,
-            String serviceDescription,
-            Integer price
+            ServiceCategory category
     ) {
 
         ExpertService expertService = new ExpertService();
 
         expertService.expertProfile = expertProfile;
-
         expertService.category = category;
 
-        // =========================
-        // 서비스별 지역 저장
-        // =========================
-
-        expertService.location = location;
-
-        expertService.serviceTitle = serviceTitle;
-        expertService.serviceDescription = serviceDescription;
-        expertService.price = price;
-
-        expertService.status = "ACTIVE";
-        expertService.deletedAt = null;
-
         return expertService;
-    }
-
-    public void delete() {
-
-        this.status = "DELETED";
-
-        this.deletedAt = LocalDateTime.now();
-    }
-
-    public boolean isActive() {
-
-        return "ACTIVE".equals(this.status);
-    }
-
-    public boolean isDeleted() {
-
-        return "DELETED".equals(this.status);
     }
 }

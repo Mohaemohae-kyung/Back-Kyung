@@ -2,12 +2,11 @@ package kyung.kung_backend.domain.favorite.service;
 
 import kyung.kung_backend.domain.expert.entity.ExpertProfile;
 import kyung.kung_backend.domain.expert.repository.ExpertProfileRepository;
-import kyung.kung_backend.domain.servicepost.entity.ExpertService;
-import kyung.kung_backend.domain.servicepost.repository.ExpertServiceRepository;
 import kyung.kung_backend.domain.favorite.dto.FavoriteExpertResponse;
 import kyung.kung_backend.domain.favorite.dto.FavoriteExpertToggleResponse;
 import kyung.kung_backend.domain.favorite.entity.FavoriteExpert;
 import kyung.kung_backend.domain.favorite.repository.FavoriteExpertRepository;
+import kyung.kung_backend.domain.servicepost.repository.ExpertServiceRepository;
 import kyung.kung_backend.domain.user.entity.User;
 import kyung.kung_backend.global.exception.GeneralException;
 import kyung.kung_backend.global.response.ErrorCode;
@@ -54,16 +53,11 @@ public class FavoriteExpertService {
     public List<FavoriteExpertResponse> getMyFavoriteExperts(User user) {
         return favoriteExpertRepository.findAllByUserWithExpertProfile(user)
                 .stream()
-                .map(favoriteExpert -> {
-                    ExpertProfile expertProfile = favoriteExpert.getExpertProfile();
-
-                    Long expertServiceId = expertServiceRepository
-                            .findFirstByExpertProfileOrderByExpertServiceIdAsc(expertProfile)
-                            .map(ExpertService::getExpertServiceId)
-                            .orElse(null);
-
-                    return FavoriteExpertResponse.from(expertProfile, expertServiceId);
-                })
+                .map(favoriteExpert ->
+                        FavoriteExpertResponse.from(
+                                favoriteExpert.getExpertProfile()
+                        )
+                )
                 .toList();
     }
 }

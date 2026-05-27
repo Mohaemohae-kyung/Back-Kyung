@@ -1,13 +1,9 @@
 package kyung.kung_backend.domain.community.controller;
 
-import io.swagger.v3.oas.annotations.tags.Tag;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
-import kyung.kung_backend.domain.community.dto.CommentRequest;
-import kyung.kung_backend.domain.community.dto.CommentResponse;
-import kyung.kung_backend.domain.community.dto.PostCreateRequest;
-import kyung.kung_backend.domain.community.dto.PostResponse;
-import kyung.kung_backend.domain.community.dto.PostUpdateRequest;
+import kyung.kung_backend.domain.community.dto.*;
 import kyung.kung_backend.domain.community.service.CommunityCommentService;
 import kyung.kung_backend.domain.community.service.CommunityPostService;
 import kyung.kung_backend.domain.user.entity.User;
