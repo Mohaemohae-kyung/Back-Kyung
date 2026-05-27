@@ -71,13 +71,13 @@ public class ExpertController {
             summary = "고수 상세 조회",
             description = "선택한 고수의 프로필 상세 정보를 조회합니다."
     )
-    @GetMapping("/{serviceId}")
+    @GetMapping("/{expertProfileId}")
     public ResponseEntity<ApiResponse<ExpertDetailResponse>> getExpertDetail(
-            @PathVariable Long serviceId
+            @PathVariable Long expertProfileId
     ) {
 
         ExpertDetailResponse response =
-                expertService.getExpertDetail(serviceId);
+                expertService.getExpertDetail(expertProfileId);
 
         return ResponseEntity.ok(
                 ApiResponse.onSuccess(response)

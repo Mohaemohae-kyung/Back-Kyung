@@ -22,7 +22,6 @@ public class ExpertServiceResponse {
                 .expertName(expertService.getExpertProfile().getDisplayName())
                 .categoryId(expertService.getCategory().getCategoryId())
                 .categoryName(expertService.getCategory().getName())
-                .status(expertService.getStatus())
                 .build();
     }
 }

@@ -85,8 +85,7 @@ public class UserService {
         }
 
         expertProfileRepository.findByUser(user).ifPresent(profile -> {
-            expertServiceRepository.findAllByExpertProfileAndStatus(profile, "ACTIVE")
-                    .forEach(ExpertService::delete);
+            expertServiceRepository.deleteByExpertProfile(profile);
             profile.delete();
         });
 

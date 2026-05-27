@@ -20,11 +20,5 @@ public interface ExpertProfileRepository
     // 추가
     Optional<ExpertProfile> findByUser_UserId(Long userId);
 
-    List<ExpertProfile> findByStatus(String status);
-
-    List<ExpertProfile> findByStatusAndMainCategoryAndMainLocation(
-            String status,
-            ServiceCategory mainCategory,
-            Location mainLocation
-    );
+    Optional<ExpertProfile> findById(Long expertProfileId);
 }
