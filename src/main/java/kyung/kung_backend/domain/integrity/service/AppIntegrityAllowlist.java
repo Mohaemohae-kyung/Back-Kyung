@@ -20,7 +20,7 @@ public class AppIntegrityAllowlist {
     );
 
     private final Map<DexKey, String> allowedClassesDexHashes = Map.of(
-            new DexKey(PACKAGE_NAME, 1L, "release"),
+            new DexKey(PACKAGE_NAME, 1L, "debug"),
             "A4C4BCB3F38B43930525CC036DBCF43CAA29F9AE2ACB8FFBCB2D1075759F1AF3"
     );
 
@@ -53,11 +53,6 @@ public class AppIntegrityAllowlist {
             String buildType,
             String receivedDexHash
     ) {
-        System.out.println("receivedDexHash=["+receivedDexHash+"]");
-        DexKey dexKey = new DexKey(packageName, versionCode, buildType);
-        System.out.println("DexKey="+dexKey);
-        System.out.println("constainKey="+allowedClassesDexHashes.constainKey(dexKey));
-        System.out.println("allowedDexHash=["+allowedClassesDexHeshes.get(dexKey)+"]");
         if (receivedDexHash == null || receivedDexHash.isBlank()) {
             return false;
         }
