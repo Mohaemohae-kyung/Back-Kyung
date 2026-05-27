@@ -184,7 +184,7 @@ public class SecurityConfig {
                 "http://localhost:3000",
                 "http://localhost:5173",
 
-                // Vercel 배포 프론트엔드 허용
+                // 모든 Vercel 배포 프론트엔드 허용 고태완식 해결법
                 "https://*.vercel.app"
         ));
 
