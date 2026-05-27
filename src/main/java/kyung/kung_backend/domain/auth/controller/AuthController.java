@@ -1,21 +1,19 @@
 package kyung.kung_backend.domain.auth.controller;
 
-import io.swagger.v3.oas.annotations.tags.Tag;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
-import kyung.kung_backend.domain.auth.dto.SignupRequest;
-import kyung.kung_backend.domain.auth.dto.SignupResponse;
-import kyung.kung_backend.domain.auth.dto.LoginRequest;
-import kyung.kung_backend.domain.auth.dto.LoginResponse;
-import kyung.kung_backend.domain.auth.dto.ReissueRequest;
-import kyung.kung_backend.domain.auth.dto.ReissueResponse;
+import kyung.kung_backend.domain.auth.dto.*;
 import kyung.kung_backend.domain.auth.service.AuthService;
 import kyung.kung_backend.domain.user.entity.User;
 import kyung.kung_backend.global.response.ApiResponse;
 import kyung.kung_backend.global.response.SuccessCode;
 import lombok.RequiredArgsConstructor;
-import org.springframework.web.bind.annotation.*;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
 
 @Tag(name = "Auth", description = "회원 인증 및 토큰 관리 API")
 @RestController
@@ -70,6 +68,19 @@ public class AuthController {
             @AuthenticationPrincipal User user
     ) {
         authService.logout(user);
+        return ApiResponse.onSuccess(SuccessCode.OK);
+    }
+
+    @Operation(
+            summary = "비밀번호 변경",
+            description = "현재 비밀번호를 확인한 후 새로운 비밀번호로 변경합니다."
+    )
+    @PostMapping("/password/change")
+    public ApiResponse<Void> changePassword(
+            @AuthenticationPrincipal User user,
+            @Valid @RequestBody PasswordChangeRequest request
+    ) {
+        authService.changePassword(user, request);
         return ApiResponse.onSuccess(SuccessCode.OK);
     }
 }

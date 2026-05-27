@@ -1,16 +1,11 @@
 package kyung.kung_backend.domain.auth.service;
 
-import kyung.kung_backend.domain.auth.dto.SignupRequest;
-import kyung.kung_backend.domain.auth.dto.SignupResponse;
-import kyung.kung_backend.domain.auth.dto.LoginRequest;
-import kyung.kung_backend.domain.auth.dto.LoginResponse;
-import kyung.kung_backend.domain.auth.dto.ReissueRequest;
-import kyung.kung_backend.domain.auth.dto.ReissueResponse;
+import kyung.kung_backend.domain.auth.dto.*;
 import kyung.kung_backend.domain.user.entity.User;
 import kyung.kung_backend.domain.user.repository.UserRepository;
-import kyung.kung_backend.global.response.ErrorCode;
-import kyung.kung_backend.global.jwt.JwtProvider;
 import kyung.kung_backend.global.exception.GeneralException;
+import kyung.kung_backend.global.jwt.JwtProvider;
+import kyung.kung_backend.global.response.ErrorCode;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -113,5 +108,24 @@ public class AuthService {
                 .orElseThrow(() -> GeneralException.of(ErrorCode.UNAUTHORIZED));
 
         findUser.clearRefreshToken();
+    }
+
+    @Transactional
+    public void changePassword(User user, PasswordChangeRequest request) {
+        // 영속성 컨텍스트에서 현재 로그인한 유저를 다시 조회
+        User findUser = userRepository.findById(user.getUserId())
+                .orElseThrow(() -> GeneralException.of(ErrorCode.UNAUTHORIZED));
+
+        // 1. 현재 입력한 비밀번호와 DB의 암호화된 비밀번호 대조
+        if (!passwordEncoder.matches(request.getCurrentPassword(), findUser.getPassword())) {
+            // 기존 ErrorCode 명세 중 알맞은 인증 실패 코드를 매핑합니다.
+            throw GeneralException.of(ErrorCode.INVALID_LOGIN);
+        }
+
+        // 2. 새로운 비밀번호를 암호화하여 엔티티 도메인 메서드로 주입
+        String encodedPassword = passwordEncoder.encode(request.getNewPassword());
+        findUser.updatePassword(encodedPassword);
+
+        // @Transactional에 의해 메서드 종료 시 영속성 데이터가 자동으로 Dirty Checking(변경 감지)되어 DB에 반영됩니다.
     }
 }
