@@ -13,6 +13,7 @@ public class AIChatbotDto {
         private String message;
         private String session_id;
         private String mode;
+        private Long user_id;
     }
 
     @Getter
