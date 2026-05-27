@@ -1,6 +1,7 @@
 package kyung.kung_backend.domain.booking.service;
 
 import kyung.kung_backend.domain.booking.dto.BookingPrepareRequest;
+import kyung.kung_backend.domain.booking.dto.BookingAvailabilityResponse;
 import kyung.kung_backend.domain.booking.dto.BookingResponse;
 import kyung.kung_backend.domain.booking.entity.Booking;
 import kyung.kung_backend.domain.booking.repository.BookingRepository;
@@ -60,6 +61,33 @@ public class BookingService {
         Booking booking = createStoreProductBooking(user, request, now);
 
         return BookingResponse.from(bookingRepository.save(booking));
+    }
+
+    public BookingAvailabilityResponse checkBookingAvailability(
+            Long storeProductId,
+            LocalDateTime startAt,
+            LocalDateTime endAt,
+            Long locationId
+    ) {
+        LocalDateTime now = LocalDateTime.now();
+
+        validateBookingTime(startAt, endAt, now);
+
+        if (storeProductId == null) {
+            throw GeneralException.of(ErrorCode.BAD_REQUEST);
+        }
+
+        StoreProduct storeProduct = findStoreProduct(storeProductId);
+        Location location = findLocation(locationId);
+
+        validateStoreProductReservable(storeProduct);
+        validateBookingLocation(storeProduct, location);
+
+        if (isStoreProductSlotReservedForAvailability(storeProduct.getStoreProductId(), startAt, endAt, now)) {
+            return BookingAvailabilityResponse.alreadyReserved();
+        }
+
+        return BookingAvailabilityResponse.available();
     }
 
     public List<BookingResponse> getMyBookings(User loginUser) {
@@ -240,16 +268,46 @@ public class BookingService {
             LocalDateTime startAt,
             LocalDateTime endAt
     ) {
-        boolean alreadyReserved = bookingRepository
+        if (isStoreProductSlotReserved(storeProductId, startAt, endAt)) {
+            throw GeneralException.of(ErrorCode.BOOKING_ALREADY_RESERVED);
+        }
+    }
+
+    /*
+     * 예약 시간 겹침 검사입니다.
+     * 기존 예약의 시작 시간이 요청 종료 시간보다 빠르고,
+     * 기존 예약의 종료 시간이 요청 시작 시간보다 늦으면 시간이 겹친 것으로 봅니다.
+     */
+    private boolean isStoreProductSlotReserved(
+            Long storeProductId,
+            LocalDateTime startAt,
+            LocalDateTime endAt
+    ) {
+        return bookingRepository
                 .existsByStoreProductStoreProductIdAndStartAtLessThanAndEndAtGreaterThanAndStatusIn(
                         storeProductId,
                         endAt,
                         startAt,
                         BLOCKING_STATUSES
                 );
+    }
 
-        if (alreadyReserved) {
-            throw GeneralException.of(ErrorCode.BOOKING_ALREADY_RESERVED);
-        }
+    /*
+     * 예약 가능 여부 조회용 겹침 검사입니다.
+     * GET API에서는 DB 상태를 바꾸지 않기 위해 만료 정리 메서드를 호출하지 않습니다.
+     * 대신 아직 결제 대기 시간이 남은 PENDING_PAYMENT 예약과 CONFIRMED 예약만 막힌 시간으로 봅니다.
+     */
+    private boolean isStoreProductSlotReservedForAvailability(
+            Long storeProductId,
+            LocalDateTime startAt,
+            LocalDateTime endAt,
+            LocalDateTime now
+    ) {
+        return bookingRepository.existsActiveBlockingReservation(
+                storeProductId,
+                startAt,
+                endAt,
+                now
+        );
     }
 }
