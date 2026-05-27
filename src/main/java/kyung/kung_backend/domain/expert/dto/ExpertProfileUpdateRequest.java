@@ -10,4 +10,5 @@ public class ExpertProfileUpdateRequest {
     private Double careerYears;
     private Long mainCategoryId;
     private Long mainLocationId;
+    private String externalPortfolioUrl;
 }

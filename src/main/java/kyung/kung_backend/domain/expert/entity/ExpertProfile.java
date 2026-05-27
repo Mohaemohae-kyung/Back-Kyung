@@ -58,13 +58,18 @@ public class ExpertProfile extends BaseEntity {
     @Column(name = "STATUS", nullable = false, length = 20)
     private String status;
 
+    // 포트폴리오 외부 경로 필드 추가
+    @Column(name = "EXTERNAL_PORTFOLIO_URL", length = 1000)
+    private String externalPortfolioUrl;
+
     public ExpertProfile(
             User user,
             String displayName,
             String introduction,
             Double careerYears,
             ServiceCategory mainCategory,
-            Location mainLocation
+            Location mainLocation,
+            String externalPortfolioUrl
     ) {
         this.user = user;
         this.displayName = displayName;
@@ -72,6 +77,7 @@ public class ExpertProfile extends BaseEntity {
         this.careerYears = careerYears;
         this.mainCategory = mainCategory;
         this.mainLocation = mainLocation;
+        this.externalPortfolioUrl = externalPortfolioUrl;
         this.verifiedYn = "N";
         this.status = "ACTIVE";
     }
@@ -81,13 +87,15 @@ public class ExpertProfile extends BaseEntity {
             String introduction,
             Double careerYears,
             ServiceCategory mainCategory,
-            Location mainLocation
+            Location mainLocation,
+            String externalPortfolioUrl
     ) {
         this.displayName = displayName;
         this.introduction = introduction;
         this.careerYears = careerYears;
         this.mainCategory = mainCategory;
         this.mainLocation = mainLocation;
+        this.externalPortfolioUrl = externalPortfolioUrl;
     }
 
     public void delete() {
