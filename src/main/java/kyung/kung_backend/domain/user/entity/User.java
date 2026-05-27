@@ -100,4 +100,11 @@ public class User extends BaseEntity {
     public void becomeExpert() {
         this.role = "EXPERT";
     }
+
+    public void updatePassword(String encodedPassword) {
+        if (encodedPassword == null || encodedPassword.isBlank()) {
+            throw new IllegalArgumentException("변경할 비밀번호는 공백일 수 없습니다.");
+        }
+        this.password = encodedPassword;
+    }
 }
