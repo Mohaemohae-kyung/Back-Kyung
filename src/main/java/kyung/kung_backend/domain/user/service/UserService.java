@@ -4,7 +4,6 @@ import kyung.kung_backend.domain.expert.entity.ExpertProfile;
 import kyung.kung_backend.domain.expert.repository.ExpertProfileRepository;
 import kyung.kung_backend.domain.file.entity.FileUpload;
 import kyung.kung_backend.domain.file.repository.FileUploadRepository;
-import kyung.kung_backend.domain.servicepost.entity.ExpertService;
 import kyung.kung_backend.domain.servicepost.repository.ExpertServiceRepository;
 import kyung.kung_backend.domain.user.dto.UserProfileResponse;
 import kyung.kung_backend.domain.user.dto.UserProfileUpdateRequest;
@@ -40,10 +39,10 @@ public class UserService {
     public UserProfileResponse getMyProfile(User currentUser) {
         User user = getUser(currentUser.getUserId());
 
-        Long expertServiceId = expertProfileRepository.findByUser(user)
-                .flatMap(expertServiceRepository::findFirstByExpertProfileOrderByExpertServiceIdAsc)
-                .map(ExpertService::getExpertServiceId)
-                .orElse(null);
+        Long expertProfileId =
+                expertProfileRepository.findByUser(user)
+                        .map(ExpertProfile::getExpertProfileId)
+                        .orElse(null);
 
         return UserProfileResponse.builder()
                 .userId(user.getUserId())
@@ -53,7 +52,7 @@ public class UserService {
                 .nickname(user.getNickname())
                 .role(user.getRole())
                 .profileImageUrl(user.getProfileImageUrl())
-                .expertServiceId(expertServiceId)
+                .expertProfileId(expertProfileId)
                 .build();
     }
 

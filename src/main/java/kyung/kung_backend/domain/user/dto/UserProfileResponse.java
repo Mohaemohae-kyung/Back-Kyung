@@ -6,6 +6,7 @@ import lombok.Getter;
 @Getter
 @Builder
 public class UserProfileResponse {
+
     private Long userId;
     private String name;
     private String email;
@@ -13,5 +14,7 @@ public class UserProfileResponse {
     private String nickname;
     private String role;
     private String profileImageUrl;
-    private Long expertServiceId;
+
+    // 고수 사용자인 경우에만 값 존재
+    private Long expertProfileId;
 }
