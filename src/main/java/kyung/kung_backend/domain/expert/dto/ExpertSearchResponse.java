@@ -33,6 +33,8 @@ public class ExpertSearchResponse {
 
     private String profileImageUrl;
 
+    private String nickname;
+
     public static ExpertSearchResponse from(
             kyung.kung_backend.domain.servicepost.entity.ExpertService expertService
     ) {
@@ -80,6 +82,10 @@ public class ExpertSearchResponse {
 
                 expertProfile.getUser() != null
                         ? expertProfile.getUser().getProfileImageUrl()
+                        : null,
+
+                expertProfile.getUser() != null
+                        ? expertProfile.getUser().getNickname()
                         : null
         );
     }
