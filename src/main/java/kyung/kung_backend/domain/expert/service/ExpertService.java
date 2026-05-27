@@ -1,25 +1,20 @@
 package kyung.kung_backend.domain.expert.service;
 
-import kyung.kung_backend.domain.expert.dto.ExpertProfileCreateRequest;
-import kyung.kung_backend.domain.expert.dto.ExpertSearchResponse;
-import kyung.kung_backend.domain.expert.dto.ExpertDetailResponse;
-import kyung.kung_backend.domain.expert.entity.ExpertProfile;
-import kyung.kung_backend.domain.expert.repository.ExpertProfileRepository;
-import kyung.kung_backend.domain.expert.dto.ExpertProfileUpdateRequest;
-
-import kyung.kung_backend.domain.servicepost.repository.ExpertServiceRepository;
-
-import kyung.kung_backend.domain.user.entity.User;
-import kyung.kung_backend.domain.user.repository.UserRepository;
-
 import kyung.kung_backend.domain.category.entity.ServiceCategory;
 import kyung.kung_backend.domain.category.repository.ServiceCategoryRepository;
-
+import kyung.kung_backend.domain.expert.dto.ExpertDetailResponse;
+import kyung.kung_backend.domain.expert.dto.ExpertProfileCreateRequest;
+import kyung.kung_backend.domain.expert.dto.ExpertProfileUpdateRequest;
+import kyung.kung_backend.domain.expert.dto.ExpertSearchResponse;
+import kyung.kung_backend.domain.expert.entity.ExpertProfile;
+import kyung.kung_backend.domain.expert.repository.ExpertProfileRepository;
 import kyung.kung_backend.domain.location.entity.Location;
 import kyung.kung_backend.domain.location.repository.LocationRepository;
-
+import kyung.kung_backend.domain.servicepost.repository.ExpertServiceRepository;
+import kyung.kung_backend.domain.user.entity.User;
+import kyung.kung_backend.domain.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
-
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -28,8 +23,6 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
-
-import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 @Service

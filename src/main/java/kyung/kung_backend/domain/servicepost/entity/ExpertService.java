@@ -1,16 +1,12 @@
 package kyung.kung_backend.domain.servicepost.entity;
 
 import jakarta.persistence.*;
-
 import kyung.kung_backend.domain.category.entity.ServiceCategory;
 import kyung.kung_backend.domain.expert.entity.ExpertProfile;
 import kyung.kung_backend.global.common.BaseEntity;
-
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-
-import java.time.LocalDateTime;
 
 @Getter
 @Entity

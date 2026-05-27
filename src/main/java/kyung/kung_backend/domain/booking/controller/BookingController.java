@@ -1,10 +1,8 @@
 package kyung.kung_backend.domain.booking.controller;
 
 import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
-import kyung.kung_backend.domain.booking.dto.BookingAvailabilityResponse;
 import kyung.kung_backend.domain.booking.dto.BookingPrepareRequest;
 import kyung.kung_backend.domain.booking.dto.BookingResponse;
 import kyung.kung_backend.domain.booking.service.BookingService;
@@ -12,19 +10,11 @@ import kyung.kung_backend.domain.user.entity.User;
 import kyung.kung_backend.global.response.ApiResponse;
 import kyung.kung_backend.global.response.SuccessCode;
 import lombok.RequiredArgsConstructor;
-import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
-import java.time.LocalDateTime;
 import java.util.List;
 
 @RestController
@@ -54,40 +44,6 @@ public class BookingController {
         return ResponseEntity
                 .status(HttpStatus.CREATED)
                 .body(ApiResponse.onSuccess(SuccessCode.CREATED, response));
-    }
-
-    /*
-     * 날짜/시간 선택 화면에서 "예약하기" 버튼을 누르기 전에 호출하는 확인용 API입니다.
-     * 실제 예약을 생성하지 않고, 같은 시간대에 결제 대기 또는 결제 완료 예약이 있는지만 확인합니다.
-     */
-    @Operation(
-            summary = "마켓 상품 예약 가능 여부 확인",
-            description = "선택한 마켓 상품, 날짜, 시간, 지역으로 예약 가능한지 확인합니다. " +
-                    "이 API는 BOOKINGS 테이블에 예약을 생성하지 않으며, 가능 여부만 반환합니다. " +
-                    "실제 예약 생성 시점에는 /api/bookings/prepare에서 동일한 중복 검사를 다시 수행합니다."
-    )
-    @GetMapping("/availability")
-    public ApiResponse<BookingAvailabilityResponse> checkBookingAvailability(
-            @Parameter(description = "예약 가능 여부를 확인할 마켓 상품 ID", example = "21", required = true)
-            @RequestParam Long storeProductId,
-
-            @Parameter(description = "예약 시작 일시. 예: 2026-05-28T10:00:00", example = "2026-05-28T10:00:00", required = true)
-            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime startAt,
-
-            @Parameter(description = "예약 종료 일시. 예: 2026-05-28T11:00:00", example = "2026-05-28T11:00:00", required = true)
-            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime endAt,
-
-            @Parameter(description = "LOCATIONS 테이블의 지역 ID. 온라인 상품은 생략할 수 있습니다.", example = "442")
-            @RequestParam(required = false) Long locationId
-    ) {
-        BookingAvailabilityResponse response = bookingService.checkBookingAvailability(
-                storeProductId,
-                startAt,
-                endAt,
-                locationId
-        );
-
-        return ApiResponse.onSuccess(SuccessCode.OK, response);
     }
 
     /*

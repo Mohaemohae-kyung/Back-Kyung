@@ -2,7 +2,6 @@ package kyung.kung_backend.domain.chat.controller;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
-
 import kyung.kung_backend.domain.chat.dto.ChatDto;
 import kyung.kung_backend.domain.chat.dto.ChatMessageRequest;
 import kyung.kung_backend.domain.chat.entity.ChatRoom;
@@ -10,18 +9,15 @@ import kyung.kung_backend.domain.chat.service.ChatService;
 import kyung.kung_backend.domain.user.entity.User;
 import kyung.kung_backend.global.response.ApiResponse;
 import kyung.kung_backend.global.response.SuccessCode;
-
 import lombok.RequiredArgsConstructor;
-
-import org.springframework.http.ResponseEntity;
-
 import org.springframework.messaging.handler.annotation.MessageMapping;
 import org.springframework.messaging.handler.annotation.Payload;
 import org.springframework.messaging.simp.SimpMessageSendingOperations;
-
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
-
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
 import java.util.Map;
