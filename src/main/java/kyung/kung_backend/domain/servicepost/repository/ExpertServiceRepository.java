@@ -13,18 +13,6 @@ import java.util.Optional;
 
 public interface ExpertServiceRepository
         extends JpaRepository<ExpertService, Long> {
-    // 상세 조회
-    @Query("""
-        select es
-        from ExpertService es
-        join fetch es.expertProfile ep
-        left join fetch ep.mainCategory
-        left join fetch ep.mainLocation
-        where es.expertServiceId = :id
-    """)
-    Optional<ExpertService> findDetailById(
-            @Param("id") Long id
-    );
 
     // 고수 프로필 기준 첫 번째 서비스 조회
     Optional<ExpertService> findFirstByExpertProfileOrderByExpertServiceIdAsc(
