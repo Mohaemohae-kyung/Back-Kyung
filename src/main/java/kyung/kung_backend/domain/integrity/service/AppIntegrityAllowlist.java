@@ -53,6 +53,11 @@ public class AppIntegrityAllowlist {
             String buildType,
             String receivedDexHash
     ) {
+        System.out.println("receivedDexHash=["+receivedDexHash+"]");
+        DexKey dexKey = new DexKey(packageName, versionCode, buildType);
+        System.out.println("DexKey="+dexKey);
+        System.out.println("constainKey="+allowedClassesDexHashes.constainKey(dexKey));
+        System.out.println("allowedDexHash=["+allowedClassesDexHeshes.get(dexKey)+"]");
         if (receivedDexHash == null || receivedDexHash.isBlank()) {
             return false;
         }
