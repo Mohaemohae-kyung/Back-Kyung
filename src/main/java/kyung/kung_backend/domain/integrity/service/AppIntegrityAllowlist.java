@@ -20,8 +20,8 @@ public class AppIntegrityAllowlist {
     );
 
     private final Map<DexKey, String> allowedClassesDexHashes = Map.of(
-            new DexKey(PACKAGE_NAME, 1L, "release"),
-            "35fbff45a8867013f2bb0d521d557bb49ff54b9f340ebd921f37bb917d215c09"
+            new DexKey(PACKAGE_NAME, 1L, "debug"),
+            "a4c4bcb3f38b43930525cc036dbcf43caa29f9ae2acb8ffbcb2d1075759f1af3"
     );
 
     public boolean isAllowedSignature(

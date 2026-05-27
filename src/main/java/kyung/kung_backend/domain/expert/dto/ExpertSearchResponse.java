@@ -26,6 +26,8 @@ public class ExpertSearchResponse {
 
     private String profileImageUrl;
 
+    private String nickname;
+
     public static ExpertSearchResponse from(
             ExpertProfile expertProfile,
             List<String> categoryNames
@@ -50,6 +52,10 @@ public class ExpertSearchResponse {
 
                 expertProfile.getUser() != null
                         ? expertProfile.getUser().getProfileImageUrl()
+                        : null,
+
+                expertProfile.getUser() != null
+                        ? expertProfile.getUser().getNickname()
                         : null
         );
     }

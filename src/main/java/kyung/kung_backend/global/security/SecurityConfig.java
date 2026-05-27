@@ -188,7 +188,7 @@ public class SecurityConfig {
                 "https://can-fly.shop",
                 "https://www.can-fly.shop",
 
-                // Vercel 배포 프론트엔드 허용
+                // 모든 Vercel 배포 프론트엔드 허용 고태완식 해결법
                 "https://*.vercel.app"
         ));
 
