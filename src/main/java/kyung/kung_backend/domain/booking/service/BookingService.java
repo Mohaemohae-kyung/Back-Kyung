@@ -203,25 +203,29 @@ public class BookingService {
             throw GeneralException.of(ErrorCode.BAD_REQUEST);
         }
 
-        Location expertLocation = storeProduct.getExpertProfile().getMainLocation();
+        if (storeProduct.getServiceType() == StoreProductServiceType.ONLINE) {
+            return;
+        }
 
-        if (expertLocation == null || !"Y".equals(expertLocation.getActiveYn())) {
+        Location productLocation = storeProduct.getLocation();
+
+        if (productLocation == null || !"Y".equals(productLocation.getActiveYn())) {
             throw GeneralException.of(ErrorCode.BAD_REQUEST);
         }
 
-        if (!isSameOrChildLocation(bookingLocation, expertLocation)) {
+        if (!isSameOrChildLocation(bookingLocation, productLocation)) {
             throw GeneralException.of(ErrorCode.BAD_REQUEST);
         }
     }
 
     private boolean isSameOrChildLocation(
             Location bookingLocation,
-            Location expertLocation
+            Location productLocation
     ) {
         Location current = bookingLocation;
 
         while (current != null) {
-            if (current.getLocationId().equals(expertLocation.getLocationId())) {
+            if (current.getLocationId().equals(productLocation.getLocationId())) {
                 return true;
             }
 
