@@ -60,6 +60,7 @@ public class FileService {
         return s3Service.downloadFile(fileUpload.getStoredName());
     }
 
+
     public FileUpload getFileInfo(String fileKey) {
         return fileUploadRepository.findByStoredName(fileKey)
                 .orElseThrow(() -> new IllegalArgumentException("파일을 찾을 수 없습니다."));

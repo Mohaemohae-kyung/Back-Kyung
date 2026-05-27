@@ -93,8 +93,11 @@ public class ServiceRequest extends BaseEntity {
             BigDecimal budget,
             LocalDateTime preferredDate
     ) {
-        if (!isPending()) {
-            throw new IllegalStateException("대기 중인 견적 요청만 수정할 수 있습니다.");
+        if (!isPending() && !isChatting()) {
+
+            throw new IllegalStateException(
+                    "진행 중이거나 대기 중인 견적 요청만 수정할 수 있습니다."
+            );
         }
 
         if (title != null && !title.isBlank()) {
@@ -115,8 +118,11 @@ public class ServiceRequest extends BaseEntity {
     }
 
     public void startChatting() {
-        if (!isPending()) {
-            throw new IllegalStateException("대기 중인 견적 요청만 승인할 수 있습니다.");
+        if (!isPending() && !isChatting()) {
+
+            throw new IllegalStateException(
+                    "진행 중이거나 대기 중인 견적 요청만 수정할 수 있습니다."
+            );
         }
 
         this.status = RequestStatus.CHATTING;

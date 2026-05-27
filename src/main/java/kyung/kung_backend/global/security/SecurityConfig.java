@@ -132,6 +132,8 @@ public class SecurityConfig {
 
                         .requestMatchers(HttpMethod.GET, "/api/expert-services/**").permitAll()
 
+                        .requestMatchers("/api/portfolios/viewer").permitAll()
+
                         // 고수 서비스 등록은 로그인 필요
                         .requestMatchers(HttpMethod.POST, "/api/expert-services/**").authenticated()
 
@@ -183,6 +185,8 @@ public class SecurityConfig {
         config.setAllowedOriginPatterns(List.of(
                 "http://localhost:3000",
                 "http://localhost:5173",
+                "https://can-fly.shop",
+                "https://www.can-fly.shop",
 
                 // 모든 Vercel 배포 프론트엔드 허용 고태완식 해결법
                 "https://*.vercel.app"

@@ -27,13 +27,18 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Objects;
 import java.util.UUID;
+import java.math.BigDecimal;
+
+import kyung.kung_backend.domain.chat.entity.ChatMessage;
+import kyung.kung_backend.domain.chat.entity.ChatRoom;
+import kyung.kung_backend.domain.chat.repository.ChatMessageRepository;
+import kyung.kung_backend.domain.chat.repository.ChatRoomRepository;
 
 @Service
 @RequiredArgsConstructor
@@ -52,6 +57,8 @@ public class PaymentService {
     private final ServiceRequestRepository serviceRequestRepository;
     private final UserRepository userRepository;
     private final MockPgService mockPgService;
+    private final ChatRoomRepository chatRoomRepository;
+    private final ChatMessageRepository chatMessageRepository;
 
     @Transactional
     public BookingCheckoutResponse getBookingCheckout(
@@ -183,18 +190,52 @@ public class PaymentService {
 
         Payment payment = prepareReadyPayment(
                 transaction,
-                user,
+                serviceRequest.getUser(),
                 userCoupon,
                 request.getPaymentMethod(),
                 finalAmount,
                 request.getPgProvider()
         );
 
-        return PaymentPrepareResponse.of(payment, transaction, getOrderName(serviceRequest));
+        // =========================
+        // 결제 요청 채팅 메시지 생성
+        // =========================
+        ChatRoom chatRoom = chatRoomRepository
+                .findByServiceRequest_RequestId(serviceRequest.getRequestId())
+                .orElse(null);
+
+        if (chatRoom != null) {
+
+            String paymentMessageContent =
+                    finalAmount.toPlainString()
+                            + "원 결제 요청";
+
+            ChatMessage chatMessage =
+                    ChatMessage.createPaymentMessage(
+                            chatRoom,
+                            seller,
+                            paymentMessageContent,
+                            payment.getPaymentId()
+                    );
+
+            chatMessageRepository.save(chatMessage);
+        }
+
+        return PaymentPrepareResponse.of(
+                payment,
+                transaction,
+                getOrderName(serviceRequest)
+        );
     }
 
     @Transactional
     public PaymentResponse confirmPayment(PaymentConfirmRequest request) {
+
+        System.out.println("===== confirm request =====");
+        System.out.println(request.getOrderId());
+        System.out.println(request.getPaymentKey());
+        System.out.println(request.getAmount());
+
         Payment payment = paymentRepository.findByTransactionOrderId(request.getOrderId())
                 .orElseThrow(() -> GeneralException.of(ErrorCode.PAYMENT_NOT_FOUND));
 
@@ -298,9 +339,9 @@ public class PaymentService {
             User loginUser,
             Long paymentId
     ) {
-        User user = findLoginUser(loginUser);
+        findLoginUser(loginUser);
 
-        Payment payment = paymentRepository.findByPaymentIdAndUserUserId(paymentId, user.getUserId())
+        Payment payment = paymentRepository.findById(paymentId)
                 .orElseThrow(() -> GeneralException.of(ErrorCode.PAYMENT_NOT_FOUND));
 
         return PaymentResponse.from(payment);
@@ -403,7 +444,14 @@ public class PaymentService {
                         throw GeneralException.of(ErrorCode.PAYMENT_INVALID_STATUS);
                     }
 
-                    payment.resetReady(transaction, userCoupon, paymentMethod, finalAmount, pgProvider);
+                    payment.resetReady(
+                            transaction,
+                            user,
+                            userCoupon,
+                            paymentMethod,
+                            finalAmount,
+                            pgProvider
+                    );
                     return payment;
                 })
                 .orElseGet(() -> paymentRepository.save(Payment.createReady(
@@ -433,7 +481,22 @@ public class PaymentService {
                 .findByRequestIdAndDeletedAtIsNull(requestId)
                 .orElseThrow(() -> GeneralException.of(ErrorCode.NOT_FOUND));
 
-        if (!serviceRequest.getUser().getUserId().equals(user.getUserId())) {
+        Long requesterId =
+                serviceRequest.getUser().getUserId();
+
+        Long expertId =
+                serviceRequest.getExpertService()
+                        .getExpertProfile()
+                        .getUser()
+                        .getUserId();
+
+        // =========================
+        // 요청자 또는 고수만 접근 가능
+        if (
+                !requesterId.equals(user.getUserId())
+                        &&
+                        !expertId.equals(user.getUserId())
+        ){
             throw GeneralException.of(ErrorCode.FORBIDDEN);
         }
 
@@ -448,7 +511,6 @@ public class PaymentService {
         if (serviceRequest.getExpertService() == null
                 || serviceRequest.getExpertService().getExpertProfile() == null
                 || serviceRequest.getExpertService().getExpertProfile().getUser() == null
-                || serviceRequest.getPreferredDate() == null
                 || serviceRequest.getBudget() == null
                 || serviceRequest.getBudget().compareTo(ZERO) <= 0) {
             throw GeneralException.of(ErrorCode.BOOKING_NOT_PAYABLE);

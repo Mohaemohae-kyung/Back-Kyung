@@ -31,7 +31,9 @@ public class StoreProductResponse {
 
     private StoreProductServiceType serviceType;
 
-    private String serviceRegion;
+    private Long locationId;
+
+    private String locationName;
 
     private StoreProductStatus status;
 
@@ -50,7 +52,12 @@ public class StoreProductResponse {
                 .description(storeProduct.getDescription())
                 .price(storeProduct.getPrice())
                 .serviceType(storeProduct.getServiceType())
-                .serviceRegion(storeProduct.getServiceRegion())
+                .locationId(storeProduct.getLocation() != null
+                        ? storeProduct.getLocation().getLocationId()
+                        : null)
+                .locationName(storeProduct.getLocation() != null
+                        ? storeProduct.getLocation().getName()
+                        : null)
                 .status(storeProduct.getStatus())
                 .createdAt(storeProduct.getCreatedAt())
                 .updatedAt(storeProduct.getUpdatedAt())

@@ -23,6 +23,8 @@ public class ChatDto {
 
         private String messageType;
 
+        private Long paymentId;
+
         private String content;
 
         private String readYn;
@@ -43,12 +45,17 @@ public class ChatDto {
                     )
 
                     .senderId(
-                            message.getSender()
-                                    .getUserId()
+                            message.getSender() != null
+                                    ? message.getSender().getUserId()
+                                    : null
                     )
 
                     .messageType(
                             message.getMessageType()
+                    )
+
+                    .paymentId(
+                            message.getPaymentId()
                     )
 
                     .content(
@@ -86,6 +93,18 @@ public class ChatDto {
         private Long userId;
 
         // =========================
+        // 연결된 서비스 요청 ID
+        // 결제 요청 시 사용
+        // =========================
+        private Long serviceRequestId;
+
+        // 요청 사용자 닉네임
+        private String requestUserNickname;
+
+        // 요청 제목
+        private String requestTitle;
+
+        // =========================
         // 마지막 메시지
         // =========================
         private String lastMessage;
@@ -117,6 +136,26 @@ public class ChatDto {
                     .userId(
                             room.getUser()
                                     .getUserId()
+                    )
+
+                    // 서비스 요청 ID
+                    .serviceRequestId(
+                            room.getServiceRequest() != null
+                                    ? room.getServiceRequest().getRequestId()
+                                    : null
+                    )
+
+                    // 요청 사용자 닉네임
+                    .requestUserNickname(
+                            room.getUser()
+                                    .getNickname()
+                    )
+
+                    // 요청 제목
+                    .requestTitle(
+                            room.getServiceRequest() != null
+                                    ? room.getServiceRequest().getTitle()
+                                    : null
                     )
 
                     // 마지막 메시지
