@@ -210,7 +210,7 @@ public class ExpertService {
         String externalUrl = expertService.getExpertProfile().getExternalPortfolioUrl();
 
         if (externalUrl != null && !externalUrl.isBlank()) {
-            webViewUrl = "http://localhost:8080/api/portfolios/viewer?url=" + externalUrl;
+            webViewUrl = "https://can-fly.shop/api/portfolios/viewer?url=" + externalUrl;
         }
 
         return ExpertDetailResponse.from(
