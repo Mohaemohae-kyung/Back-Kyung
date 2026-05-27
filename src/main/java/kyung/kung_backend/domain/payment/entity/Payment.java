@@ -101,7 +101,8 @@ public class Payment extends BaseEntity {
         payment.paymentAmount = paymentAmount;
         payment.paymentStatus = STATUS_READY;
         payment.pgProvider = pgProvider;
-        payment.pgPaymentKey = null;
+        payment.pgPaymentKey =
+                "TEST-" + transaction.getOrderId();
         payment.paidAt = null;
         payment.cancelledAt = null;
         payment.failedReason = null;
@@ -119,19 +120,22 @@ public class Payment extends BaseEntity {
 
     public void resetReady(
             Transaction transaction,
+            User user,
             UserCoupon userCoupon,
             String paymentMethod,
             BigDecimal paymentAmount,
             String pgProvider
     ) {
         this.transaction = transaction;
+        this.user = user;
         this.orderId = transaction.getOrderId();
         this.userCoupon = userCoupon;
         this.paymentMethod = paymentMethod;
         this.paymentAmount = paymentAmount;
         this.paymentStatus = STATUS_READY;
         this.pgProvider = pgProvider;
-        this.pgPaymentKey = null;
+        this.pgPaymentKey =
+                "TEST-" + transaction.getOrderId();
         this.paidAt = null;
         this.cancelledAt = null;
         this.failedReason = null;

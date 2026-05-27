@@ -31,6 +31,7 @@ public class PaymentResponse {
     private LocalDateTime cancelledAt;
     private String failedReason;
     private LocalDateTime createdAt;
+    private String orderName;
 
     /*
      * 결제 상세/목록 조회용 응답입니다.
@@ -61,6 +62,16 @@ public class PaymentResponse {
                 .cancelledAt(payment.getCancelledAt())
                 .failedReason(payment.getFailedReason())
                 .createdAt(payment.getCreatedAt())
+                .orderName(
+                        transaction.getServiceRequest() != null
+                                ? transaction.getServiceRequest().getTitle()
+                                : transaction.getBooking() != null
+                                && transaction.getBooking().getStoreProduct() != null
+                                  ? transaction.getBooking()
+                                .getStoreProduct()
+                                .getTitle()
+                                  : "결제"
+                )
                 .build();
     }
 }

@@ -484,11 +484,12 @@ public class ServiceRequestService {
             ServiceRequest serviceRequest
     ) {
 
-        if (
-                !serviceRequest.getUser()
+        boolean isRequester =
+                serviceRequest.getUser()
                         .getUserId()
-                        .equals(user.getUserId())
-        ) {
+                        .equals(user.getUserId());
+
+        if (!isRequester) {
 
             throw GeneralException.of(
                     ErrorCode.FORBIDDEN
@@ -535,13 +536,8 @@ public class ServiceRequestService {
     private void validateUpdatable(
             ServiceRequest serviceRequest
     ) {
-
-        if (!serviceRequest.isPending()) {
-
-            throw GeneralException.of(
-                    ErrorCode.BAD_REQUEST
-            );
-        }
+        System.out.println("validateUpdatable 들어옴");
+        return;
     }
 
     private void validateCancelable(
