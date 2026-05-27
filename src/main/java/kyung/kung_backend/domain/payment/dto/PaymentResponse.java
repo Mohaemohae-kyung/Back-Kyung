@@ -65,7 +65,12 @@ public class PaymentResponse {
                 .orderName(
                         transaction.getServiceRequest() != null
                                 ? transaction.getServiceRequest().getTitle()
-                                : null
+                                : transaction.getBooking() != null
+                                && transaction.getBooking().getStoreProduct() != null
+                                  ? transaction.getBooking()
+                                .getStoreProduct()
+                                .getTitle()
+                                  : "결제"
                 )
                 .build();
     }

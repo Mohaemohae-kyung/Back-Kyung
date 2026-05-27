@@ -120,12 +120,14 @@ public class Payment extends BaseEntity {
 
     public void resetReady(
             Transaction transaction,
+            User user,
             UserCoupon userCoupon,
             String paymentMethod,
             BigDecimal paymentAmount,
             String pgProvider
     ) {
         this.transaction = transaction;
+        this.user = user;
         this.orderId = transaction.getOrderId();
         this.userCoupon = userCoupon;
         this.paymentMethod = paymentMethod;

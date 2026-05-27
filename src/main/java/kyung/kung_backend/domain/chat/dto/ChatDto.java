@@ -101,6 +101,9 @@ public class ChatDto {
         // 요청 사용자 닉네임
         private String requestUserNickname;
 
+        // 요청 제목
+        private String requestTitle;
+
         // =========================
         // 마지막 메시지
         // =========================
@@ -146,6 +149,13 @@ public class ChatDto {
                     .requestUserNickname(
                             room.getUser()
                                     .getNickname()
+                    )
+
+                    // 요청 제목
+                    .requestTitle(
+                            room.getServiceRequest() != null
+                                    ? room.getServiceRequest().getTitle()
+                                    : null
                     )
 
                     // 마지막 메시지

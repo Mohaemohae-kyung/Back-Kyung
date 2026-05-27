@@ -190,7 +190,7 @@ public class PaymentService {
 
         Payment payment = prepareReadyPayment(
                 transaction,
-                user,
+                serviceRequest.getUser(),
                 userCoupon,
                 request.getPaymentMethod(),
                 finalAmount,
@@ -444,7 +444,14 @@ public class PaymentService {
                         throw GeneralException.of(ErrorCode.PAYMENT_INVALID_STATUS);
                     }
 
-                    payment.resetReady(transaction, userCoupon, paymentMethod, finalAmount, pgProvider);
+                    payment.resetReady(
+                            transaction,
+                            user,
+                            userCoupon,
+                            paymentMethod,
+                            finalAmount,
+                            pgProvider
+                    );
                     return payment;
                 })
                 .orElseGet(() -> paymentRepository.save(Payment.createReady(
@@ -485,11 +492,11 @@ public class PaymentService {
 
         // =========================
         // 요청자 또는 고수만 접근 가능
-        // =========================
         if (
                 !requesterId.equals(user.getUserId())
-                        && !expertId.equals(user.getUserId())
-        ) {
+                        &&
+                        !expertId.equals(user.getUserId())
+        ){
             throw GeneralException.of(ErrorCode.FORBIDDEN);
         }
 
