@@ -21,6 +21,7 @@ import kyung.kung_backend.domain.user.repository.UserRepository;
 import kyung.kung_backend.global.exception.GeneralException;
 import kyung.kung_backend.global.response.ErrorCode;
 import lombok.RequiredArgsConstructor;
+import org.springframework.web.client.RestTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -260,6 +261,28 @@ public class PaymentService {
         }
 
         validatePgPaymentKeyNotUsed(request.getPaymentKey(), payment);
+
+        // =======================================================
+        // 결제 서버(Node.js, LLM 서버)로 토스 승인 실제 위임 호출
+        // =======================================================
+        try {
+            RestTemplate restTemplate = new RestTemplate();
+            String paymentServerUrl = "http://100.104.59.126:4000/api/payments/toss-confirm";
+            org.springframework.http.ResponseEntity<String> response = 
+                    restTemplate.postForEntity(paymentServerUrl, request, String.class);
+                    
+            if (!response.getStatusCode().is2xxSuccessful()) {
+                payment.fail("결제 서버 승인 처리 실패");
+                transaction.markFailed();
+                throw GeneralException.of(ErrorCode.INTERNAL_SERVER_ERROR);
+            }
+        } catch (Exception e) {
+            System.err.println("Node Payment Server 통신 오류: " + e.getMessage());
+            payment.fail("결제 서버 통신 오류");
+            transaction.markFailed();
+            throw GeneralException.of(ErrorCode.INTERNAL_SERVER_ERROR);
+        }
+        // =======================================================
 
         LocalDateTime paidAt = now;
         payment.complete(request.getPaymentKey(), paidAt);
