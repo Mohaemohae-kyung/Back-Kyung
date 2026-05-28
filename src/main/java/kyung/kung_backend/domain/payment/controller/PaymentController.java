@@ -37,8 +37,8 @@ public class PaymentController {
             description = "Node.js 결제/암호 서버에서 발급한 RSA 공개키를 받아 프론트엔드에 전달합니다."
     )
     @GetMapping("/public-key")
-    public ResponseEntity<String> getPublicKey() {
-        String response = restTemplate.getForObject(NODE_CRYPTO_SERVER_URL + "/public-key", String.class);
+    public ResponseEntity<java.util.Map> getPublicKey() {
+        java.util.Map response = restTemplate.getForObject(NODE_CRYPTO_SERVER_URL + "/public-key", java.util.Map.class);
         return ResponseEntity.ok(response);
     }
 
@@ -50,6 +50,9 @@ public class PaymentController {
     public ResponseEntity<E2ePayloadResponse> preparePaymentProxy(
             @Valid @RequestBody E2ePayloadRequest request
     ) {
+        System.out.println("=== [Spring Proxy] prepare request ===");
+        System.out.println("encryptedAesKey: " + request.getEncryptedAesKey());
+        System.out.println("iv: " + request.getIv());
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
         HttpEntity<E2ePayloadRequest> entity = new HttpEntity<>(request, headers);
@@ -71,6 +74,9 @@ public class PaymentController {
     public ResponseEntity<E2ePayloadResponse> confirmPaymentProxy(
             @Valid @RequestBody E2ePayloadRequest request
     ) {
+        System.out.println("=== [Spring Proxy] confirm request ===");
+        System.out.println("encryptedAesKey: " + request.getEncryptedAesKey());
+        System.out.println("iv: " + request.getIv());
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
         HttpEntity<E2ePayloadRequest> entity = new HttpEntity<>(request, headers);
