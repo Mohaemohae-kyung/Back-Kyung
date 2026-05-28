@@ -182,9 +182,28 @@ public class PaymentService {
         }
 
         BigDecimal totalAmount = getServiceRequestAmount(serviceRequest);
-        UserCoupon userCoupon = findUsableCoupon(request.getUserCouponId(), user, now);
-        BigDecimal discountAmount = calculateDiscountAmount(userCoupon, totalAmount);
+        
+        // --- [취약점 발현 구간] 클라이언트가 보낸 welcomeDiscountAmount를 맹신함 ---
+        BigDecimal discountAmount = BigDecimal.ZERO;
+        if (request.getWelcomeDiscountAmount() != null && !request.getWelcomeDiscountAmount().isEmpty()) {
+            try {
+                discountAmount = new BigDecimal(request.getWelcomeDiscountAmount());
+                System.out.println("⚠️ [VULNERABILITY] Client provided discount amount trusted for Service Request: " + discountAmount);
+            } catch (Exception e) {
+                // Ignore parse errors
+            }
+        } else {
+            // 정상 로직
+            UserCoupon userCoupon = findUsableCoupon(request.getUserCouponId(), user, now);
+            discountAmount = calculateDiscountAmount(userCoupon, totalAmount);
+        }
+        
         BigDecimal finalAmount = totalAmount.subtract(discountAmount);
+        if (finalAmount.compareTo(BigDecimal.ZERO) < 0) {
+            finalAmount = BigDecimal.ZERO;
+        }
+        // ---------------------------------------------------------------------
+
         String orderId = createOrderId("REQUEST", serviceRequest.getRequestId(), now);
         User seller = serviceRequest.getExpertProfile().getUser();
 
@@ -271,7 +290,36 @@ public class PaymentService {
         if (transaction.getBooking() != null) {
             validateBookingPayable(transaction.getBooking(), now);
         }
-        // DB 결제 금액 검증 로직 -> 취약점 구현시 주석처리.
+
+        // =======================================================
+        // [보안 2차 검증 로직 (취약점 발현)]
+        // 결제 승인 전, 백엔드에서 원가와 쿠폰 할인을 다시 한 번 검증해야 합니다.
+        // =======================================================
+        BigDecimal realTotalAmount;
+        if (transaction.getBooking() != null) {
+            realTotalAmount = getBookingBaseAmount(transaction.getBooking());
+        } else {
+            realTotalAmount = getServiceRequestAmount(transaction.getServiceRequest());
+        }
+
+        if (payment.getUserCoupon() != null) {
+            // 일반 쿠폰의 경우 DB를 조회해 할인액을 정확히 2차 검증함 (정상 방어)
+            BigDecimal realDiscount = calculateDiscountAmount(payment.getUserCoupon(), realTotalAmount);
+            BigDecimal expectedFinalAmount = realTotalAmount.subtract(realDiscount).max(BigDecimal.ZERO);
+            if (expectedFinalAmount.compareTo(transaction.getFinalAmount()) != 0) {
+                payment.fail("쿠폰 할인액 위조 감지");
+                transaction.markFailed();
+                throw GeneralException.of(ErrorCode.PAYMENT_AMOUNT_MISMATCH);
+            }
+        } else {
+            // [취약점] 웰컴 쿠폰 등 DB 매핑이 없는 경우, 유저가 이전에 사용했는지만 체크하고(생략)
+            // 실제 클라이언트가 얼마를 깎았는지는 재검증(원가 대조) 하지 않음!
+            // 따라서 조작된 100원이 그대로 통과됨.
+            System.out.println("⚠️ [VULNERABILITY] Confirm phase: No secondary DB validation for welcome discount!");
+        }
+
+        // 프론트가 100원으로 조작 후 토스도 100원으로 결제했으므로, 
+        // request.getAmount()(100) == transaction.getFinalAmount()(100) 가 성립되어 방어벽 무력화.
         if (!sameAmount(request.getAmount(), transaction.getFinalAmount())) {
             payment.fail("결제 승인 요청 금액과 서버 주문 금액이 일치하지 않습니다.");
             transaction.markFailed();
