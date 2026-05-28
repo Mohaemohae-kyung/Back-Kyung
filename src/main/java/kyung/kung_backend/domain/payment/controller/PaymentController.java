@@ -43,10 +43,25 @@ public class PaymentController {
     }
 
     @Operation(
+            summary = "결제 준비 (기존/평문)",
+            description = "PG 결제창을 띄우기 직전에 호출하는 API입니다. 마켓/견적 등 기존 결제 화면에서 사용합니다."
+    )
+    @PostMapping("/prepare")
+    public ResponseEntity<ApiResponse<PaymentPrepareResponse>> preparePayment(
+            @AuthenticationPrincipal User user,
+            @Valid @RequestBody PaymentPrepareRequest request
+    ) {
+        PaymentPrepareResponse response = paymentService.preparePayment(user, request);
+        return ResponseEntity
+                .status(HttpStatus.CREATED)
+                .body(ApiResponse.onSuccess(SuccessCode.CREATED, response));
+    }
+
+    @Operation(
             summary = "결제 준비 (E2E Proxy)",
             description = "클라이언트의 E2E 암호문을 Node.js 서버로 릴레이합니다."
     )
-    @PostMapping("/prepare")
+    @PostMapping("/prepare-e2e")
     public ResponseEntity<E2ePayloadResponse> preparePaymentProxy(
             @RequestBody java.util.Map<String, String> request
     ) {
@@ -69,10 +84,21 @@ public class PaymentController {
     }
 
     @Operation(
+            summary = "결제 승인 처리 (기존/평문)",
+            description = "PG 결제 성공 후 호출하는 승인 API입니다. 기존 결제 화면에서 사용합니다."
+    )
+    @PostMapping("/confirm")
+    public ApiResponse<PaymentResponse> confirmPayment(
+            @Valid @RequestBody PaymentConfirmRequest request
+    ) {
+        return ApiResponse.onSuccess(SuccessCode.OK, paymentService.confirmPayment(request));
+    }
+
+    @Operation(
             summary = "결제 승인 (E2E Proxy)",
             description = "클라이언트의 E2E 승인 암호문을 Node.js 서버로 릴레이합니다."
     )
-    @PostMapping("/confirm")
+    @PostMapping("/confirm-e2e")
     public ResponseEntity<E2ePayloadResponse> confirmPaymentProxy(
             @RequestBody java.util.Map<String, String> request
     ) {
