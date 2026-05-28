@@ -57,7 +57,7 @@ public class User extends BaseEntity {
     @Column(name = "PROFILE_IMAGE_URL", length = 500)
     private String profileImageUrl;
 
-    @Column(name = "WELCOME_COUPON_AVAILABLE", nullable = false, length = 1)
+    @Column(name = "WELCOME_COUPON_AVAILABLE", length = 1)
     private String welcomeCouponAvailable = "Y";
 
     public static User createUser(String email, String encodedPassword, String name, String nickname, String phone) {
