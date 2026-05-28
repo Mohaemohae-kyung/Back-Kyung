@@ -1,8 +1,9 @@
 package kyung.kung_backend.domain.request.entity;
 
 import jakarta.persistence.*;
+import kyung.kung_backend.domain.category.entity.ServiceCategory;
+import kyung.kung_backend.domain.expert.entity.ExpertProfile;
 import kyung.kung_backend.domain.request.enums.RequestStatus;
-import kyung.kung_backend.domain.servicepost.entity.ExpertService;
 import kyung.kung_backend.domain.user.entity.User;
 import kyung.kung_backend.global.common.BaseEntity;
 import lombok.AccessLevel;
@@ -33,8 +34,12 @@ public class ServiceRequest extends BaseEntity {
     private User user;
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "EXPERT_SERVICE_ID", nullable = false)
-    private ExpertService expertService;
+    @JoinColumn(name = "EXPERT_PROFILE_ID", nullable = false)
+    private ExpertProfile expertProfile;
+
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "CATEGORY_ID", nullable = false)
+    private ServiceCategory category;
 
     @Column(name = "TITLE", nullable = false, length = 200)
     private String title;
@@ -67,7 +72,8 @@ public class ServiceRequest extends BaseEntity {
 
     public static ServiceRequest create(
             User user,
-            ExpertService expertService,
+            ExpertProfile expertProfile,
+            ServiceCategory category,
             String title,
             String content,
             BigDecimal budget,
@@ -76,7 +82,8 @@ public class ServiceRequest extends BaseEntity {
         ServiceRequest serviceRequest = new ServiceRequest();
 
         serviceRequest.user = user;
-        serviceRequest.expertService = expertService;
+        serviceRequest.expertProfile = expertProfile;
+        serviceRequest.category = category;
         serviceRequest.title = title;
         serviceRequest.content = content;
         serviceRequest.budget = budget;

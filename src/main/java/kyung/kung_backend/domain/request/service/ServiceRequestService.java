@@ -1,28 +1,23 @@
 package kyung.kung_backend.domain.request.service;
 
+import kyung.kung_backend.domain.category.entity.ServiceCategory;
+import kyung.kung_backend.domain.category.repository.ServiceCategoryRepository;
 import kyung.kung_backend.domain.chat.entity.ChatRoom;
 import kyung.kung_backend.domain.chat.repository.ChatMessageRepository;
 import kyung.kung_backend.domain.chat.repository.ChatRoomRepository;
-
 import kyung.kung_backend.domain.expert.entity.ExpertProfile;
+import kyung.kung_backend.domain.expert.repository.ExpertProfileRepository;
 import kyung.kung_backend.domain.request.dto.ServiceRequestCreateRequest;
 import kyung.kung_backend.domain.request.dto.ServiceRequestResponse;
 import kyung.kung_backend.domain.request.dto.ServiceRequestUpdateRequest;
-
 import kyung.kung_backend.domain.request.entity.ServiceRequest;
 import kyung.kung_backend.domain.request.repository.ServiceRequestRepository;
-
-import kyung.kung_backend.domain.servicepost.entity.ExpertService;
 import kyung.kung_backend.domain.servicepost.repository.ExpertServiceRepository;
-
 import kyung.kung_backend.domain.user.entity.User;
 import kyung.kung_backend.domain.user.repository.UserRepository;
-
 import kyung.kung_backend.global.exception.GeneralException;
 import kyung.kung_backend.global.response.ErrorCode;
-
 import lombok.RequiredArgsConstructor;
-
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -35,23 +30,13 @@ public class ServiceRequestService {
 
     private static final String ROLE_ADMIN = "ADMIN";
 
-    private final ServiceRequestRepository
-            serviceRequestRepository;
-
-    private final ExpertServiceRepository
-            expertServiceRepository;
-
-    private final UserRepository
-            userRepository;
-
-    private final ChatRoomRepository
-            chatRoomRepository;
-
-    // =========================
-    // 추가
-    // =========================
-    private final ChatMessageRepository
-            chatMessageRepository;
+    private final ServiceRequestRepository serviceRequestRepository;
+    private final ExpertProfileRepository expertProfileRepository;
+    private final ServiceCategoryRepository serviceCategoryRepository;
+    private final ExpertServiceRepository expertServiceRepository;
+    private final UserRepository userRepository;
+    private final ChatRoomRepository chatRoomRepository;
+    private final ChatMessageRepository chatMessageRepository;
 
     // =========================
     // 견적 요청 생성
@@ -61,18 +46,36 @@ public class ServiceRequestService {
             User loginUser,
             ServiceRequestCreateRequest request
     ) {
-
         User user = findLoginUser(loginUser);
 
-        ExpertService expertService =
-                findExpertService(
-                        request.getExpertServiceId()
+        ExpertProfile expertProfile =
+                expertProfileRepository.findById(request.getExpertProfileId())
+                        .orElseThrow(() ->
+                                GeneralException.of(ErrorCode.NOT_FOUND)
+                        );
+
+        ServiceCategory category =
+                serviceCategoryRepository.findById(request.getCategoryId())
+                        .orElseThrow(() ->
+                                GeneralException.of(ErrorCode.NOT_FOUND)
+                        );
+
+        // 선택한 categoryId가 해당 고수의 서비스 분야에 포함되어 있는지 검증
+        boolean hasCategory =
+                expertServiceRepository.existsByExpertProfileAndCategory(
+                        expertProfile,
+                        category
                 );
+
+        if (!hasCategory) {
+            throw GeneralException.of(ErrorCode.BAD_REQUEST);
+        }
 
         ServiceRequest serviceRequest =
                 ServiceRequest.create(
                         user,
-                        expertService,
+                        expertProfile,
+                        category,
                         request.getTitle(),
                         request.getContent(),
                         request.getBudget(),
@@ -80,13 +83,9 @@ public class ServiceRequestService {
                 );
 
         ServiceRequest savedServiceRequest =
-                serviceRequestRepository.save(
-                        serviceRequest
-                );
+                serviceRequestRepository.save(serviceRequest);
 
-        return ServiceRequestResponse.from(
-                savedServiceRequest
-        );
+        return ServiceRequestResponse.from(savedServiceRequest);
     }
 
     // =========================
@@ -95,7 +94,6 @@ public class ServiceRequestService {
     public List<ServiceRequestResponse> getMyServiceRequests(
             User loginUser
     ) {
-
         User user = findLoginUser(loginUser);
 
         return serviceRequestRepository
@@ -104,7 +102,6 @@ public class ServiceRequestService {
                 )
                 .stream()
                 .map(request -> {
-
                     Long chatRoomId =
                             chatRoomRepository
                                     .findByServiceRequest_RequestId(
@@ -113,30 +110,19 @@ public class ServiceRequestService {
                                     .map(ChatRoom::getChatRoomId)
                                     .orElse(null);
 
-                    // =========================
-                    // unreadCount 계산
-                    // =========================
                     Long unreadCount = 0L;
 
                     if (chatRoomId != null) {
-
                         unreadCount =
-
-                                chatMessageRepository
-                                        .countUnread(
-
-                                                chatRoomId,
-
-                                                user.getUserId()
-                                        );
+                                chatMessageRepository.countUnread(
+                                        chatRoomId,
+                                        user.getUserId()
+                                );
                     }
 
                     return ServiceRequestResponse.from(
-
                             request,
-
                             chatRoomId,
-
                             unreadCount
                     );
                 })
@@ -149,7 +135,6 @@ public class ServiceRequestService {
     public List<ServiceRequestResponse> getReceivedServiceRequests(
             User loginUser
     ) {
-
         User user = findLoginUser(loginUser);
 
         validateExpert(user);
@@ -160,7 +145,6 @@ public class ServiceRequestService {
                 )
                 .stream()
                 .map(request -> {
-
                     Long chatRoomId =
                             chatRoomRepository
                                     .findByServiceRequest_RequestId(
@@ -169,30 +153,19 @@ public class ServiceRequestService {
                                     .map(ChatRoom::getChatRoomId)
                                     .orElse(null);
 
-                    // =========================
-                    // unreadCount 계산
-                    // =========================
                     Long unreadCount = 0L;
 
                     if (chatRoomId != null) {
-
                         unreadCount =
-
-                                chatMessageRepository
-                                        .countUnread(
-
-                                                chatRoomId,
-
-                                                user.getUserId()
-                                        );
+                                chatMessageRepository.countUnread(
+                                        chatRoomId,
+                                        user.getUserId()
+                                );
                     }
 
                     return ServiceRequestResponse.from(
-
                             request,
-
                             chatRoomId,
-
                             unreadCount
                     );
                 })
@@ -206,7 +179,6 @@ public class ServiceRequestService {
             User loginUser,
             Long requestId
     ) {
-
         User user = findLoginUser(loginUser);
 
         ServiceRequest serviceRequest =
@@ -225,33 +197,23 @@ public class ServiceRequestService {
                         .map(ChatRoom::getChatRoomId)
                         .orElse(null);
 
-        // =========================
-        // unreadCount 계산
-        // =========================
         Long unreadCount = 0L;
 
         if (chatRoomId != null) {
-
             unreadCount =
-
-                    chatMessageRepository
-                            .countUnread(
-
-                                    chatRoomId,
-
-                                    user.getUserId()
-                            );
+                    chatMessageRepository.countUnread(
+                            chatRoomId,
+                            user.getUserId()
+                    );
         }
 
         return ServiceRequestResponse.from(
-
                 serviceRequest,
-
                 chatRoomId,
-
                 unreadCount
         );
     }
+
     // =========================
     // 요청 수정
     // =========================
@@ -261,7 +223,6 @@ public class ServiceRequestService {
             Long requestId,
             ServiceRequestUpdateRequest request
     ) {
-
         User user = findLoginUser(loginUser);
 
         ServiceRequest serviceRequest =
@@ -303,7 +264,6 @@ public class ServiceRequestService {
             User loginUser,
             Long requestId
     ) {
-
         User user = findLoginUser(loginUser);
 
         ServiceRequest serviceRequest =
@@ -340,7 +300,6 @@ public class ServiceRequestService {
             User loginUser,
             Long requestId
     ) {
-
         User user = findLoginUser(loginUser);
 
         ServiceRequest serviceRequest =
@@ -349,52 +308,26 @@ public class ServiceRequestService {
         validateExpert(user);
 
         Long requestExpertUserId =
-                serviceRequest.getExpertService()
-                        .getExpertProfile()
+                serviceRequest.getExpertProfile()
                         .getUser()
                         .getUserId();
 
-        if (
-                !requestExpertUserId.equals(
-                        user.getUserId()
-                )
-        ) {
-
-            throw GeneralException.of(
-                    ErrorCode.FORBIDDEN
-            );
+        if (!requestExpertUserId.equals(user.getUserId())) {
+            throw GeneralException.of(ErrorCode.FORBIDDEN);
         }
 
         validateApprovable(serviceRequest);
 
         serviceRequest.startChatting();
 
-        if (
-                serviceRequest.getExpertService() == null
-                        ||
-                        serviceRequest.getExpertService()
-                                .getExpertProfile() == null
-        ) {
-
-            throw new IllegalArgumentException(
-                    "고수 프로필이 존재하지 않습니다."
-            );
-        }
-
         ChatRoom chatRoom = ChatRoom.create(
-
                 serviceRequest,
-
                 serviceRequest.getUser(),
-
-                serviceRequest.getExpertService()
-                        .getExpertProfile()
+                serviceRequest.getExpertProfile()
         );
 
         ChatRoom savedChatRoom =
-                chatRoomRepository.save(
-                        chatRoom
-                );
+                chatRoomRepository.save(chatRoom);
 
         return ServiceRequestResponse.from(
                 serviceRequest,
@@ -410,7 +343,6 @@ public class ServiceRequestService {
             User loginUser,
             Long requestId
     ) {
-
         User user = findLoginUser(loginUser);
 
         ServiceRequest serviceRequest =
@@ -422,60 +354,32 @@ public class ServiceRequestService {
 
         serviceRequest.reject(null);
 
-        return ServiceRequestResponse.from(
-                serviceRequest
-        );
+        return ServiceRequestResponse.from(serviceRequest);
     }
 
     private User findLoginUser(User loginUser) {
-
         if (
-                loginUser == null
-                        ||
+                loginUser == null ||
                         loginUser.getUserId() == null
         ) {
-
-            throw GeneralException.of(
-                    ErrorCode.UNAUTHORIZED
-            );
+            throw GeneralException.of(ErrorCode.UNAUTHORIZED);
         }
 
-        return userRepository.findById(
-                        loginUser.getUserId()
-                )
+        return userRepository.findById(loginUser.getUserId())
                 .orElseThrow(() ->
-                        GeneralException.of(
-                                ErrorCode.UNAUTHORIZED
-                        )
-                );
-    }
-
-    private ExpertService findExpertService(
-            Long expertServiceId
-    ) {
-
-        return expertServiceRepository.findById(
-                        expertServiceId
-                )
-                .orElseThrow(() ->
-                        GeneralException.of(
-                                ErrorCode.NOT_FOUND
-                        )
+                        GeneralException.of(ErrorCode.UNAUTHORIZED)
                 );
     }
 
     private ServiceRequest findServiceRequest(
             Long requestId
     ) {
-
         return serviceRequestRepository
                 .findByRequestIdAndDeletedAtIsNull(
                         requestId
                 )
                 .orElseThrow(() ->
-                        GeneralException.of(
-                                ErrorCode.NOT_FOUND
-                        )
+                        GeneralException.of(ErrorCode.NOT_FOUND)
                 );
     }
 
@@ -483,17 +387,13 @@ public class ServiceRequestService {
             User user,
             ServiceRequest serviceRequest
     ) {
-
         boolean isRequester =
                 serviceRequest.getUser()
                         .getUserId()
                         .equals(user.getUserId());
 
         if (!isRequester) {
-
-            throw GeneralException.of(
-                    ErrorCode.FORBIDDEN
-            );
+            throw GeneralException.of(ErrorCode.FORBIDDEN);
         }
     }
 
@@ -501,7 +401,6 @@ public class ServiceRequestService {
             User user,
             ServiceRequest serviceRequest
     ) {
-
         if (isAdmin(user)) {
             return;
         }
@@ -512,67 +411,49 @@ public class ServiceRequestService {
                         .equals(user.getUserId());
 
         boolean isExpert =
-                serviceRequest.getExpertService()
-                        .getExpertProfile()
+                serviceRequest.getExpertProfile()
                         .getUser()
                         .getUserId()
                         .equals(user.getUserId());
 
         if (!isRequester && !isExpert) {
-
-            throw GeneralException.of(
-                    ErrorCode.FORBIDDEN
-            );
+            throw GeneralException.of(ErrorCode.FORBIDDEN);
         }
     }
 
     private boolean isAdmin(User user) {
-
-        return ROLE_ADMIN.equals(
-                user.getRole()
-        );
+        return ROLE_ADMIN.equals(user.getRole());
     }
 
     private void validateUpdatable(
             ServiceRequest serviceRequest
     ) {
-        System.out.println("validateUpdatable 들어옴");
-        return;
+        if (!serviceRequest.isPending() && !serviceRequest.isChatting()) {
+            throw GeneralException.of(ErrorCode.BAD_REQUEST);
+        }
     }
 
     private void validateCancelable(
             ServiceRequest serviceRequest
     ) {
-
         if (!serviceRequest.isPending()) {
-
-            throw GeneralException.of(
-                    ErrorCode.BAD_REQUEST
-            );
+            throw GeneralException.of(ErrorCode.BAD_REQUEST);
         }
     }
 
     private void validateApprovable(
             ServiceRequest serviceRequest
     ) {
-
         if (!serviceRequest.isPending()) {
-
-            throw GeneralException.of(
-                    ErrorCode.BAD_REQUEST
-            );
+            throw GeneralException.of(ErrorCode.BAD_REQUEST);
         }
     }
 
     private void validateRejectable(
             ServiceRequest serviceRequest
     ) {
-
         if (!serviceRequest.isPending()) {
-
-            throw GeneralException.of(
-                    ErrorCode.BAD_REQUEST
-            );
+            throw GeneralException.of(ErrorCode.BAD_REQUEST);
         }
     }
 
@@ -580,38 +461,20 @@ public class ServiceRequestService {
             User user,
             ServiceRequest serviceRequest
     ) {
-
-        ExpertService expertService =
-                serviceRequest.getExpertService();
-
         ExpertProfile expertProfile =
-                expertService.getExpertProfile();
+                serviceRequest.getExpertProfile();
 
         User expertUser =
                 expertProfile.getUser();
 
-        if (
-                !expertUser.getUserId()
-                        .equals(user.getUserId())
-        ) {
-
-            throw GeneralException.of(
-                    ErrorCode.FORBIDDEN
-            );
+        if (!expertUser.getUserId().equals(user.getUserId())) {
+            throw GeneralException.of(ErrorCode.FORBIDDEN);
         }
     }
 
     private void validateExpert(User user) {
-
-        if (
-                !"EXPERT".equals(
-                        user.getRole()
-                )
-        ) {
-
-            throw GeneralException.of(
-                    ErrorCode.FORBIDDEN
-            );
+        if (!"EXPERT".equals(user.getRole())) {
+            throw GeneralException.of(ErrorCode.FORBIDDEN);
         }
     }
 }

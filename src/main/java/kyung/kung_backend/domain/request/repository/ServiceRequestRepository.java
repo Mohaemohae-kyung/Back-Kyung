@@ -19,17 +19,16 @@ public interface ServiceRequestRepository extends JpaRepository<ServiceRequest, 
     long countByUserAndStatusInAndDeletedAtIsNull(User user, List<RequestStatus> statuses);
 
     @Query("""
-            select sr
-            from ServiceRequest sr
-            join fetch sr.user u
-            join fetch sr.expertService es
-            join fetch es.expertProfile ep
-            left join fetch es.category c
-            left join fetch ep.mainLocation ml
-            where ep.user.userId = :expertUserId
-            and sr.deletedAt is null
-            order by sr.createdAt desc
-            """)
+        select sr
+        from ServiceRequest sr
+        join fetch sr.user u
+        join fetch sr.expertProfile ep
+        join fetch ep.user eu
+        join fetch sr.category c
+        where eu.userId = :expertUserId
+          and sr.deletedAt is null
+        order by sr.createdAt desc
+        """)
     List<ServiceRequest> findAllReceivedByExpertUserId(
             @Param("expertUserId") Long expertUserId
     );

@@ -16,17 +16,20 @@ public class BookingCheckoutResponse {
 
     private Long bookingId;
     private Long storeProductId;
-    private Long expertServiceId;
+
     private String productTitle;
-    private String serviceTitle;
     private String expertDisplayName;
+
     private LocalDateTime startAt;
     private LocalDateTime endAt;
+
     private Long locationId;
     private String locationName;
     private String locationText;
+
     private String bookingStatus;
     private LocalDateTime paymentExpiresAt;
+
     private BigDecimal baseAmount;
     private BigDecimal discountAmount;
     private BigDecimal finalAmount;
@@ -37,27 +40,84 @@ public class BookingCheckoutResponse {
             BigDecimal discountAmount,
             BigDecimal finalAmount
     ) {
-        StoreProduct storeProduct = booking.getStoreProduct();
-        ExpertProfile expertProfile = storeProduct != null ? storeProduct.getExpertProfile() : null;
-        Location location = booking.getLocation();
+        StoreProduct storeProduct =
+                booking.getStoreProduct();
+
+        ExpertProfile expertProfile =
+                storeProduct != null
+                        ? storeProduct.getExpertProfile()
+                        : null;
+
+        Location location =
+                booking.getLocation();
 
         return BookingCheckoutResponse.builder()
-                .bookingId(booking.getBookingId())
-                .storeProductId(storeProduct != null ? storeProduct.getStoreProductId() : null)
-                .expertServiceId(null)
-                .productTitle(storeProduct != null ? storeProduct.getTitle() : null)
-                .serviceTitle(null)
-                .expertDisplayName(expertProfile != null ? expertProfile.getDisplayName() : null)
-                .startAt(booking.getStartAt())
-                .endAt(booking.getEndAt())
-                .locationId(location != null ? location.getLocationId() : null)
-                .locationName(location != null ? location.getName() : null)
-                .locationText(booking.getLocationText())
-                .bookingStatus(booking.getStatus())
-                .paymentExpiresAt(booking.getPaymentExpiresAt())
-                .baseAmount(baseAmount)
-                .discountAmount(discountAmount)
-                .finalAmount(finalAmount)
+                .bookingId(
+                        booking.getBookingId()
+                )
+
+                .storeProductId(
+                        storeProduct != null
+                                ? storeProduct.getStoreProductId()
+                                : null
+                )
+
+                .productTitle(
+                        storeProduct != null
+                                ? storeProduct.getTitle()
+                                : null
+                )
+
+                .expertDisplayName(
+                        expertProfile != null
+                                ? expertProfile.getDisplayName()
+                                : null
+                )
+
+                .startAt(
+                        booking.getStartAt()
+                )
+
+                .endAt(
+                        booking.getEndAt()
+                )
+
+                .locationId(
+                        location != null
+                                ? location.getLocationId()
+                                : null
+                )
+
+                .locationName(
+                        location != null
+                                ? location.getName()
+                                : null
+                )
+
+                .locationText(
+                        booking.getLocationText()
+                )
+
+                .bookingStatus(
+                        booking.getStatus()
+                )
+
+                .paymentExpiresAt(
+                        booking.getPaymentExpiresAt()
+                )
+
+                .baseAmount(
+                        baseAmount
+                )
+
+                .discountAmount(
+                        discountAmount
+                )
+
+                .finalAmount(
+                        finalAmount
+                )
+
                 .build();
     }
 }

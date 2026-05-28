@@ -1,9 +1,10 @@
 package kyung.kung_backend.domain.request.dto;
 
+import kyung.kung_backend.domain.category.entity.ServiceCategory;
+import kyung.kung_backend.domain.expert.entity.ExpertProfile;
 import kyung.kung_backend.domain.location.entity.Location;
 import kyung.kung_backend.domain.request.entity.ServiceRequest;
 import kyung.kung_backend.domain.request.enums.RequestStatus;
-import kyung.kung_backend.domain.servicepost.entity.ExpertService;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -23,11 +24,11 @@ public class ServiceRequestResponse {
 
     private Long userId;
 
-    private Long expertServiceId;
-
     private Long expertProfileId;
 
     private Long categoryId;
+
+    private String categoryName;
 
     private Long locationId;
 
@@ -72,9 +73,7 @@ public class ServiceRequestResponse {
     }
 
     public static ServiceRequestResponse from(
-
             ServiceRequest serviceRequest,
-
             Long chatRoomId
     ) {
 
@@ -86,34 +85,23 @@ public class ServiceRequestResponse {
     }
 
     public static ServiceRequestResponse from(
-
             ServiceRequest serviceRequest,
-
             Long chatRoomId,
-
             Long unreadCount
     ) {
 
-        ExpertService expertService =
-                serviceRequest.getExpertService();
+        ExpertProfile expertProfile =
+                serviceRequest.getExpertProfile();
+
+        ServiceCategory category =
+                serviceRequest.getCategory();
 
         Location mainLocation = null;
 
-        if (
-
-                expertService != null
-
-                        &&
-
-                        expertService.getExpertProfile()
-                                != null
-        ) {
+        if (expertProfile != null) {
 
             mainLocation =
-
-                    expertService
-                            .getExpertProfile()
-                            .getMainLocation();
+                    expertProfile.getMainLocation();
         }
 
         return ServiceRequestResponse.builder()
@@ -128,77 +116,39 @@ public class ServiceRequestResponse {
                                 .getUserId()
                 )
 
-                .expertServiceId(
-
-                        expertService != null
-
-                                ? expertService
-                                .getExpertServiceId()
-
-                                : null
-                )
-
                 .expertProfileId(
-
-                        expertService != null
-
-                                &&
-
-                                expertService.getExpertProfile()
-                                        != null
-
-                                ? expertService
-                                .getExpertProfile()
-                                .getExpertProfileId()
-
+                        expertProfile != null
+                                ? expertProfile.getExpertProfileId()
                                 : null
                 )
 
                 .categoryId(
+                        category != null
+                                ? category.getCategoryId()
+                                : null
+                )
 
-                        expertService != null
-
-                                &&
-
-                                expertService.getCategory()
-                                        != null
-
-                                ? expertService
-                                .getCategory()
-                                .getCategoryId()
-
+                .categoryName(
+                        category != null
+                                ? category.getName()
                                 : null
                 )
 
                 .locationId(
-
                         mainLocation != null
-
-                                ? mainLocation
-                                .getLocationId()
-
+                                ? mainLocation.getLocationId()
                                 : null
                 )
 
-                // =========================
-                // 채팅방 ID
-                // =========================
                 .chatRoomId(
                         chatRoomId
                 )
 
-                // =========================
-                // unreadCount
-                // =========================
                 .unreadCount(
                         unreadCount
                 )
 
-                // =========================
-                // 요청자 닉네임
-                // =========================
                 .requesterName(
-
                         serviceRequest
                                 .getUser()
                                 .getNickname()
