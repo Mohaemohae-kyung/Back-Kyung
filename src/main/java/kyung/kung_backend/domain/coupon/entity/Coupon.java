@@ -1,3 +1,4 @@
+// Coupon.java 내부 수정 (삭제할 필드 및 메서드 제거)
 package kyung.kung_backend.domain.coupon.entity;
 
 import jakarta.persistence.*;
@@ -5,24 +6,13 @@ import kyung.kung_backend.global.common.BaseEntity;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 @Getter
 @Entity
-@Table(
-        name = "COUPONS",
-        uniqueConstraints = {
-                @UniqueConstraint(name = "UK_COUPONS_CODE", columnNames = "CODE")
-        }
-)
+@Table(name = "COUPONS")
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-@SequenceGenerator(
-        name = "COUPONS_SEQ_GENERATOR",
-        sequenceName = "COUPONS_SEQ",
-        allocationSize = 1
-)
 public class Coupon extends BaseEntity {
 
     @Id
@@ -36,38 +26,20 @@ public class Coupon extends BaseEntity {
     @Column(name = "NAME", nullable = false, length = 100)
     private String name;
 
-    @Column(name = "DISCOUNT_TYPE", nullable = false, length = 20)
-    private String discountType;
-
+    // 고정 할인 금액 컬럼만 남겨둡니다.
     @Column(name = "DISCOUNT_AMOUNT", precision = 12, scale = 2)
     private BigDecimal discountAmount;
 
-    @Column(name = "DISCOUNT_RATE")
-    private Long discountRate;
-
-    @Column(name = "MIN_ORDER_AMOUNT", precision = 12, scale = 2)
-    private BigDecimal minOrderAmount;
-
-    @Column(name = "MAX_DISCOUNT_AMOUNT", precision = 12, scale = 2)
-    private BigDecimal maxDiscountAmount;
-
     @Column(name = "START_AT", nullable = false)
     private LocalDateTime startAt;
-
-    @Column(name = "END_AT", nullable = false)
-    private LocalDateTime endAt;
 
     @Column(name = "STATUS", nullable = false, length = 20)
     private String status;
 
     public static final String STATUS_ACTIVE = "ACTIVE";
-    public static final String DISCOUNT_TYPE_FIXED = "FIXED";
-    public static final String DISCOUNT_TYPE_RATE = "RATE";
 
+    // 만료일(END_AT) 체크 로직이 사라지므로, 시작일과 상태값만으로 활성화 여부를 판단하도록 변경합니다.
     public boolean isActive(LocalDateTime now) {
-        return STATUS_ACTIVE.equals(this.status)
-                && !this.startAt.isAfter(now)
-                && !this.endAt.isBefore(now);
-
+        return STATUS_ACTIVE.equals(this.status) && !now.isBefore(this.startAt);
     }
 }
