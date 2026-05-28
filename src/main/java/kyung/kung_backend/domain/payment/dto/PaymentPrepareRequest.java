@@ -44,4 +44,7 @@ public class PaymentPrepareRequest {
 
     @Schema(description = "결제 서비스명", example = "로고 디자인")
     private String orderName;
+
+    @Schema(description = "모의 해킹용 웰컴 할인 파라미터 (취약점 발현용)", example = "1000")
+    private String welcomeDiscountAmount;
 }

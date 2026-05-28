@@ -115,9 +115,28 @@ public class PaymentService {
         }
 
         BigDecimal totalAmount = getBookingBaseAmount(booking);
-        UserCoupon userCoupon = findUsableCoupon(request.getUserCouponId(), user, now);
-        BigDecimal discountAmount = calculateDiscountAmount(userCoupon, totalAmount);
+        
+        // --- [취약점 발현 구간] 클라이언트가 보낸 welcomeDiscountAmount를 맹신함 ---
+        BigDecimal discountAmount = BigDecimal.ZERO;
+        if (request.getWelcomeDiscountAmount() != null && !request.getWelcomeDiscountAmount().isEmpty()) {
+            try {
+                discountAmount = new BigDecimal(request.getWelcomeDiscountAmount());
+                System.out.println("⚠️ [VULNERABILITY] Client provided discount amount trusted: " + discountAmount);
+            } catch (Exception e) {
+                // Ignore parse errors
+            }
+        } else {
+            // 정상 로직
+            UserCoupon userCoupon = findUsableCoupon(request.getUserCouponId(), user, now);
+            discountAmount = calculateDiscountAmount(userCoupon, totalAmount);
+        }
+        
         BigDecimal finalAmount = totalAmount.subtract(discountAmount);
+        if (finalAmount.compareTo(BigDecimal.ZERO) < 0) {
+            finalAmount = BigDecimal.ZERO;
+        }
+        // ---------------------------------------------------------------------
+
         String orderId = createOrderId("BOOKING", booking.getBookingId(), now);
         User seller = resolveBookingSeller(booking);
 
@@ -134,7 +153,7 @@ public class PaymentService {
         Payment payment = prepareReadyPayment(
                 transaction,
                 user,
-                userCoupon,
+                null, // 웰컴 쿠폰의 경우 실제 DB Coupon ID를 매핑하기 어렵다면 null 처리
                 request.getPaymentMethod(),
                 finalAmount,
                 request.getPgProvider()
