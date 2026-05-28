@@ -43,125 +43,76 @@ public class PaymentController {
     }
 
     @Operation(
-            summary = "결제 준비 (E2E 암호화 적용)",
-            description = "클라이언트의 E2E 암호문을 받아 Node.js에서 해독한 후 비즈니스 로직을 처리합니다."
+            summary = "결제 준비 (E2E 순수 프록시)",
+            description = "E2E 암호문을 전혀 열어보지 않고 결제 전담 서버(Node.js)로 중계합니다."
     )
     @PostMapping("/prepare")
-    public ResponseEntity<E2ePayloadResponse> preparePayment(
+    public ResponseEntity<java.util.Map> preparePaymentProxy(
             @AuthenticationPrincipal User user,
-            @RequestBody java.util.Map<String, String> request
+            @RequestBody java.util.Map<String, Object> request
     ) {
-        System.out.println("=== [Spring Proxy] prepare request ===");
+        System.out.println("=== [Spring Proxy] prepare request (PURE PROXY) ===");
+        
+        // Node.js에서 유저 식별을 할 수 있도록 평문 헤더/바디 추가
+        request.put("userId", user.getUserId());
         
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
-        HttpEntity<java.util.Map<String, String>> entity = new HttpEntity<>(request, headers);
+        HttpEntity<java.util.Map<String, Object>> entity = new HttpEntity<>(request, headers);
 
-        // 1. Node.js로 E2E 해독 요청
-        java.util.Map<String, Object> decryptRes = restTemplate.postForObject(
-                NODE_CRYPTO_SERVER_URL + "/decrypt",
+        // Node.js 결제 전담 서버로 순수 릴레이
+        java.util.Map response = restTemplate.postForObject(
+                NODE_CRYPTO_SERVER_URL + "/payments/prepare",
                 entity,
                 java.util.Map.class
         );
 
-        if (decryptRes == null || !Boolean.TRUE.equals(decryptRes.get("success"))) {
-            throw new RuntimeException("E2E 데이터 복호화 실패");
-        }
-
-        java.util.Map<String, Object> plainData = (java.util.Map<String, Object>) decryptRes.get("plainData");
-        String aesKeyBase64 = (String) decryptRes.get("aesKeyBase64");
-        String ivBase64 = (String) decryptRes.get("ivBase64");
-
-        // 2. 평문 데이터로 PaymentPrepareRequest 생성 및 서비스 호출
-        PaymentPrepareRequest prepareReq = new PaymentPrepareRequest();
-        prepareReq.setTargetType((String) plainData.get("targetType"));
-        prepareReq.setTargetId(plainData.get("targetId") != null ? Long.valueOf(plainData.get("targetId").toString()) : null);
-        prepareReq.setPaymentMethod((String) plainData.get("paymentMethod"));
-        prepareReq.setPgProvider((String) plainData.get("pgProvider"));
-        if (plainData.get("userCouponId") != null) {
-            prepareReq.setUserCouponId(Long.valueOf(plainData.get("userCouponId").toString()));
-        }
-        
-        // 의도적 취약점 변수 추출 (PaymentService로 전달)
-        if (plainData.get("welcomeDiscountAmount") != null) {
-            prepareReq.setWelcomeDiscountAmount(plainData.get("welcomeDiscountAmount").toString());
-        }
-
-        PaymentPrepareResponse response = paymentService.preparePayment(user, prepareReq);
-
-        // 3. 응답 데이터를 다시 Node.js로 암호화 요청
-        java.util.Map<String, Object> encryptReq = new java.util.HashMap<>();
-        encryptReq.put("responseData", response);
-        encryptReq.put("aesKeyBase64", aesKeyBase64);
-        encryptReq.put("ivBase64", ivBase64);
-
-        java.util.Map<String, Object> encryptRes = restTemplate.postForObject(
-                NODE_CRYPTO_SERVER_URL + "/encrypt",
-                new HttpEntity<>(encryptReq, headers),
-                java.util.Map.class
-        );
-
-        E2ePayloadResponse e2eResponse = new E2ePayloadResponse();
-        e2eResponse.setSuccess(true);
-        e2eResponse.setCipherText((String) encryptRes.get("cipherText"));
-
-        return ResponseEntity.ok(e2eResponse);
+        return ResponseEntity.ok(response);
     }
 
     @Operation(
-            summary = "결제 승인 처리 (E2E 암호화 적용)",
-            description = "E2E 승인 데이터를 해독하여 DB 금액 대조 후 토스 승인을 위임합니다."
+            summary = "결제 승인 처리 (E2E 순수 프록시)",
+            description = "E2E 승인 암호문을 전혀 열어보지 않고 결제 전담 서버(Node.js)로 중계합니다."
     )
     @PostMapping("/confirm")
-    public ResponseEntity<E2ePayloadResponse> confirmPayment(
-            @RequestBody java.util.Map<String, String> request
+    public ResponseEntity<java.util.Map> confirmPaymentProxy(
+            @RequestBody java.util.Map<String, Object> request
     ) {
-        System.out.println("=== [Spring Proxy] confirm request ===");
+        System.out.println("=== [Spring Proxy] confirm request (PURE PROXY) ===");
         
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
-        HttpEntity<java.util.Map<String, String>> entity = new HttpEntity<>(request, headers);
+        HttpEntity<java.util.Map<String, Object>> entity = new HttpEntity<>(request, headers);
 
-        // 1. Node.js 해독
-        java.util.Map<String, Object> decryptRes = restTemplate.postForObject(
-                NODE_CRYPTO_SERVER_URL + "/decrypt",
+        // Node.js 결제 전담 서버로 순수 릴레이
+        java.util.Map response = restTemplate.postForObject(
+                NODE_CRYPTO_SERVER_URL + "/payments/confirm",
                 entity,
                 java.util.Map.class
         );
 
-        if (decryptRes == null || !Boolean.TRUE.equals(decryptRes.get("success"))) {
-            throw new RuntimeException("E2E 데이터 복호화 실패");
-        }
+        return ResponseEntity.ok(response);
+    }
 
-        java.util.Map<String, Object> plainData = (java.util.Map<String, Object>) decryptRes.get("plainData");
-        String aesKeyBase64 = (String) decryptRes.get("aesKeyBase64");
-        String ivBase64 = (String) decryptRes.get("ivBase64");
+    // =========================================================================
+    // Node.js 결제 서버 전용 Internal API (백엔드는 E2E 데이터를 모르고 이것만 제공)
+    // =========================================================================
+    @GetMapping("/internal/target-info")
+    public ResponseEntity<java.util.Map<String, Object>> getTargetInfo(
+            @RequestParam String targetType,
+            @RequestParam Long targetId,
+            @RequestParam Long userId
+    ) {
+        java.util.Map<String, Object> info = paymentService.getTargetInfoForNode(targetType, targetId, userId);
+        return ResponseEntity.ok(info);
+    }
 
-        // 2. 서비스 호출 (내부적으로 토스 승인 포함됨)
-        PaymentConfirmRequest confirmReq = new PaymentConfirmRequest();
-        confirmReq.setPaymentKey((String) plainData.get("paymentKey"));
-        confirmReq.setOrderId((String) plainData.get("orderId"));
-        confirmReq.setAmount(new java.math.BigDecimal(plainData.get("amount").toString()));
-
-        PaymentResponse response = paymentService.confirmPayment(confirmReq);
-
-        // 3. 결과 암호화
-        java.util.Map<String, Object> encryptReq = new java.util.HashMap<>();
-        encryptReq.put("responseData", response);
-        encryptReq.put("aesKeyBase64", aesKeyBase64);
-        encryptReq.put("ivBase64", ivBase64);
-
-        java.util.Map<String, Object> encryptRes = restTemplate.postForObject(
-                NODE_CRYPTO_SERVER_URL + "/encrypt",
-                new HttpEntity<>(encryptReq, headers),
-                java.util.Map.class
-        );
-
-        E2ePayloadResponse e2eResponse = new E2ePayloadResponse();
-        e2eResponse.setSuccess(true);
-        e2eResponse.setCipherText((String) encryptRes.get("cipherText"));
-
-        return ResponseEntity.ok(e2eResponse);
+    @PostMapping("/internal/complete")
+    public ResponseEntity<Void> completePaymentInternal(
+            @RequestBody java.util.Map<String, Object> request
+    ) {
+        paymentService.completePaymentFromNode(request);
+        return ResponseEntity.ok().build();
     }
 
     /*

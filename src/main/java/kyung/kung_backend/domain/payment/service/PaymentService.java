@@ -76,297 +76,93 @@ public class PaymentService {
         return ServiceRequestCheckoutResponse.of(serviceRequest, baseAmount, ZERO, baseAmount);
     }
 
-    @Transactional
-    public PaymentPrepareResponse preparePayment(
-            User loginUser,
-            PaymentPrepareRequest request
-    ) {
-        User user = findLoginUser(loginUser);
-        LocalDateTime now = LocalDateTime.now();
-
-        if (TARGET_TYPE_BOOKING.equals(request.getTargetType())) {
-            return prepareBookingPayment(user, request, now);
-        }
-
-        if (TARGET_TYPE_SERVICE_REQUEST.equals(request.getTargetType())) {
-            return prepareServiceRequestPayment(user, request, now);
-        }
-
-        throw GeneralException.of(ErrorCode.PAYMENT_UNSUPPORTED_TARGET);
-    }
-
-    private PaymentPrepareResponse prepareBookingPayment(
-            User user,
-            PaymentPrepareRequest request,
-            LocalDateTime now
-    ) {
-        bookingService.expireStalePendingBookings(now);
-
-        Booking booking = bookingService.findOwnedBooking(user, request.getTargetId());
-        validateBookingPayable(booking, now);
-
-        Payment existingReadyPayment = findExistingReadyPayment(booking);
-        if (existingReadyPayment != null && samePrepareCondition(existingReadyPayment, request)) {
-            return PaymentPrepareResponse.of(
-                    existingReadyPayment,
-                    existingReadyPayment.getTransaction(),
-                    getOrderName(booking)
-            );
-        }
-
-        BigDecimal totalAmount = getBookingBaseAmount(booking);
+    // =========================================================================
+    // Node.js 결제 전담 서버를 위한 내부 API (백엔드는 E2E 데이터를 모르고 통신)
+    // =========================================================================
+    @Transactional(readOnly = true)
+    public java.util.Map<String, Object> getTargetInfoForNode(String targetType, Long targetId, Long userId, Long userCouponId) {
+        User user = userRepository.findById(userId).orElseThrow(() -> GeneralException.of(ErrorCode.UNAUTHORIZED));
+        java.util.Map<String, Object> result = new java.util.HashMap<>();
+        BigDecimal baseAmount = BigDecimal.ZERO;
         
-        // --- [취약점 발현 구간] 클라이언트가 보낸 welcomeDiscountAmount를 맹신함 ---
-        BigDecimal discountAmount = BigDecimal.ZERO;
-        if (request.getWelcomeDiscountAmount() != null && !request.getWelcomeDiscountAmount().isEmpty()) {
-            try {
-                discountAmount = new BigDecimal(request.getWelcomeDiscountAmount());
-                System.out.println("⚠️ [VULNERABILITY] Client provided discount amount trusted: " + discountAmount);
-            } catch (Exception e) {
-                // Ignore parse errors
-            }
+        if (TARGET_TYPE_BOOKING.equals(targetType)) {
+            Booking booking = bookingService.findOwnedBooking(user, targetId);
+            baseAmount = getBookingBaseAmount(booking);
+            result.put("baseAmount", baseAmount);
+            result.put("orderName", getOrderName(booking));
+        } else if (TARGET_TYPE_SERVICE_REQUEST.equals(targetType)) {
+            ServiceRequest serviceRequest = findOwnedServiceRequest(user, targetId);
+            baseAmount = getServiceRequestAmount(serviceRequest);
+            result.put("baseAmount", baseAmount);
+            result.put("orderName", getOrderName(serviceRequest));
         } else {
-            // 정상 로직
-            UserCoupon userCoupon = findUsableCoupon(request.getUserCouponId(), user, now);
-            discountAmount = calculateDiscountAmount(userCoupon, totalAmount);
+            throw GeneralException.of(ErrorCode.PAYMENT_UNSUPPORTED_TARGET);
         }
         
-        BigDecimal finalAmount = totalAmount.subtract(discountAmount);
-        if (finalAmount.compareTo(BigDecimal.ZERO) < 0) {
-            finalAmount = BigDecimal.ZERO;
-        }
-        // ---------------------------------------------------------------------
-
-        String orderId = createOrderId("BOOKING", booking.getBookingId(), now);
-        User seller = resolveBookingSeller(booking);
-
-        Transaction transaction = prepareBookingTransaction(
-                booking,
-                user,
-                seller,
-                orderId,
-                totalAmount,
-                discountAmount,
-                finalAmount
-        );
-
-        Payment payment = prepareReadyPayment(
-                transaction,
-                user,
-                null, // 웰컴 쿠폰의 경우 실제 DB Coupon ID를 매핑하기 어렵다면 null 처리
-                request.getPaymentMethod(),
-                finalAmount,
-                request.getPgProvider()
-        );
-
-        return PaymentPrepareResponse.of(payment, transaction, getOrderName(booking));
-    }
-
-    private PaymentPrepareResponse prepareServiceRequestPayment(
-            User user,
-            PaymentPrepareRequest request,
-            LocalDateTime now
-    ) {
-        validateCouponNotUsedForServiceRequest(request.getUserCouponId());
-
-        ServiceRequest serviceRequest = findOwnedServiceRequest(user, request.getTargetId());
-        validateServiceRequestPayable(serviceRequest);
-
-        Payment existingReadyPayment = findExistingReadyPayment(serviceRequest);
-        if (existingReadyPayment != null && samePrepareCondition(existingReadyPayment, request)) {
-            return PaymentPrepareResponse.of(
-                    existingReadyPayment,
-                    existingReadyPayment.getTransaction(),
-                    getOrderName(serviceRequest)
-            );
-        }
-
-        BigDecimal totalAmount = getServiceRequestAmount(serviceRequest);
-        
-        // --- [취약점 발현 구간] 클라이언트가 보낸 welcomeDiscountAmount를 맹신함 ---
         BigDecimal discountAmount = BigDecimal.ZERO;
-        if (request.getWelcomeDiscountAmount() != null && !request.getWelcomeDiscountAmount().isEmpty()) {
-            try {
-                discountAmount = new BigDecimal(request.getWelcomeDiscountAmount());
-                System.out.println("⚠️ [VULNERABILITY] Client provided discount amount trusted for Service Request: " + discountAmount);
-            } catch (Exception e) {
-                // Ignore parse errors
-            }
-        } else {
-            // 정상 로직
-            UserCoupon userCoupon = findUsableCoupon(request.getUserCouponId(), user, now);
-            discountAmount = calculateDiscountAmount(userCoupon, totalAmount);
+        if (userCouponId != null) {
+            UserCoupon userCoupon = findUsableCoupon(userCouponId, user, LocalDateTime.now());
+            discountAmount = calculateDiscountAmount(userCoupon, baseAmount);
         }
+        result.put("discountAmount", discountAmount);
         
-        BigDecimal finalAmount = totalAmount.subtract(discountAmount);
-        if (finalAmount.compareTo(BigDecimal.ZERO) < 0) {
-            finalAmount = BigDecimal.ZERO;
-        }
-        // ---------------------------------------------------------------------
-
-        String orderId = createOrderId("REQUEST", serviceRequest.getRequestId(), now);
-        User seller = serviceRequest.getExpertProfile().getUser();
-
-        Transaction transaction = prepareServiceRequestTransaction(
-                serviceRequest,
-                user,
-                seller,
-                orderId,
-                totalAmount,
-                discountAmount,
-                finalAmount
-        );
-
-        Payment payment = prepareReadyPayment(
-                transaction,
-                serviceRequest.getUser(),
-                userCoupon,
-                request.getPaymentMethod(),
-                finalAmount,
-                request.getPgProvider()
-        );
-
-        // =========================
-        // 결제 요청 채팅 메시지 생성
-        // =========================
-        ChatRoom chatRoom = chatRoomRepository
-                .findByServiceRequest_RequestId(serviceRequest.getRequestId())
-                .orElse(null);
-
-        if (chatRoom != null) {
-
-            String paymentMessageContent =
-                    finalAmount.toPlainString()
-                            + "원 결제 요청";
-
-            ChatMessage chatMessage =
-                    ChatMessage.createPaymentMessage(
-                            chatRoom,
-                            seller,
-                            paymentMessageContent,
-                            payment.getPaymentId()
-                    );
-
-            chatMessageRepository.save(chatMessage);
-        }
-
-        return PaymentPrepareResponse.of(
-                payment,
-                transaction,
-                getOrderName(serviceRequest)
-        );
+        return result;
     }
 
     @Transactional
-    public PaymentResponse confirmPayment(PaymentConfirmRequest request) {
-
-        System.out.println("===== confirm request =====");
-        System.out.println(request.getOrderId());
-        System.out.println(request.getPaymentKey());
-        System.out.println(request.getAmount());
-
-        Payment payment = paymentRepository.findByTransactionOrderId(request.getOrderId())
-                .orElseThrow(() -> GeneralException.of(ErrorCode.PAYMENT_NOT_FOUND));
-
-        Transaction transaction = payment.getTransaction();
-
-        if (payment.isPaid()) {
-            if (request.getPaymentKey().equals(payment.getPgPaymentKey())
-                    && sameAmount(request.getAmount(), transaction.getFinalAmount())) {
-                return PaymentResponse.from(payment);
-            }
-
-            throw GeneralException.of(ErrorCode.PAYMENT_INVALID_STATUS);
+    public void completePaymentFromNode(java.util.Map<String, Object> request) {
+        String targetType = (String) request.get("targetType");
+        Long targetId = Long.valueOf(request.get("targetId").toString());
+        Long userId = Long.valueOf(request.get("userId").toString());
+        String orderId = (String) request.get("orderId");
+        BigDecimal finalAmount = new BigDecimal(request.get("finalAmount").toString());
+        String paymentKey = (String) request.get("paymentKey");
+        String paymentMethod = (String) request.get("paymentMethod");
+        String pgProvider = (String) request.get("pgProvider");
+        
+        Long userCouponId = null;
+        if (request.get("userCouponId") != null) {
+            userCouponId = Long.valueOf(request.get("userCouponId").toString());
         }
 
-        if (!payment.isReady() || !transaction.isReady()) {
-            throw GeneralException.of(ErrorCode.PAYMENT_INVALID_STATUS);
-        }
-
-        validateServiceRequestPaymentHasNoCoupon(payment, transaction);
-
+        User user = userRepository.findById(userId).orElseThrow(() -> GeneralException.of(ErrorCode.UNAUTHORIZED));
         LocalDateTime now = LocalDateTime.now();
 
-        if (transaction.getBooking() != null) {
-            validateBookingPayable(transaction.getBooking(), now);
-        }
+        Transaction transaction;
+        User seller;
+        UserCoupon userCoupon = userCouponId != null ? findUsableCoupon(userCouponId, user, now) : null;
 
-        // =======================================================
-        // [보안 2차 검증 로직 (취약점 발현)]
-        // 결제 승인 전, 백엔드에서 원가와 쿠폰 할인을 다시 한 번 검증해야 합니다.
-        // =======================================================
-        BigDecimal realTotalAmount;
-        if (transaction.getBooking() != null) {
-            realTotalAmount = getBookingBaseAmount(transaction.getBooking());
-        } else {
-            realTotalAmount = getServiceRequestAmount(transaction.getServiceRequest());
-        }
-
-        if (payment.getUserCoupon() != null) {
-            // 일반 쿠폰의 경우 DB를 조회해 할인액을 정확히 2차 검증함 (정상 방어)
-            BigDecimal realDiscount = calculateDiscountAmount(payment.getUserCoupon(), realTotalAmount);
-            BigDecimal expectedFinalAmount = realTotalAmount.subtract(realDiscount).max(BigDecimal.ZERO);
-            if (expectedFinalAmount.compareTo(transaction.getFinalAmount()) != 0) {
-                payment.fail("쿠폰 할인액 위조 감지");
-                transaction.markFailed();
-                throw GeneralException.of(ErrorCode.PAYMENT_AMOUNT_MISMATCH);
+        if (TARGET_TYPE_BOOKING.equals(targetType)) {
+            Booking booking = bookingService.findOwnedBooking(user, targetId);
+            seller = resolveBookingSeller(booking);
+            transaction = prepareBookingTransaction(booking, user, seller, orderId, finalAmount, BigDecimal.ZERO, finalAmount);
+            booking.confirmPayment();
+        } else if (TARGET_TYPE_SERVICE_REQUEST.equals(targetType)) {
+            ServiceRequest serviceRequest = findOwnedServiceRequest(user, targetId);
+            seller = serviceRequest.getExpertProfile().getUser();
+            transaction = prepareServiceRequestTransaction(serviceRequest, user, seller, orderId, finalAmount, BigDecimal.ZERO, finalAmount);
+            serviceRequest.complete();
+            
+            // =========================
+            // 결제 요청 완료 채팅 메시지 생성
+            // =========================
+            ChatRoom chatRoom = chatRoomRepository.findByServiceRequest_RequestId(serviceRequest.getRequestId()).orElse(null);
+            if (chatRoom != null) {
+                String paymentMessageContent = finalAmount.toPlainString() + "원 결제 완료";
+                ChatMessage chatMessage = ChatMessage.createPaymentMessage(chatRoom, seller, paymentMessageContent, null);
+                chatMessageRepository.save(chatMessage);
             }
         } else {
-            // [취약점] 웰컴 쿠폰 등 DB 매핑이 없는 경우, 유저가 이전에 사용했는지만 체크하고(생략)
-            // 실제 클라이언트가 얼마를 깎았는지는 재검증(원가 대조) 하지 않음!
-            // 따라서 조작된 100원이 그대로 통과됨.
-            System.out.println("⚠️ [VULNERABILITY] Confirm phase: No secondary DB validation for welcome discount!");
+            throw GeneralException.of(ErrorCode.PAYMENT_UNSUPPORTED_TARGET);
         }
 
-        // 프론트가 100원으로 조작 후 토스도 100원으로 결제했으므로, 
-        // request.getAmount()(100) == transaction.getFinalAmount()(100) 가 성립되어 방어벽 무력화.
-        if (!sameAmount(request.getAmount(), transaction.getFinalAmount())) {
-            payment.fail("결제 승인 요청 금액과 서버 주문 금액이 일치하지 않습니다.");
-            transaction.markFailed();
-            throw GeneralException.of(ErrorCode.PAYMENT_AMOUNT_MISMATCH);
-        }
-
-        validatePgPaymentKeyNotUsed(request.getPaymentKey(), payment);
-
-        // =======================================================
-        // 결제 서버(Node.js, LLM 서버)로 토스 승인 실제 위임 호출
-        // =======================================================
-        try {
-            RestTemplate restTemplate = new RestTemplate();
-            String paymentServerUrl = "http://100.104.59.126:4000/api/payments/toss-confirm";
-            org.springframework.http.ResponseEntity<String> response = 
-                    restTemplate.postForEntity(paymentServerUrl, request, String.class);
-                    
-            if (!response.getStatusCode().is2xxSuccessful()) {
-                payment.fail("결제 서버 승인 처리 실패");
-                transaction.markFailed();
-                throw GeneralException.of(ErrorCode.INTERNAL_SERVER_ERROR);
-            }
-        } catch (Exception e) {
-            System.err.println("Node Payment Server 통신 오류: " + e.getMessage());
-            payment.fail("결제 서버 통신 오류");
-            transaction.markFailed();
-            throw GeneralException.of(ErrorCode.INTERNAL_SERVER_ERROR);
-        }
-        // =======================================================
-
-        LocalDateTime paidAt = now;
-        payment.complete(request.getPaymentKey(), paidAt);
+        Payment payment = prepareReadyPayment(transaction, user, userCoupon, paymentMethod, finalAmount, pgProvider);
+        payment.complete(paymentKey, now);
         transaction.markPaid();
 
-        if (transaction.getBooking() != null) {
-            transaction.getBooking().confirmPayment();
+        if (userCoupon != null) {
+            userCoupon.use(now);
         }
-
-        if (transaction.getServiceRequest() != null && transaction.getServiceRequest().isChatting()) {
-            transaction.getServiceRequest().complete();
-        }
-
-        if (payment.getUserCoupon() != null) {
-            payment.getUserCoupon().use(paidAt);
-        }
-
-        return PaymentResponse.from(payment);
     }
 
     @Transactional
