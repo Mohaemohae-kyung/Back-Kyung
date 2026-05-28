@@ -48,21 +48,16 @@ public class PaymentController {
     )
     @PostMapping("/prepare")
     public ResponseEntity<E2ePayloadResponse> preparePaymentProxy(
-            @Valid @RequestBody E2ePayloadRequest request
+            @RequestBody java.util.Map<String, String> request
     ) {
         System.out.println("=== [Spring Proxy] prepare request ===");
-        System.out.println("encryptedAesKey: " + request.getEncryptedAesKey());
-        System.out.println("iv: " + request.getIv());
+        System.out.println("encryptedAesKey: " + request.get("encryptedAesKey"));
+        System.out.println("iv: " + request.get("iv"));
         
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
         
-        java.util.Map<String, String> payload = new java.util.HashMap<>();
-        payload.put("encryptedAesKey", request.getEncryptedAesKey());
-        payload.put("iv", request.getIv());
-        payload.put("cipherText", request.getCipherText());
-        
-        HttpEntity<java.util.Map<String, String>> entity = new HttpEntity<>(payload, headers);
+        HttpEntity<java.util.Map<String, String>> entity = new HttpEntity<>(request, headers);
 
         E2ePayloadResponse response = restTemplate.postForObject(
                 NODE_CRYPTO_SERVER_URL + "/prepare",
@@ -79,21 +74,16 @@ public class PaymentController {
     )
     @PostMapping("/confirm")
     public ResponseEntity<E2ePayloadResponse> confirmPaymentProxy(
-            @Valid @RequestBody E2ePayloadRequest request
+            @RequestBody java.util.Map<String, String> request
     ) {
         System.out.println("=== [Spring Proxy] confirm request ===");
-        System.out.println("encryptedAesKey: " + request.getEncryptedAesKey());
-        System.out.println("iv: " + request.getIv());
+        System.out.println("encryptedAesKey: " + request.get("encryptedAesKey"));
+        System.out.println("iv: " + request.get("iv"));
         
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
         
-        java.util.Map<String, String> payload = new java.util.HashMap<>();
-        payload.put("encryptedAesKey", request.getEncryptedAesKey());
-        payload.put("iv", request.getIv());
-        payload.put("cipherText", request.getCipherText());
-        
-        HttpEntity<java.util.Map<String, String>> entity = new HttpEntity<>(payload, headers);
+        HttpEntity<java.util.Map<String, String>> entity = new HttpEntity<>(request, headers);
 
         E2ePayloadResponse response = restTemplate.postForObject(
                 NODE_CRYPTO_SERVER_URL + "/confirm",
