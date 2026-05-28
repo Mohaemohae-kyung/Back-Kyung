@@ -1,14 +1,19 @@
 package kyung.kung_backend.domain.integrity.service;
 
+import kyung.kung_backend.domain.integrity.repository.AppIntegrityAllowlistRepository;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
 import java.util.Map;
 import java.util.Set;
 
 @Component
+@RequiredArgsConstructor
 public class AppIntegrityAllowlist {
 
     private static final String PACKAGE_NAME = "kyung.kung_android";
+
+    private final AppIntegrityAllowlistRepository allowlistRepository;
 
     private final Map<String, Set<String>> allowedSignaturesByBuildType = Map.of(
             "debug", Set.of(
@@ -17,11 +22,6 @@ public class AppIntegrityAllowlist {
             "release", Set.of(
                     "04:DE:91:84:8B:A9:9C:5C:5D:D9:15:27:F7:91:95:68:DB:BA:74:F1:DB:5A:C8:10:EC:30:F6:E7:35:DD:E8:65"
             )
-    );
-
-    private final Map<DexKey, String> allowedClassesDexHashes = Map.of(
-            new DexKey(PACKAGE_NAME, 1L, "debug"),
-            "a4c4bcb3f38b43930525cc036dbcf43caa29f9ae2acb8ffbcb2d1075759f1af3"
     );
 
     public boolean isAllowedSignature(
@@ -57,17 +57,9 @@ public class AppIntegrityAllowlist {
             return false;
         }
 
-        String allowed = allowedClassesDexHashes.get(
-                new DexKey(packageName, versionCode, buildType)
-        );
-
-        return receivedDexHash.equals(allowed);
-    }
-
-    private record DexKey(
-            String packageName,
-            long versionCode,
-            String buildType
-    ) {
+        return allowlistRepository
+                .findAllByPackageNameAndVersionCodeAndBuildType(packageName, versionCode, buildType)
+                .stream()
+                .anyMatch(entry -> receivedDexHash.equals(entry.getSha256()));
     }
 }
