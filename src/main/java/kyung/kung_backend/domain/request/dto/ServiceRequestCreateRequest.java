@@ -17,8 +17,11 @@ import java.time.LocalDateTime;
 @AllArgsConstructor
 public class ServiceRequestCreateRequest {
 
-    @NotNull(message = "고수 서비스 ID는 필수입니다.")
-    private Long expertServiceId;
+    @NotNull(message = "고수 프로필 ID는 필수입니다.")
+    private Long expertProfileId;
+
+    @NotNull(message = "카테고리 ID는 필수입니다.")
+    private Long categoryId;
 
     @NotBlank(message = "제목은 필수입니다.")
     @Size(max = 200, message = "제목은 200자 이하로 입력해주세요.")

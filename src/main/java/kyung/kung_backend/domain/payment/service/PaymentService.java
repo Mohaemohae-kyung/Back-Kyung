@@ -167,7 +167,7 @@ public class PaymentService {
         BigDecimal discountAmount = calculateDiscountAmount(userCoupon, totalAmount);
         BigDecimal finalAmount = totalAmount.subtract(discountAmount);
         String orderId = createOrderId("REQUEST", serviceRequest.getRequestId(), now);
-        User seller = serviceRequest.getExpertService().getExpertProfile().getUser();
+        User seller = serviceRequest.getExpertProfile().getUser();
 
         Transaction transaction = prepareServiceRequestTransaction(
                 serviceRequest,
@@ -471,8 +471,7 @@ public class PaymentService {
                 serviceRequest.getUser().getUserId();
 
         Long expertId =
-                serviceRequest.getExpertService()
-                        .getExpertProfile()
+                serviceRequest.getExpertProfile()
                         .getUser()
                         .getUserId();
 
@@ -494,9 +493,9 @@ public class PaymentService {
             throw GeneralException.of(ErrorCode.BOOKING_NOT_PAYABLE);
         }
 
-        if (serviceRequest.getExpertService() == null
-                || serviceRequest.getExpertService().getExpertProfile() == null
-                || serviceRequest.getExpertService().getExpertProfile().getUser() == null
+        if (serviceRequest.getExpertProfile() == null
+                || serviceRequest.getExpertProfile().getUser() == null
+                || serviceRequest.getCategory() == null
                 || serviceRequest.getBudget() == null
                 || serviceRequest.getBudget().compareTo(ZERO) <= 0) {
             throw GeneralException.of(ErrorCode.BOOKING_NOT_PAYABLE);

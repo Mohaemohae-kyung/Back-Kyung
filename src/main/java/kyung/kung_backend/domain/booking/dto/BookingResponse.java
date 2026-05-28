@@ -16,16 +16,18 @@ public class BookingResponse {
     private Long bookingId;
     private Long userId;
     private Long storeProductId;
-    private Long expertServiceId;
     private Long expertProfileId;
+
     private String productTitle;
-    private String serviceTitle;
     private String expertDisplayName;
+
     private LocalDateTime startAt;
     private LocalDateTime endAt;
+
     private Long locationId;
     private String locationName;
     private String locationText;
+
     private String status;
     private LocalDateTime paymentExpiresAt;
     private LocalDateTime createdAt;
@@ -33,22 +35,47 @@ public class BookingResponse {
 
     public static BookingResponse from(Booking booking) {
         StoreProduct storeProduct = booking.getStoreProduct();
-        ExpertProfile expertProfile = storeProduct != null ? storeProduct.getExpertProfile() : null;
+        ExpertProfile expertProfile =
+                storeProduct != null
+                        ? storeProduct.getExpertProfile()
+                        : null;
         Location location = booking.getLocation();
 
         return BookingResponse.builder()
                 .bookingId(booking.getBookingId())
                 .userId(booking.getUser().getUserId())
-                .storeProductId(storeProduct != null ? storeProduct.getStoreProductId() : null)
-                .expertServiceId(null)
-                .expertProfileId(expertProfile != null ? expertProfile.getExpertProfileId() : null)
-                .productTitle(storeProduct != null ? storeProduct.getTitle() : null)
-                .serviceTitle(null)
-                .expertDisplayName(expertProfile != null ? expertProfile.getDisplayName() : null)
+                .storeProductId(
+                        storeProduct != null
+                                ? storeProduct.getStoreProductId()
+                                : null
+                )
+                .expertProfileId(
+                        expertProfile != null
+                                ? expertProfile.getExpertProfileId()
+                                : null
+                )
+                .productTitle(
+                        storeProduct != null
+                                ? storeProduct.getTitle()
+                                : null
+                )
+                .expertDisplayName(
+                        expertProfile != null
+                                ? expertProfile.getDisplayName()
+                                : null
+                )
                 .startAt(booking.getStartAt())
                 .endAt(booking.getEndAt())
-                .locationId(location != null ? location.getLocationId() : null)
-                .locationName(location != null ? location.getName() : null)
+                .locationId(
+                        location != null
+                                ? location.getLocationId()
+                                : null
+                )
+                .locationName(
+                        location != null
+                                ? location.getName()
+                                : null
+                )
                 .locationText(booking.getLocationText())
                 .status(booking.getStatus())
                 .paymentExpiresAt(booking.getPaymentExpiresAt())

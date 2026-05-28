@@ -1,9 +1,10 @@
 package kyung.kung_backend.domain.payment.dto;
 
+import kyung.kung_backend.domain.category.entity.ServiceCategory;
 import kyung.kung_backend.domain.expert.entity.ExpertProfile;
 import kyung.kung_backend.domain.request.entity.ServiceRequest;
 import kyung.kung_backend.domain.request.enums.RequestStatus;
-import kyung.kung_backend.domain.servicepost.entity.ExpertService;
+
 import lombok.Builder;
 import lombok.Getter;
 
@@ -15,12 +16,18 @@ import java.time.LocalDateTime;
 public class ServiceRequestCheckoutResponse {
 
     private Long requestId;
-    private Long expertServiceId;
+
     private Long expertProfileId;
-    private String serviceTitle;
     private String expertDisplayName;
+
+    private Long categoryId;
+    private String categoryName;
+
+    private String requestTitle;
+
     private LocalDateTime preferredDate;
     private RequestStatus requestStatus;
+
     private BigDecimal baseAmount;
     private BigDecimal discountAmount;
     private BigDecimal finalAmount;
@@ -36,15 +43,35 @@ public class ServiceRequestCheckoutResponse {
             BigDecimal discountAmount,
             BigDecimal finalAmount
     ) {
-        ExpertService expertService = serviceRequest.getExpertService();
-        ExpertProfile expertProfile = expertService != null ? expertService.getExpertProfile() : null;
+        ExpertProfile expertProfile =
+                serviceRequest.getExpertProfile();
+
+        ServiceCategory category =
+                serviceRequest.getCategory();
 
         return ServiceRequestCheckoutResponse.builder()
                 .requestId(serviceRequest.getRequestId())
-                .expertServiceId(expertService != null ? expertService.getExpertServiceId() : null)
-                .expertProfileId(expertProfile != null ? expertProfile.getExpertProfileId() : null)
-                .serviceTitle(serviceRequest.getTitle())
-                .expertDisplayName(expertProfile != null ? expertProfile.getDisplayName() : null)
+                .expertProfileId(
+                        expertProfile != null
+                                ? expertProfile.getExpertProfileId()
+                                : null
+                )
+                .expertDisplayName(
+                        expertProfile != null
+                                ? expertProfile.getDisplayName()
+                                : null
+                )
+                .categoryId(
+                        category != null
+                                ? category.getCategoryId()
+                                : null
+                )
+                .categoryName(
+                        category != null
+                                ? category.getName()
+                                : null
+                )
+                .requestTitle(serviceRequest.getTitle())
                 .preferredDate(serviceRequest.getPreferredDate())
                 .requestStatus(serviceRequest.getStatus())
                 .baseAmount(baseAmount)
