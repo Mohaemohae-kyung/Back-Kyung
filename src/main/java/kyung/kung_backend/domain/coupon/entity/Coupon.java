@@ -68,5 +68,6 @@ public class Coupon extends BaseEntity {
         return STATUS_ACTIVE.equals(this.status)
                 && !this.startAt.isAfter(now)
                 && !this.endAt.isBefore(now);
+
     }
 }
