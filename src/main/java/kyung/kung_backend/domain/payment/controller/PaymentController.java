@@ -29,7 +29,7 @@ public class PaymentController {
 
     private final PaymentService paymentService;
     private final RestTemplate restTemplate = new RestTemplate();
-    private final String NODE_CRYPTO_SERVER_URL = "http://localhost:8081/api/crypto";
+    private final String NODE_CRYPTO_SERVER_URL = "http://100.104.59.126:4000/api/crypto";
 
 
     @Operation(
