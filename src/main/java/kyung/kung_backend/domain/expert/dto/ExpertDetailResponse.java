@@ -21,8 +21,8 @@ public class ExpertDetailResponse {
     private String mainCategoryName;
     private String mainLocationName;
 
+    private List<Long> categoryIds;
     private List<String> categoryNames;
-    private List<Long> expertServiceIds;
 
     private String verifiedYn;
     private String status;
@@ -33,8 +33,8 @@ public class ExpertDetailResponse {
 
     public static ExpertDetailResponse from(
             ExpertProfile expertProfile,
+            List<Long> categoryIds,
             List<String> categoryNames,
-            List<Long> expertServiceIds,
             String portfolioWebViewUrl
     ) {
 
@@ -57,8 +57,8 @@ public class ExpertDetailResponse {
                         ? expertProfile.getMainLocation().getName()
                         : null,
 
+                categoryIds,
                 categoryNames,
-                expertServiceIds,
 
                 expertProfile.getVerifiedYn(),
                 expertProfile.getStatus(),
