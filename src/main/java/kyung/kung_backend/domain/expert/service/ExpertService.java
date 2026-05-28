@@ -241,17 +241,20 @@ public class ExpertService {
         List<kyung.kung_backend.domain.servicepost.entity.ExpertService> expertServices =
                 expertServiceRepository.findAllByExpertProfile(expertProfile);
 
+        List<Long> categoryIds =
+                expertServices.stream()
+                        .map(kyung.kung_backend.domain.servicepost.entity.ExpertService::getCategory)
+                        .filter(Objects::nonNull)
+                        .map(category -> category.getCategoryId())
+                        .distinct()
+                        .toList();
+
         List<String> categoryNames =
                 expertServices.stream()
                         .map(kyung.kung_backend.domain.servicepost.entity.ExpertService::getCategory)
                         .filter(Objects::nonNull)
                         .map(category -> category.getName())
                         .distinct()
-                        .toList();
-
-        List<Long> expertServiceIds =
-                expertServices.stream()
-                        .map(kyung.kung_backend.domain.servicepost.entity.ExpertService::getExpertServiceId)
                         .toList();
 
         String webViewUrl = null;
@@ -263,8 +266,8 @@ public class ExpertService {
 
         return ExpertDetailResponse.from(
                 expertProfile,
+                categoryIds,
                 categoryNames,
-                expertServiceIds,
                 webViewUrl
         );
     }
