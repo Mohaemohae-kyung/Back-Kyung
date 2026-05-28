@@ -34,7 +34,7 @@ public class PaymentController {
                     "마켓 예약 결제는 targetType=BOOKING과 bookingId를 사용하고, 견적 요청 결제는 targetType=SERVICE_REQUEST와 requestId를 사용합니다. " +
                     "쿠폰은 마켓 예약 결제에서만 사용할 수 있으며, 견적 요청 결제에서 userCouponId를 보내면 거절됩니다. " +
                     "서버가 금액과 쿠폰을 다시 계산한 뒤 TRANSACTIONS와 PAYMENTS를 READY 상태로 생성하고 orderId를 발급합니다. " +
-                    "응답의 orderId와 finalAmount로 /api/mock-pg/approve를 먼저 호출한 뒤, 받은 paymentKey로 /api/payments/confirm을 호출합니다."
+                    "응답의 orderId와 finalAmount로 토스페이먼츠 결제창을 호출합니다."
     )
     @PostMapping("/prepare")
     public ResponseEntity<ApiResponse<PaymentPrepareResponse>> preparePayment(
@@ -49,14 +49,13 @@ public class PaymentController {
     }
 
     /*
-     * PG 결제 성공 후 호출하는 승인 API입니다.
-     * 현재는 실제 PG 대신 Mock PG 승인 기록을 조회해 결제 성공 여부를 확인한 뒤 예약/거래를 확정합니다.
+     * PG 결제 성공 후 결제 서버(Payment Server)에서 동기화를 위해 호출하는 API입니다.
+     * 결제 서버가 승인을 마친 후 orderId와 paymentKey를 넘기면 즉시 결제 상태를 확정합니다.
      */
     @Operation(
-            summary = "결제 승인 처리",
-            description = "Mock PG 승인 후 서버의 결제 상태를 확정하는 API입니다. " +
-                    "mock-pg/approve 응답의 paymentKey, prepare 응답의 orderId와 finalAmount를 기준으로 Mock PG 승인 내역을 검증합니다. " +
-                    "검증 성공 시 PAYMENTS와 TRANSACTIONS를 PAID 상태로 변경합니다. " +
+            summary = "결제 승인 처리 (결제 서버 연동)",
+            description = "결제 서버(Payment Server)가 토스페이먼츠 승인을 마친 후 호출하는 API입니다. " +
+                    "해당 orderId를 가진 결제 내역을 즉시 PAID 상태로 변경합니다. " +
                     "마켓 예약 결제는 BOOKINGS를 CONFIRMED로, 견적 요청 결제는 SERVICE_REQUESTS를 COMPLETED로 변경합니다."
     )
     @PostMapping("/confirm")

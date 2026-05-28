@@ -11,7 +11,6 @@ import kyung.kung_backend.domain.coupon.entity.UserCoupon;
 import kyung.kung_backend.domain.coupon.repository.UserCouponRepository;
 import kyung.kung_backend.domain.payment.dto.*;
 import kyung.kung_backend.domain.payment.entity.Payment;
-import kyung.kung_backend.domain.payment.pg.service.MockPgService;
 import kyung.kung_backend.domain.payment.repository.PaymentRepository;
 import kyung.kung_backend.domain.request.entity.ServiceRequest;
 import kyung.kung_backend.domain.request.repository.ServiceRequestRepository;
@@ -49,7 +48,6 @@ public class PaymentService {
     private final UserCouponRepository userCouponRepository;
     private final ServiceRequestRepository serviceRequestRepository;
     private final UserRepository userRepository;
-    private final MockPgService mockPgService;
     private final ChatRoomRepository chatRoomRepository;
     private final ChatMessageRepository chatMessageRepository;
 
@@ -262,11 +260,6 @@ public class PaymentService {
         }
 
         validatePgPaymentKeyNotUsed(request.getPaymentKey(), payment);
-        mockPgService.verifyApprovedPayment(
-                request.getOrderId(),
-                request.getPaymentKey(),
-                request.getAmount()
-        );
 
         LocalDateTime paidAt = now;
         payment.complete(request.getPaymentKey(), paidAt);
