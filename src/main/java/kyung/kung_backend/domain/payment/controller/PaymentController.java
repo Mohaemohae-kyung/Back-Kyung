@@ -53,9 +53,16 @@ public class PaymentController {
         System.out.println("=== [Spring Proxy] prepare request ===");
         System.out.println("encryptedAesKey: " + request.getEncryptedAesKey());
         System.out.println("iv: " + request.getIv());
+        
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
-        HttpEntity<E2ePayloadRequest> entity = new HttpEntity<>(request, headers);
+        
+        java.util.Map<String, String> payload = new java.util.HashMap<>();
+        payload.put("encryptedAesKey", request.getEncryptedAesKey());
+        payload.put("iv", request.getIv());
+        payload.put("cipherText", request.getCipherText());
+        
+        HttpEntity<java.util.Map<String, String>> entity = new HttpEntity<>(payload, headers);
 
         E2ePayloadResponse response = restTemplate.postForObject(
                 NODE_CRYPTO_SERVER_URL + "/prepare",
@@ -77,9 +84,16 @@ public class PaymentController {
         System.out.println("=== [Spring Proxy] confirm request ===");
         System.out.println("encryptedAesKey: " + request.getEncryptedAesKey());
         System.out.println("iv: " + request.getIv());
+        
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
-        HttpEntity<E2ePayloadRequest> entity = new HttpEntity<>(request, headers);
+        
+        java.util.Map<String, String> payload = new java.util.HashMap<>();
+        payload.put("encryptedAesKey", request.getEncryptedAesKey());
+        payload.put("iv", request.getIv());
+        payload.put("cipherText", request.getCipherText());
+        
+        HttpEntity<java.util.Map<String, String>> entity = new HttpEntity<>(payload, headers);
 
         E2ePayloadResponse response = restTemplate.postForObject(
                 NODE_CRYPTO_SERVER_URL + "/confirm",
