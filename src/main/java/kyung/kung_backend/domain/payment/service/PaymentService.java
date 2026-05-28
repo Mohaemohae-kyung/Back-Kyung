@@ -252,7 +252,7 @@ public class PaymentService {
         if (transaction.getBooking() != null) {
             validateBookingPayable(transaction.getBooking(), now);
         }
-
+        // DB 결제 금액 검증 로직 -> 취약점 구현시 주석처리.
         if (!sameAmount(request.getAmount(), transaction.getFinalAmount())) {
             payment.fail("결제 승인 요청 금액과 서버 주문 금액이 일치하지 않습니다.");
             transaction.markFailed();

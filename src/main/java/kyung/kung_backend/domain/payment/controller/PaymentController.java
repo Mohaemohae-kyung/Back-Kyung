@@ -16,6 +16,11 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
+import org.springframework.web.client.RestTemplate;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
+import org.springframework.http.HttpEntity;
+
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/api/payments")
@@ -23,46 +28,60 @@ import java.util.List;
 public class PaymentController {
 
     private final PaymentService paymentService;
+    private final RestTemplate restTemplate = new RestTemplate();
+    private final String NODE_CRYPTO_SERVER_URL = "http://localhost:8081/api/crypto";
 
-    /*
-     * PG 결제창을 띄우기 직전에 호출하는 API입니다.
-     * 서버가 예약/견적 금액과 쿠폰을 기준으로 최종 금액을 계산하고, PG에 넘길 orderId를 발급합니다.
-     */
+
     @Operation(
-            summary = "결제 준비 및 주문번호 발급",
-            description = "PG 결제창을 열기 직전에 호출하는 API입니다. " +
-                    "마켓 예약 결제는 targetType=BOOKING과 bookingId를 사용하고, 견적 요청 결제는 targetType=SERVICE_REQUEST와 requestId를 사용합니다. " +
-                    "쿠폰은 마켓 예약 결제에서만 사용할 수 있으며, 견적 요청 결제에서 userCouponId를 보내면 거절됩니다. " +
-                    "서버가 금액과 쿠폰을 다시 계산한 뒤 TRANSACTIONS와 PAYMENTS를 READY 상태로 생성하고 orderId를 발급합니다. " +
-                    "응답의 orderId와 finalAmount로 토스페이먼츠 결제창을 호출합니다."
+            summary = "E2E 결제용 RSA 공개키 발급",
+            description = "Node.js 결제/암호 서버에서 발급한 RSA 공개키를 받아 프론트엔드에 전달합니다."
     )
-    @PostMapping("/prepare")
-    public ResponseEntity<ApiResponse<PaymentPrepareResponse>> preparePayment(
-            @AuthenticationPrincipal User user,
-            @Valid @RequestBody PaymentPrepareRequest request
-    ) {
-        PaymentPrepareResponse response = paymentService.preparePayment(user, request);
-
-        return ResponseEntity
-                .status(HttpStatus.CREATED)
-                .body(ApiResponse.onSuccess(SuccessCode.CREATED, response));
+    @GetMapping("/public-key")
+    public ResponseEntity<String> getPublicKey() {
+        String response = restTemplate.getForObject(NODE_CRYPTO_SERVER_URL + "/public-key", String.class);
+        return ResponseEntity.ok(response);
     }
 
-    /*
-     * PG 결제 성공 후 결제 서버(Payment Server)에서 동기화를 위해 호출하는 API입니다.
-     * 결제 서버가 승인을 마친 후 orderId와 paymentKey를 넘기면 즉시 결제 상태를 확정합니다.
-     */
     @Operation(
-            summary = "결제 승인 처리 (결제 서버 연동)",
-            description = "결제 서버(Payment Server)가 토스페이먼츠 승인을 마친 후 호출하는 API입니다. " +
-                    "해당 orderId를 가진 결제 내역을 즉시 PAID 상태로 변경합니다. " +
-                    "마켓 예약 결제는 BOOKINGS를 CONFIRMED로, 견적 요청 결제는 SERVICE_REQUESTS를 COMPLETED로 변경합니다."
+            summary = "결제 준비 (E2E Proxy)",
+            description = "클라이언트의 E2E 암호문을 Node.js 서버로 릴레이합니다."
+    )
+    @PostMapping("/prepare")
+    public ResponseEntity<E2ePayloadResponse> preparePaymentProxy(
+            @Valid @RequestBody E2ePayloadRequest request
+    ) {
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_JSON);
+        HttpEntity<E2ePayloadRequest> entity = new HttpEntity<>(request, headers);
+
+        E2ePayloadResponse response = restTemplate.postForObject(
+                NODE_CRYPTO_SERVER_URL + "/prepare",
+                entity,
+                E2ePayloadResponse.class
+        );
+
+        return ResponseEntity.ok(response);
+    }
+
+    @Operation(
+            summary = "결제 승인 (E2E Proxy)",
+            description = "클라이언트의 E2E 승인 암호문을 Node.js 서버로 릴레이합니다."
     )
     @PostMapping("/confirm")
-    public ApiResponse<PaymentResponse> confirmPayment(
-            @Valid @RequestBody PaymentConfirmRequest request
+    public ResponseEntity<E2ePayloadResponse> confirmPaymentProxy(
+            @Valid @RequestBody E2ePayloadRequest request
     ) {
-        return ApiResponse.onSuccess(SuccessCode.OK, paymentService.confirmPayment(request));
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_JSON);
+        HttpEntity<E2ePayloadRequest> entity = new HttpEntity<>(request, headers);
+
+        E2ePayloadResponse response = restTemplate.postForObject(
+                NODE_CRYPTO_SERVER_URL + "/confirm",
+                entity,
+                E2ePayloadResponse.class
+        );
+
+        return ResponseEntity.ok(response);
     }
 
     /*
