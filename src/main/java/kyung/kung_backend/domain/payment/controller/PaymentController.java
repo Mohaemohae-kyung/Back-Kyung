@@ -101,9 +101,10 @@ public class PaymentController {
     public ResponseEntity<java.util.Map<String, Object>> getTargetInfo(
             @RequestParam String targetType,
             @RequestParam Long targetId,
-            @RequestParam Long userId
+            @RequestParam Long userId,
+            @RequestParam(required = false) Long userCouponId
     ) {
-        java.util.Map<String, Object> info = paymentService.getTargetInfoForNode(targetType, targetId, userId);
+        java.util.Map<String, Object> info = paymentService.getTargetInfoForNode(targetType, targetId, userId, userCouponId);
         return ResponseEntity.ok(info);
     }
 
