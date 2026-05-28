@@ -22,7 +22,7 @@ public class ExpertDetailResponse {
     private String mainLocationName;
 
     private List<String> categoryNames;
-    private List<Long> expertServiceIds;
+    private List<ServiceInfo> services;
 
     private String verifiedYn;
     private String status;
@@ -34,7 +34,7 @@ public class ExpertDetailResponse {
     public static ExpertDetailResponse from(
             ExpertProfile expertProfile,
             List<String> categoryNames,
-            List<Long> expertServiceIds,
+            List<ServiceInfo> services,
             String portfolioWebViewUrl
     ) {
 
@@ -58,7 +58,7 @@ public class ExpertDetailResponse {
                         : null,
 
                 categoryNames,
-                expertServiceIds,
+                services,
 
                 expertProfile.getVerifiedYn(),
                 expertProfile.getStatus(),
@@ -69,5 +69,12 @@ public class ExpertDetailResponse {
 
                 portfolioWebViewUrl
         );
+    }
+    @Getter
+    @AllArgsConstructor
+    public static class ServiceInfo {
+
+        private Long categoryId;
+        private String categoryName;
     }
 }

@@ -249,9 +249,14 @@ public class ExpertService {
                         .distinct()
                         .toList();
 
-        List<Long> expertServiceIds =
+        List<ExpertDetailResponse.ServiceInfo> services =
                 expertServices.stream()
-                        .map(kyung.kung_backend.domain.servicepost.entity.ExpertService::getExpertServiceId)
+                        .map(service ->
+                                new ExpertDetailResponse.ServiceInfo(
+                                        service.getCategory().getCategoryId(),
+                                        service.getCategory().getName()
+                                )
+                        )
                         .toList();
 
         String webViewUrl = null;
@@ -264,7 +269,7 @@ public class ExpertService {
         return ExpertDetailResponse.from(
                 expertProfile,
                 categoryNames,
-                expertServiceIds,
+                services,
                 webViewUrl
         );
     }

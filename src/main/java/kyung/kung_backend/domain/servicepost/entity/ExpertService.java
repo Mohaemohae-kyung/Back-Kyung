@@ -40,6 +40,15 @@ public class ExpertService extends BaseEntity {
     @JoinColumn(name = "CATEGORY_ID", nullable = false)
     private ServiceCategory category;
 
+    @Column(name = "SERVICE_TITLE", nullable = false)
+    private String serviceTitle;
+
+    @Column(name = "SERVICE_DESCRIPTION")
+    private String serviceDescription;
+
+    @Column(name = "STATUS", nullable = false)
+    private String status;
+
     public static ExpertService create(
             ExpertProfile expertProfile,
             ServiceCategory category
@@ -49,6 +58,10 @@ public class ExpertService extends BaseEntity {
 
         expertService.expertProfile = expertProfile;
         expertService.category = category;
+
+        expertService.serviceTitle = "기본 서비스";
+        expertService.serviceDescription = "";
+        expertService.status = "ACTIVE";
 
         return expertService;
     }
