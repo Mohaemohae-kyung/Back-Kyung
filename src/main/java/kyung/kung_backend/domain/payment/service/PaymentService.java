@@ -21,12 +21,11 @@ import kyung.kung_backend.domain.user.repository.UserRepository;
 import kyung.kung_backend.global.exception.GeneralException;
 import kyung.kung_backend.global.response.ErrorCode;
 import lombok.RequiredArgsConstructor;
-import org.springframework.web.client.RestTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.client.RestTemplate;
 
 import java.math.BigDecimal;
-import java.math.RoundingMode;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
@@ -636,37 +635,24 @@ public class PaymentService {
         return userCoupon;
     }
 
-    private BigDecimal calculateDiscountAmount(
-            UserCoupon userCoupon,
-            BigDecimal totalAmount
-    ) {
+    // PaymentService.java 내부의 쿠폰 계산 로직 수정 예시
+    private BigDecimal calculateDiscountAmount(UserCoupon userCoupon, BigDecimal totalAmount) {
         if (userCoupon == null) {
-            return ZERO;
+            return BigDecimal.ZERO;
         }
 
         Coupon coupon = userCoupon.getCoupon();
 
-        if (coupon.getMinOrderAmount() != null && totalAmount.compareTo(coupon.getMinOrderAmount()) < 0) {
-            throw GeneralException.of(ErrorCode.COUPON_NOT_AVAILABLE);
+        // 최소 주문 금액 검증 로직(minOrderAmount) 및 정률 할인(RATE) 분기 로직을 모두 제거합니다.
+        // 오직 고정 할인 금액(discountAmount)만 바로 반환하도록 변경합니다.
+        BigDecimal discountAmount = coupon.getDiscountAmount();
+
+        // 할인 금액이 총 주문 금액보다 크다면 주문 금액만큼만 할인하도록 방어 코드를 작성합니다.
+        if (discountAmount.compareTo(totalAmount) > 0) {
+            return totalAmount;
         }
 
-        BigDecimal discountAmount = ZERO;
-
-        if (Coupon.DISCOUNT_TYPE_FIXED.equals(coupon.getDiscountType()) && coupon.getDiscountAmount() != null) {
-            discountAmount = coupon.getDiscountAmount();
-        }
-
-        if (Coupon.DISCOUNT_TYPE_RATE.equals(coupon.getDiscountType()) && coupon.getDiscountRate() != null) {
-            discountAmount = totalAmount
-                    .multiply(BigDecimal.valueOf(coupon.getDiscountRate()))
-                    .divide(BigDecimal.valueOf(100), 2, RoundingMode.DOWN);
-        }
-
-        if (coupon.getMaxDiscountAmount() != null) {
-            discountAmount = discountAmount.min(coupon.getMaxDiscountAmount());
-        }
-
-        return discountAmount.min(totalAmount);
+        return discountAmount;
     }
 
     private void validatePgPaymentKeyNotUsed(

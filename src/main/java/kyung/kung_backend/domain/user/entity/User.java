@@ -57,6 +57,9 @@ public class User extends BaseEntity {
     @Column(name = "PROFILE_IMAGE_URL", length = 500)
     private String profileImageUrl;
 
+    @Column(name = "WELCOME_COUPON_AVAILABLE", nullable = false, length = 1)
+    private String welcomeCouponAvailable = "Y";
+
     public static User createUser(String email, String encodedPassword, String name, String nickname, String phone) {
         User user = new User();
         user.email = email;
@@ -66,6 +69,7 @@ public class User extends BaseEntity {
         user.phone = phone;
         user.role = "USER";
         user.status = "ACTIVE";
+        user.welcomeCouponAvailable = "Y"; // 회원가입 시 웰컴 쿠폰 수령 가능 상태로 초기화
         return user;
     }
 
@@ -106,5 +110,13 @@ public class User extends BaseEntity {
             throw new IllegalArgumentException("변경할 비밀번호는 공백일 수 없습니다.");
         }
         this.password = encodedPassword;
+    }
+
+    public boolean isWelcomeCouponAvailable() {
+        return "Y".equals(this.welcomeCouponAvailable);
+    }
+
+    public void disableWelcomeCoupon() {
+        this.welcomeCouponAvailable = "N";
     }
 }
