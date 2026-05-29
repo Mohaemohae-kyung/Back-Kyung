@@ -91,6 +91,9 @@ dependencies {
 	// 채팅 구현 위한 Websocket
 	implementation 'org.springframework.boot:spring-boot-starter-websocket'
 
+	// Firebase Admin SDK (FCM)
+	implementation 'com.google.firebase:firebase-admin:9.3.0'
+
 	// HTML 파싱 및 경로 치환을 위한 Jsoup 라이브러리 추가
 	implementation 'org.jsoup:jsoup:1.17.2'
 }

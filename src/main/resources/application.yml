@@ -39,6 +39,9 @@ jwt:
   access-expiration-ms: ${JWT_ACCESS_EXPIRATION_MS:3600000}
   refresh-expiration-ms: ${JWT_REFRESH_EXPIRATION_MS:1209600000}
 
+fcm:
+  credentials-path: ${FCM_CREDENTIALS_PATH:}
+
 security:
   cors:
     allowed-origins:

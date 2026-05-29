@@ -50,6 +50,7 @@ public class PaymentService {
     private final UserRepository userRepository;
     private final ChatRoomRepository chatRoomRepository;
     private final ChatMessageRepository chatMessageRepository;
+    private final kyung.kung_backend.global.fcm.FcmService fcmService;
 
     @Transactional
     public BookingCheckoutResponse getBookingCheckout(
@@ -142,7 +143,7 @@ public class PaymentService {
             seller = serviceRequest.getExpertProfile().getUser();
             transaction = prepareServiceRequestTransaction(serviceRequest, user, seller, orderId, finalAmount, BigDecimal.ZERO, finalAmount);
             serviceRequest.complete();
-            
+
             // =========================
             // 결제 요청 완료 채팅 메시지 생성
             // =========================
@@ -152,6 +153,14 @@ public class PaymentService {
                 ChatMessage chatMessage = ChatMessage.createPaymentMessage(chatRoom, seller, paymentMessageContent, null);
                 chatMessageRepository.save(chatMessage);
             }
+
+            // =========================
+            // FCM 푸시 알림 (고수에게)
+            // =========================
+            String buyerName = user.getNickname() != null ? user.getNickname() : user.getName();
+            String title = "결제 완료";
+            String body = buyerName + "님으로부터 " + finalAmount.toPlainString() + "원 결제 완료 (주문 " + orderId + ")";
+            fcmService.sendPaymentNotification(seller.getFcmToken(), title, body, orderId);
         } else {
             throw GeneralException.of(ErrorCode.PAYMENT_UNSUPPORTED_TARGET);
         }
