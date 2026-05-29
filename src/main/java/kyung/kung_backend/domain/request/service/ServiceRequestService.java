@@ -2,6 +2,7 @@ package kyung.kung_backend.domain.request.service;
 
 import kyung.kung_backend.domain.category.entity.ServiceCategory;
 import kyung.kung_backend.domain.category.repository.ServiceCategoryRepository;
+import kyung.kung_backend.domain.chat.entity.ChatMessage;
 import kyung.kung_backend.domain.chat.entity.ChatRoom;
 import kyung.kung_backend.domain.chat.repository.ChatMessageRepository;
 import kyung.kung_backend.domain.chat.repository.ChatRoomRepository;
@@ -235,6 +236,8 @@ public class ServiceRequestService {
 
         validateUpdatable(serviceRequest);
 
+        String oldPaymentMode = serviceRequest.getPaymentMode();
+
         serviceRequest.update(
                 request.getTitle(),
                 request.getContent(),
@@ -243,13 +246,43 @@ public class ServiceRequestService {
                 request.getPaymentMode()
         );
 
+        ChatRoom chatRoom = chatRoomRepository
+                .findByServiceRequest_RequestId(
+                        serviceRequest.getRequestId()
+                )
+                .orElse(null);
+
+        // paymentMode 가 새로 set 될 때(=결제 요청이 처음 발생)에만
+        // 안내 메시지 1건 생성. 새 messageType "PAYMENT_REQUEST_NOTICE"
+        // 는 결제 진입을 위한 paymentId 가 없어 기존 PAYMENT_REQUEST 와
+        // 분리해 사용한다.
+        boolean firstPaymentRequest =
+                oldPaymentMode == null
+                        && serviceRequest.getPaymentMode() != null;
+
+        if (firstPaymentRequest
+                && chatRoom != null
+                && request.getBudget() != null) {
+
+            String content =
+                    request.getBudget().toPlainString()
+                            + "원 결제 요청";
+
+            ChatMessage notice =
+                    ChatMessage
+                            .createPaymentRequestNoticeMessage(
+                                    chatRoom,
+                                    user,
+                                    content
+                            );
+
+            chatMessageRepository.save(notice);
+        }
+
         Long chatRoomId =
-                chatRoomRepository
-                        .findByServiceRequest_RequestId(
-                                serviceRequest.getRequestId()
-                        )
-                        .map(ChatRoom::getChatRoomId)
-                        .orElse(null);
+                chatRoom != null
+                        ? chatRoom.getChatRoomId()
+                        : null;
 
         return ServiceRequestResponse.from(
                 serviceRequest,

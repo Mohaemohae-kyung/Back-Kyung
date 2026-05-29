@@ -167,6 +167,38 @@ public class ChatMessage extends BaseCreatedEntity {
     }
 
     // =========================
+    // 결제 요청 안내 메시지 생성 (paymentMode 최초 셋업 시)
+    // =========================
+    public static ChatMessage createPaymentRequestNoticeMessage(
+            ChatRoom chatRoom,
+            User sender,
+            String content
+    ) {
+
+        ChatMessage chatMessage =
+                new ChatMessage();
+
+        chatMessage.chatRoom =
+                chatRoom;
+
+        chatMessage.sender =
+                sender;
+
+        chatMessage.messageType =
+                "PAYMENT_REQUEST_NOTICE";
+
+        chatMessage.content =
+                content;
+
+        chatMessage.paymentId = null;
+
+        chatMessage.readYn =
+                "N";
+
+        return chatMessage;
+    }
+
+    // =========================
     // 시스템 메시지 생성
     // =========================
     public static ChatMessage createSystemMessage(
