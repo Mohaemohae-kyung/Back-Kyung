@@ -29,7 +29,8 @@ public class PaymentController {
 
     private final PaymentService paymentService;
     private final RestTemplate restTemplate = new RestTemplate();
-    private final String NODE_CRYPTO_SERVER_URL = "http://100.104.59.126:4000/api/crypto";
+    private final String NODE_SERVER_URL = "http://100.104.59.126:4000";
+    private final String NODE_CRYPTO_SERVER_URL = NODE_SERVER_URL + "/api/crypto";
 
 
     @Operation(
@@ -62,7 +63,7 @@ public class PaymentController {
 
         // Node.js 결제 전담 서버로 순수 릴레이
         java.util.Map response = restTemplate.postForObject(
-                NODE_CRYPTO_SERVER_URL + "/payments/prepare",
+                NODE_SERVER_URL + "/api/payments/prepare",
                 entity,
                 java.util.Map.class
         );
@@ -86,7 +87,7 @@ public class PaymentController {
 
         // Node.js 결제 전담 서버로 순수 릴레이
         java.util.Map response = restTemplate.postForObject(
-                NODE_CRYPTO_SERVER_URL + "/payments/confirm",
+                NODE_SERVER_URL + "/api/payments/confirm",
                 entity,
                 java.util.Map.class
         );
