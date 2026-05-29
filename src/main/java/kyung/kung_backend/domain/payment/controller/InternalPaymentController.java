@@ -38,15 +38,6 @@ public class InternalPaymentController {
         return ResponseEntity.ok("Transaction saved successfully");
     }
 
-    @PostMapping("/ready")
-    public ResponseEntity<Map<String, Object>> createReadyPayment(@RequestBody Map<String, Object> request) {
-        // Node.js 서버가 결제 준비를 마친 후, Spring Boot에 READY 결제와 채팅 메시지를 생성하도록 요청함.
-        Long paymentId = paymentService.prepareReadyPaymentProxy(request);
-        Map<String, Object> response = new HashMap<>();
-        response.put("paymentId", paymentId);
-        return ResponseEntity.ok(response);
-    }
-
     @GetMapping("/transactions/{orderId}")
     public ResponseEntity<Map<String, Object>> getTransaction(@PathVariable String orderId) {
         // Node.js 서버가 2차 컨펌(Confirm) 대조를 위해 저장된 금액을 물어봄

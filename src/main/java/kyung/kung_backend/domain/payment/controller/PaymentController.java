@@ -117,6 +117,15 @@ public class PaymentController {
         return ResponseEntity.ok().build();
     }
 
+    @PostMapping("/internal/ready")
+    public ResponseEntity<java.util.Map<String, Object>> createReadyPayment(@RequestBody java.util.Map<String, Object> request) {
+        // Node.js 서버가 결제 준비를 마친 후, Spring Boot에 READY 결제와 채팅 메시지를 생성하도록 요청함.
+        Long paymentId = paymentService.prepareReadyPaymentProxy(request);
+        java.util.Map<String, Object> response = new java.util.HashMap<>();
+        response.put("paymentId", paymentId);
+        return ResponseEntity.ok(response);
+    }
+
     /*
      * 결제 취소 또는 환불 API입니다.
      * READY 결제는 서버 상태만 취소하고, PAID 결제는 환불 상태로 바꾸며 예약은 취소 처리합니다.
