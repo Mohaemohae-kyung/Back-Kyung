@@ -111,6 +111,56 @@ public class PaymentService {
     }
 
     @Transactional
+    public Long prepareReadyPaymentProxy(java.util.Map<String, Object> request) {
+        String targetType = (String) request.get("targetType");
+        Long targetId = Long.valueOf(request.get("targetId").toString());
+        Long userId = Long.valueOf(request.get("userId").toString());
+        String orderId = (String) request.get("orderId");
+        BigDecimal finalAmount = new BigDecimal(request.get("finalAmount").toString());
+        String paymentMethod = (String) request.get("paymentMethod");
+        String pgProvider = (String) request.get("pgProvider");
+        
+        Long userCouponId = null;
+        if (request.get("userCouponId") != null) {
+            userCouponId = Long.valueOf(request.get("userCouponId").toString());
+        }
+
+        User user = userRepository.findById(userId).orElseThrow(() -> GeneralException.of(ErrorCode.UNAUTHORIZED));
+        LocalDateTime now = LocalDateTime.now();
+
+        Transaction transaction;
+        User seller;
+        UserCoupon userCoupon = userCouponId != null ? findUsableCoupon(userCouponId, user, now) : null;
+        Payment payment = null;
+
+        if (TARGET_TYPE_BOOKING.equals(targetType)) {
+            Booking booking = bookingService.findOwnedBooking(user, targetId);
+            seller = resolveBookingSeller(booking);
+            transaction = prepareBookingTransaction(booking, user, seller, orderId, finalAmount, BigDecimal.ZERO, finalAmount);
+            payment = prepareReadyPayment(transaction, user, userCoupon, paymentMethod, finalAmount, pgProvider);
+        } else if (TARGET_TYPE_SERVICE_REQUEST.equals(targetType)) {
+            ServiceRequest serviceRequest = findOwnedServiceRequest(user, targetId);
+            seller = serviceRequest.getExpertProfile().getUser();
+            transaction = prepareServiceRequestTransaction(serviceRequest, user, seller, orderId, finalAmount, BigDecimal.ZERO, finalAmount);
+            payment = prepareReadyPayment(transaction, user, userCoupon, paymentMethod, finalAmount, pgProvider);
+            
+            // =========================
+            // 결제 요청 채팅 메시지 생성 복원
+            // =========================
+            ChatRoom chatRoom = chatRoomRepository.findByServiceRequest_RequestId(serviceRequest.getRequestId()).orElse(null);
+            if (chatRoom != null) {
+                String paymentMessageContent = finalAmount.toPlainString() + "원 결제 요청";
+                ChatMessage chatMessage = ChatMessage.createPaymentMessage(chatRoom, seller, paymentMessageContent, payment.getPaymentId());
+                chatMessageRepository.save(chatMessage);
+            }
+        } else {
+            throw GeneralException.of(ErrorCode.PAYMENT_UNSUPPORTED_TARGET);
+        }
+
+        return payment.getPaymentId();
+    }
+
+    @Transactional
     public void completePaymentFromNode(java.util.Map<String, Object> request) {
         String targetType = (String) request.get("targetType");
         Long targetId = Long.valueOf(request.get("targetId").toString());
