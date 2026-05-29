@@ -60,6 +60,9 @@ public class User extends BaseEntity {
     @Column(name = "WELCOME_COUPON_AVAILABLE", length = 1)
     private String welcomeCouponAvailable = "Y";
 
+    @Column(name = "FCM_TOKEN", length = 500)
+    private String fcmToken;
+
     public static User createUser(String email, String encodedPassword, String name, String nickname, String phone) {
         User user = new User();
         user.email = email;
@@ -118,5 +121,9 @@ public class User extends BaseEntity {
 
     public void disableWelcomeCoupon() {
         this.welcomeCouponAvailable = "N";
+    }
+
+    public void updateFcmToken(String token) {
+        this.fcmToken = token;
     }
 }

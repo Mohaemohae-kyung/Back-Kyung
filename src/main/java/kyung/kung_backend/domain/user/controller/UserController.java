@@ -59,4 +59,17 @@ public class UserController {
         userService.deleteMyAccount(user, request);
         return ApiResponse.onSuccess(SuccessCode.NO_CONTENT);
     }
+
+    @Operation(
+            summary = "FCM 토큰 등록",
+            description = "단말의 FCM 토큰을 사용자 계정에 등록합니다. 결제 완료 시 알림 발송에 사용됩니다."
+    )
+    @PostMapping("/me/fcm-token")
+    public ApiResponse<Void> registerFcmToken(
+            @AuthenticationPrincipal User user,
+            @Valid @RequestBody kyung.kung_backend.domain.user.dto.FcmTokenRequest request
+    ) {
+        userService.updateFcmToken(user, request.getToken());
+        return ApiResponse.onSuccess(SuccessCode.OK);
+    }
 }

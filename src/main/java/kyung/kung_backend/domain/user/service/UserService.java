@@ -57,6 +57,12 @@ public class UserService {
     }
 
     @Transactional
+    public void updateFcmToken(User currentUser, String token) {
+        User user = getUser(currentUser.getUserId());
+        user.updateFcmToken(token);
+    }
+
+    @Transactional
     public UserProfileResponse updateMyProfile(User currentUser, UserProfileUpdateRequest request) {
         User user = getUser(currentUser.getUserId());
         String newProfileImageUrl = user.getProfileImageUrl();

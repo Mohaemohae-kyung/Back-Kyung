@@ -23,6 +23,11 @@ jobs:
       - name: Create .env file
         run: |
           echo "${{ secrets.ENV_FILE }}" > .env
+          echo "FCM_CREDENTIALS_PATH=${{ secrets.EC2_APP_DIR }}/firebase-adminsdk.json" >> .env
+
+      - name: Decode Firebase Admin SDK key
+        run: |
+          echo "${{ secrets.FIREBASE_ADMIN_SDK_BASE64 }}" | base64 -d > firebase-adminsdk.json
 
       - name: Grant execute permission for Gradle
         run: chmod +x ./gradlew
@@ -51,6 +56,15 @@ jobs:
           username: ${{ secrets.EC2_USER }}
           key: ${{ secrets.EC2_SSH_KEY }}
           source: ".env"
+          target: "${{ secrets.EC2_APP_DIR }}"
+
+      - name: Copy Firebase Admin SDK key to EC2
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USER }}
+          key: ${{ secrets.EC2_SSH_KEY }}
+          source: "firebase-adminsdk.json"
           target: "${{ secrets.EC2_APP_DIR }}"
 
       - name: Restart Spring Boot service
