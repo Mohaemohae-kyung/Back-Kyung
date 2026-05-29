@@ -1,6 +1,7 @@
 package kyung.kung_backend.domain.booking.dto;
 
 import kyung.kung_backend.domain.booking.entity.Booking;
+import kyung.kung_backend.domain.coupon.dto.AvailableCouponDto;
 import kyung.kung_backend.domain.expert.entity.ExpertProfile;
 import kyung.kung_backend.domain.location.entity.Location;
 import kyung.kung_backend.domain.store.entity.StoreProduct;
@@ -8,6 +9,7 @@ import lombok.Builder;
 import lombok.Getter;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Getter
 @Builder
@@ -33,7 +35,19 @@ public class BookingResponse {
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 
+    // 추가된 쿠폰 정보 필드
+    private String welcomeCouponAvailable;
+    private List<AvailableCouponDto> availableCoupons;
+
     public static BookingResponse from(Booking booking) {
+        return of(booking, null, null);
+    }
+
+    public static BookingResponse of(
+            Booking booking,
+            String welcomeCouponAvailable,
+            List<AvailableCouponDto> availableCoupons
+    ) {
         StoreProduct storeProduct = booking.getStoreProduct();
         ExpertProfile expertProfile =
                 storeProduct != null
@@ -81,6 +95,8 @@ public class BookingResponse {
                 .paymentExpiresAt(booking.getPaymentExpiresAt())
                 .createdAt(booking.getCreatedAt())
                 .updatedAt(booking.getUpdatedAt())
+                .welcomeCouponAvailable(welcomeCouponAvailable)
+                .availableCoupons(availableCoupons)
                 .build();
     }
 }

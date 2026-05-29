@@ -1,10 +1,13 @@
 package kyung.kung_backend.domain.booking.service;
 
-import kyung.kung_backend.domain.booking.dto.BookingPrepareRequest;
 import kyung.kung_backend.domain.booking.dto.BookingAvailabilityResponse;
+import kyung.kung_backend.domain.booking.dto.BookingPrepareRequest;
 import kyung.kung_backend.domain.booking.dto.BookingResponse;
 import kyung.kung_backend.domain.booking.entity.Booking;
 import kyung.kung_backend.domain.booking.repository.BookingRepository;
+import kyung.kung_backend.domain.coupon.dto.AvailableCouponDto;
+import kyung.kung_backend.domain.coupon.entity.UserCoupon;
+import kyung.kung_backend.domain.coupon.repository.UserCouponRepository;
 import kyung.kung_backend.domain.location.entity.Location;
 import kyung.kung_backend.domain.location.repository.LocationRepository;
 import kyung.kung_backend.domain.store.entity.StoreProduct;
@@ -27,10 +30,6 @@ import java.util.List;
 @Transactional(readOnly = true)
 public class BookingService {
 
-    /*
-     * 사용자가 예약하기를 누른 뒤 결제 화면에서 머물 수 있는 시간입니다.
-     * 이 시간이 지나면 PENDING_PAYMENT 예약은 EXPIRED로 바뀌고 같은 시간을 다시 예약할 수 있습니다.
-     */
     private static final long PAYMENT_HOLD_MINUTES = 15L;
 
     private static final List<String> BLOCKING_STATUSES = List.of(
@@ -42,6 +41,7 @@ public class BookingService {
     private final StoreProductRepository storeProductRepository;
     private final LocationRepository locationRepository;
     private final UserRepository userRepository;
+    private final UserCouponRepository userCouponRepository;
 
     @Transactional
     public BookingResponse prepareBooking(
@@ -59,8 +59,23 @@ public class BookingService {
         }
 
         Booking booking = createStoreProductBooking(user, request, now);
+        Booking savedBooking = bookingRepository.save(booking);
 
-        return BookingResponse.from(bookingRepository.save(booking));
+        // 1. 유저가 보유한 전체 쿠폰 조회
+        List<UserCoupon> userCoupons = userCouponRepository.findAllByUserUserId(user.getUserId());
+
+        // 2. 만료되지 않고 사용 가능한 상태(AVAILABLE, ISSUED)의 쿠폰만 필터링 후 DTO로 변환
+        List<AvailableCouponDto> availableCoupons = userCoupons.stream()
+                .filter(uc -> uc.isUsable(now))
+                .map(AvailableCouponDto::from)
+                .toList();
+
+        // 3. User 엔티티의 웰컴 쿠폰 수령 가능 여부와 가용 쿠폰 목록을 포함하여 반환
+        return BookingResponse.of(
+                savedBooking,
+                user.getWelcomeCouponAvailable(),
+                availableCoupons
+        );
     }
 
     public BookingAvailabilityResponse checkBookingAvailability(
@@ -105,8 +120,8 @@ public class BookingService {
     ) {
         User user = findLoginUser(loginUser);
         Booking booking = findBooking(bookingId);
-        
-        // 예약 조회 권한검증 누락 취약점
+
+        // 예약 조회 권한검증 누락 취약점 유지
         // validateOwner(user, booking);
 
         return BookingResponse.from(booking);
@@ -273,11 +288,6 @@ public class BookingService {
         }
     }
 
-    /*
-     * 예약 시간 겹침 검사입니다.
-     * 기존 예약의 시작 시간이 요청 종료 시간보다 빠르고,
-     * 기존 예약의 종료 시간이 요청 시작 시간보다 늦으면 시간이 겹친 것으로 봅니다.
-     */
     private boolean isStoreProductSlotReserved(
             Long storeProductId,
             LocalDateTime startAt,
@@ -292,11 +302,6 @@ public class BookingService {
                 );
     }
 
-    /*
-     * 예약 가능 여부 조회용 겹침 검사입니다.
-     * GET API에서는 DB 상태를 바꾸지 않기 위해 만료 정리 메서드를 호출하지 않습니다.
-     * 대신 아직 결제 대기 시간이 남은 PENDING_PAYMENT 예약과 CONFIRMED 예약만 막힌 시간으로 봅니다.
-     */
     private boolean isStoreProductSlotReservedForAvailability(
             Long storeProductId,
             LocalDateTime startAt,
