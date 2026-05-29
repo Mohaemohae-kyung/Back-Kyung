@@ -9,6 +9,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
+import org.springframework.security.authorization.AuthorizationDecision;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
@@ -17,12 +18,16 @@ import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.access.intercept.RequestAuthorizationContext;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.security.web.util.matcher.IpAddressMatcher;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
+import org.springframework.security.core.Authentication;
 
 import java.util.List;
+import java.util.function.Supplier;
 
 @Configuration
 @EnableWebSecurity
@@ -47,6 +52,16 @@ public class SecurityConfig {
             "/api/chat/llm",
             "/api/payments/internal/**"
     };
+
+    // Swagger는 운영 환경에서 외부 전체 공개하지 않고,
+    // 서버 내부 또는 사설망에서만 접근할 수 있도록 제한합니다.
+    private static final List<IpAddressMatcher> INTERNAL_IP_MATCHERS = List.of(
+            new IpAddressMatcher("127.0.0.1"),
+            new IpAddressMatcher("::1"),
+            new IpAddressMatcher("10.0.0.0/8"),
+            new IpAddressMatcher("172.16.0.0/12"),
+            new IpAddressMatcher("192.168.0.0/16")
+    );
 
     private static final String[] APP_INTEGRITY_WHITE_LIST = {
             "/api/app-integrity/report"
@@ -122,8 +137,8 @@ public class SecurityConfig {
                         // health check
                         .requestMatchers(HEALTH_WHITE_LIST).permitAll()
 
-                        // Swagger 문서 확인용 경로
-                        .requestMatchers(SWAGGER_WHITE_LIST).permitAll()
+                        // Swagger 문서 경로는 외부 전체 공개하지 않고 내부 IP에서만 허용합니다.
+                        .requestMatchers(SWAGGER_WHITE_LIST).access(this::internalOnly)
 
                         // 회원가입, 로그인 등 인증 전 접근이 필요한 API
                         .requestMatchers(AUTH_WHITE_LIST).permitAll()
@@ -215,5 +230,17 @@ public class SecurityConfig {
         source.registerCorsConfiguration("/**", config);
 
         return source;
+    }
+
+    private AuthorizationDecision internalOnly(
+            Supplier<Authentication> authentication,
+            RequestAuthorizationContext context
+    ) {
+        String remoteAddress = context.getRequest().getRemoteAddr();
+
+        boolean isInternalIp = INTERNAL_IP_MATCHERS.stream()
+                .anyMatch(matcher -> matcher.matches(remoteAddress));
+
+        return new AuthorizationDecision(isInternalIp);
     }
 }
