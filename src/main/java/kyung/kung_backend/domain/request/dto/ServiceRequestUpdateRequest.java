@@ -23,4 +23,6 @@ public class ServiceRequestUpdateRequest {
     private BigDecimal budget;
 
     private LocalDateTime preferredDate;
+
+    private String paymentMode;
 }

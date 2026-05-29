@@ -57,6 +57,8 @@ public class ServiceRequestResponse {
 
     private RequestStatus status;
 
+    private String paymentMode;
+
     private LocalDateTime createdAt;
 
     private LocalDateTime updatedAt;
@@ -172,6 +174,10 @@ public class ServiceRequestResponse {
 
                 .status(
                         serviceRequest.getStatus()
+                )
+
+                .paymentMode(
+                        serviceRequest.getPaymentMode()
                 )
 
                 .createdAt(

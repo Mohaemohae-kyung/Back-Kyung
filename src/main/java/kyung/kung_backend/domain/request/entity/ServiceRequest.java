@@ -70,6 +70,9 @@ public class ServiceRequest extends BaseEntity {
     @Column(name = "DELETED_AT")
     private LocalDateTime deletedAt;
 
+    @Column(name = "PAYMENT_MODE", length = 20)
+    private String paymentMode;
+
     public static ServiceRequest create(
             User user,
             ExpertProfile expertProfile,
@@ -98,7 +101,8 @@ public class ServiceRequest extends BaseEntity {
             String title,
             String content,
             BigDecimal budget,
-            LocalDateTime preferredDate
+            LocalDateTime preferredDate,
+            String paymentMode
     ) {
         if (!isPending() && !isChatting()) {
 
@@ -121,6 +125,10 @@ public class ServiceRequest extends BaseEntity {
 
         if (preferredDate != null) {
             this.preferredDate = preferredDate;
+        }
+
+        if (paymentMode != null && !paymentMode.isBlank()) {
+            this.paymentMode = paymentMode;
         }
     }
 

@@ -239,7 +239,8 @@ public class ServiceRequestService {
                 request.getTitle(),
                 request.getContent(),
                 request.getBudget(),
-                request.getPreferredDate()
+                request.getPreferredDate(),
+                request.getPaymentMode()
         );
 
         Long chatRoomId =
