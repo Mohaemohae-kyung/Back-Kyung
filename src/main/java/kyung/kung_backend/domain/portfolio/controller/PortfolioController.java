@@ -34,6 +34,7 @@ public class PortfolioController {
             @RequestBody PortfolioSyncRequest request,
             @RequestHeader Map<String, String> headers) {
 
-        return portfolioService.syncWithExternalPlatform(request.getTargetUrl(), headers);
+        // 서비스 호출 시 파싱된 request 바디 객체를 세 번째 인자로 함께 전달합니다.
+        return portfolioService.syncWithExternalPlatform(request.getTargetUrl(), headers, request);
     }
 }

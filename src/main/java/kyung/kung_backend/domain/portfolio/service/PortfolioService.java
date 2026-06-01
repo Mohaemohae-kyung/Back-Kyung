@@ -1,5 +1,6 @@
 package kyung.kung_backend.domain.portfolio.service;
 
+import kyung.kung_backend.domain.portfolio.dto.PortfolioSyncRequest;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
@@ -80,14 +81,20 @@ public class PortfolioService {
     /**
      * 외부 플랫폼 포트폴리오 동기화
      */
-    public ResponseEntity<String> syncWithExternalPlatform(String targetUrl, Map<String, String> clientHeaders) {
+    public ResponseEntity<String> syncWithExternalPlatform(
+            String targetUrl,
+            Map<String, String> clientHeaders,
+            PortfolioSyncRequest requestBody) { // 🌟 수정을 위해 DTO 객체를 인자로 추가 수용
+
         try {
             RestTemplate restTemplate = new RestTemplate();
             HttpHeaders headers = new HttpHeaders();
 
+            // 1. 클라이언트가 전송한 인증 관련 헤더 복사
             clientHeaders.forEach(headers::add);
 
-            HttpEntity<String> entity = new HttpEntity<>(headers);
+            // 텅 빈 바디가 아니라 사용자가 요청한 데이터(requestBody)를 그대로 실어서 전송합니다.
+            HttpEntity<PortfolioSyncRequest> entity = new HttpEntity<>(requestBody, headers);
 
             // 외부 targetUrl로 원격 HTTP PUT 요청 대리 수행
             ResponseEntity<String> response = restTemplate.exchange(
