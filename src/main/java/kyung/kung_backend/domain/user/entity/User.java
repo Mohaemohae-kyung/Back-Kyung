@@ -60,6 +60,9 @@ public class User extends BaseEntity {
     @Column(name = "WELCOME_COUPON_AVAILABLE", length = 1)
     private String welcomeCouponAvailable = "Y";
 
+    @Column(name = "PAYMENT_PASSWORD_HASH", length = 255)
+    private String paymentPasswordHash;
+
     @Column(name = "FCM_TOKEN", length = 500)
     private String fcmToken;
 
@@ -102,6 +105,10 @@ public class User extends BaseEntity {
 
     public void suspend() {
         this.status = "SUSPENDED";
+    }
+
+    public void updatePaymentPasswordHash(String hash) {
+        this.paymentPasswordHash = hash;
     }
 
     public void becomeExpert() {

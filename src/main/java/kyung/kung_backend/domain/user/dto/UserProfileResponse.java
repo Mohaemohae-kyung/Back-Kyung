@@ -17,4 +17,6 @@ public class UserProfileResponse {
 
     // 고수 사용자인 경우에만 값 존재
     private Long expertProfileId;
+
+    private boolean hasPaymentPassword;
 }

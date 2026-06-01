@@ -53,6 +53,7 @@ public class UserService {
                 .role(user.getRole())
                 .profileImageUrl(user.getProfileImageUrl())
                 .expertProfileId(expertProfileId)
+                .hasPaymentPassword(user.getPaymentPasswordHash() != null)
                 .build();
     }
 

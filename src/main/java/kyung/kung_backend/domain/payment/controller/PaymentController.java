@@ -126,6 +126,30 @@ public class PaymentController {
         return ResponseEntity.ok(response);
     }
 
+    @PostMapping("/internal/password")
+    public ResponseEntity<Void> updatePaymentPasswordInternal(
+            @RequestBody java.util.Map<String, Object> request
+    ) {
+        paymentService.updatePaymentPasswordHash(request);
+        return ResponseEntity.ok().build();
+    }
+
+    @GetMapping("/internal/password/{userId}")
+    public ResponseEntity<java.util.Map<String, Object>> getPaymentPasswordHash(@PathVariable Long userId) {
+        String hash = paymentService.getPaymentPasswordHash(userId);
+        java.util.Map<String, Object> response = new java.util.HashMap<>();
+        if (hash != null) {
+            response.put("hash", hash);
+        }
+        return ResponseEntity.ok(response);
+    }
+
+    @PostMapping("/internal/suspend/{userId}")
+    public ResponseEntity<Void> suspendUserInternal(@PathVariable Long userId) {
+        paymentService.suspendUser(userId);
+        return ResponseEntity.ok().build();
+    }
+
     /*
      * 결제 취소 또는 환불 API입니다.
      * READY 결제는 서버 상태만 취소하고, PAID 결제는 환불 상태로 바꾸며 예약은 취소 처리합니다.
