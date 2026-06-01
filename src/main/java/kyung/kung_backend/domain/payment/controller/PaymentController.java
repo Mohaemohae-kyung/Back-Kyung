@@ -17,6 +17,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 import org.springframework.web.client.RestTemplate;
+import org.springframework.web.client.HttpStatusCodeException;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.HttpEntity;
@@ -61,14 +62,19 @@ public class PaymentController {
         headers.setContentType(MediaType.APPLICATION_JSON);
         HttpEntity<java.util.Map<String, Object>> entity = new HttpEntity<>(request, headers);
 
-        // Node.js 결제 전담 서버로 순수 릴레이
-        java.util.Map response = restTemplate.postForObject(
-                NODE_SERVER_URL + "/api/payments/prepare",
-                entity,
-                java.util.Map.class
-        );
-
-        return ResponseEntity.ok(response);
+        try {
+            // Node.js 결제 전담 서버로 순수 릴레이
+            java.util.Map response = restTemplate.postForObject(
+                    NODE_SERVER_URL + "/api/payments/prepare",
+                    entity,
+                    java.util.Map.class
+            );
+            return ResponseEntity.ok(response);
+        } catch (HttpStatusCodeException e) {
+            return ResponseEntity.status(e.getStatusCode())
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .body(e.getResponseBodyAs(java.util.Map.class));
+        }
     }
 
     @Operation(
@@ -85,14 +91,19 @@ public class PaymentController {
         headers.setContentType(MediaType.APPLICATION_JSON);
         HttpEntity<java.util.Map<String, Object>> entity = new HttpEntity<>(request, headers);
 
-        // Node.js 결제 전담 서버로 순수 릴레이
-        java.util.Map response = restTemplate.postForObject(
-                NODE_SERVER_URL + "/api/payments/confirm",
-                entity,
-                java.util.Map.class
-        );
-
-        return ResponseEntity.ok(response);
+        try {
+            // Node.js 결제 전담 서버로 순수 릴레이
+            java.util.Map response = restTemplate.postForObject(
+                    NODE_SERVER_URL + "/api/payments/confirm",
+                    entity,
+                    java.util.Map.class
+            );
+            return ResponseEntity.ok(response);
+        } catch (HttpStatusCodeException e) {
+            return ResponseEntity.status(e.getStatusCode())
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .body(e.getResponseBodyAs(java.util.Map.class));
+        }
     }
 
     @Operation(
@@ -112,13 +123,19 @@ public class PaymentController {
         headers.setContentType(MediaType.APPLICATION_JSON);
         HttpEntity<java.util.Map<String, Object>> entity = new HttpEntity<>(request, headers);
 
-        java.util.Map response = restTemplate.postForObject(
-                NODE_SERVER_URL + "/api/payments/password/setup",
-                entity,
-                java.util.Map.class
-        );
-
-        return ResponseEntity.ok(response);
+        try {
+            // Node.js 서버로 순수 릴레이
+            java.util.Map response = restTemplate.postForObject(
+                    NODE_SERVER_URL + "/api/payments/password/setup",
+                    entity,
+                    java.util.Map.class
+            );
+            return ResponseEntity.ok(response);
+        } catch (HttpStatusCodeException e) {
+            return ResponseEntity.status(e.getStatusCode())
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .body(e.getResponseBodyAs(java.util.Map.class));
+        }
     }
 
     // =========================================================================
