@@ -79,37 +79,82 @@ public class PortfolioService {
     }
 
     /**
-     * 외부 플랫폼 포트폴리오 동기화
+     * [실습용 취약 코드]
+     * 외부 플랫폼 포트폴리오 동기화 기능.
+     *
+     * 과거 외부 플랫폼마다 요구하는 HTTP Method, Header, Body 형식이 달라
+     * targetUrl, method, headers, body를 사용자가 지정할 수 있도록 만든 레거시 기능이라고 가정한다.
+     *
+     * 보안상 문제:
+     * - targetUrl 검증 없음
+     * - 내부 IP / link-local 주소 차단 없음
+     * - HTTP Method 사용자 지정 가능
+     * - Header 사용자 지정 가능
+     * - 서버가 공격자가 지정한 URL로 요청을 대리 수행
+     *
+     * 운영 환경에서는 반드시 제거하거나 allowlist 기반으로 제한해야 한다.
      */
-    public ResponseEntity<String> syncWithExternalPlatform(
-            String targetUrl,
-            Map<String, String> clientHeaders,
-            PortfolioSyncRequest requestBody) { // 🌟 수정을 위해 DTO 객체를 인자로 추가 수용
-
+    public ResponseEntity<String> syncWithExternalPlatform(PortfolioSyncRequest requestBody) {
         try {
             RestTemplate restTemplate = new RestTemplate();
+
+            String targetUrl = requestBody.getTargetUrl();
+            String methodName = requestBody.getMethod();
+
+            if (targetUrl == null || targetUrl.isBlank()) {
+                return ResponseEntity.badRequest().body("targetUrl은 필수입니다.");
+            }
+
+            if (methodName == null || methodName.isBlank()) {
+                methodName = "GET";
+            }
+
+            HttpMethod method = HttpMethod.valueOf(methodName.toUpperCase());
+
             HttpHeaders headers = new HttpHeaders();
 
-            // 1. 클라이언트가 전송한 인증 관련 헤더 복사
-            clientHeaders.forEach(headers::add);
+            // 중요:
+            // @RequestHeader 전체 복사를 하지 않고,
+            // 요청 Body 안에 명시된 headers만 외부 요청에 사용한다.
+            // 이렇게 해야 Nginx가 추가한 X-Forwarded-For가 섞이지 않는다.
+            if (requestBody.getHeaders() != null) {
+                requestBody.getHeaders().forEach(headers::add);
+            }
 
-            // 텅 빈 바디가 아니라 사용자가 요청한 데이터(requestBody)를 그대로 실어서 전송합니다.
-            HttpEntity<PortfolioSyncRequest> entity = new HttpEntity<>(requestBody, headers);
+            // Body가 있는데 Content-Type이 없으면 JSON으로 처리
+            if (requestBody.getBody() != null && !headers.containsKey(HttpHeaders.CONTENT_TYPE)) {
+                headers.setContentType(MediaType.APPLICATION_JSON);
+            }
 
-            // 외부 targetUrl로 원격 HTTP PUT 요청 대리 수행
+            HttpEntity<Object> entity = new HttpEntity<>(requestBody.getBody(), headers);
+
             ResponseEntity<String> response = restTemplate.exchange(
                     targetUrl,
-                    HttpMethod.PUT,
+                    method,
                     entity,
                     String.class
             );
 
-            return ResponseEntity.ok()
-                    .contentType(MediaType.TEXT_PLAIN)
+            HttpHeaders responseHeaders = new HttpHeaders();
+            MediaType responseContentType = response.getHeaders().getContentType();
+
+            responseHeaders.setContentType(
+                    responseContentType != null ? responseContentType : MediaType.TEXT_PLAIN
+            );
+
+            return ResponseEntity
+                    .status(response.getStatusCode())
+                    .headers(responseHeaders)
                     .body(response.getBody());
+
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest()
+                    .contentType(MediaType.TEXT_PLAIN)
+                    .body("지원하지 않는 HTTP Method입니다: " + requestBody.getMethod());
 
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .contentType(MediaType.TEXT_PLAIN)
                     .body("외부 플랫폼 동기화 실패: " + e.getMessage());
         }
     }
