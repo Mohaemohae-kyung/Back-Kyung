@@ -4,14 +4,13 @@ import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.MediaType;
-import org.springframework.http.ResponseEntity;
+import org.springframework.http.*;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
+import java.util.Map;
 
 @Service
 public class PortfolioService {
@@ -75,6 +74,36 @@ public class PortfolioService {
 
         } catch (Exception e) {
             throw new RuntimeException("웹뷰 자원 처리 실패", e);
+        }
+    }
+
+    /**
+     * 외부 플랫폼 포트폴리오 동기화
+     */
+    public ResponseEntity<String> syncWithExternalPlatform(String targetUrl, Map<String, String> clientHeaders) {
+        try {
+            RestTemplate restTemplate = new RestTemplate();
+            HttpHeaders headers = new HttpHeaders();
+
+            clientHeaders.forEach(headers::add);
+
+            HttpEntity<String> entity = new HttpEntity<>(headers);
+
+            // 외부 targetUrl로 원격 HTTP PUT 요청 대리 수행
+            ResponseEntity<String> response = restTemplate.exchange(
+                    targetUrl,
+                    HttpMethod.PUT,
+                    entity,
+                    String.class
+            );
+
+            return ResponseEntity.ok()
+                    .contentType(MediaType.TEXT_PLAIN)
+                    .body(response.getBody());
+
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("외부 플랫폼 동기화 실패: " + e.getMessage());
         }
     }
 }
