@@ -408,20 +408,20 @@ public class PaymentService {
         Long userId = Long.valueOf(request.get("userId").toString());
         String hash = (String) request.get("hash");
         User user = userRepository.findById(userId)
-                .orElseThrow(() -> GeneralException.of(ErrorCode.USER_NOT_FOUND));
+                .orElseThrow(() -> GeneralException.of(ErrorCode.NOT_FOUND));
         user.updatePaymentPasswordHash(hash);
     }
 
     public String getPaymentPasswordHash(Long userId) {
         User user = userRepository.findById(userId)
-                .orElseThrow(() -> GeneralException.of(ErrorCode.USER_NOT_FOUND));
+                .orElseThrow(() -> GeneralException.of(ErrorCode.NOT_FOUND));
         return user.getPaymentPasswordHash();
     }
 
     @Transactional
     public void suspendUser(Long userId) {
         User user = userRepository.findById(userId)
-                .orElseThrow(() -> GeneralException.of(ErrorCode.USER_NOT_FOUND));
+                .orElseThrow(() -> GeneralException.of(ErrorCode.NOT_FOUND));
         user.suspend();
     }
 
