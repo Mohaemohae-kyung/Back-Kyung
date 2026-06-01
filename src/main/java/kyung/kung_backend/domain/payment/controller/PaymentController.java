@@ -95,6 +95,32 @@ public class PaymentController {
         return ResponseEntity.ok(response);
     }
 
+    @Operation(
+            summary = "결제 비밀번호 설정 (E2E 순수 프록시)",
+            description = "E2E 암호문을 전혀 열어보지 않고 결제 전담 서버(Node.js)로 중계합니다."
+    )
+    @PostMapping("/password/setup")
+    public ResponseEntity<java.util.Map> setupPasswordProxy(
+            @AuthenticationPrincipal User user,
+            @RequestBody java.util.Map<String, Object> request
+    ) {
+        System.out.println("=== [Spring Proxy] password setup request (PURE PROXY) ===");
+        
+        request.put("userId", user.getUserId());
+        
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_JSON);
+        HttpEntity<java.util.Map<String, Object>> entity = new HttpEntity<>(request, headers);
+
+        java.util.Map response = restTemplate.postForObject(
+                NODE_SERVER_URL + "/api/payments/password/setup",
+                entity,
+                java.util.Map.class
+        );
+
+        return ResponseEntity.ok(response);
+    }
+
     // =========================================================================
     // Node.js 결제 서버 전용 Internal API (백엔드는 E2E 데이터를 모르고 이것만 제공)
     // =========================================================================
