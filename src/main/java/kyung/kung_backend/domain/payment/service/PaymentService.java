@@ -77,6 +77,46 @@ public class PaymentService {
         return ServiceRequestCheckoutResponse.of(serviceRequest, baseAmount, ZERO, baseAmount);
     }
 
+    @Transactional
+    public PaymentResponse createServiceRequestPaymentRequest(
+            User loginUser,
+            Long requestId,
+            ServiceRequestPaymentRequestCreateRequest request
+    ) {
+        User expert = findLoginUser(loginUser);
+        ServiceRequest serviceRequest = findServiceRequest(requestId);
+        validateServiceRequestExpert(expert, serviceRequest);
+        validateServiceRequestPayable(serviceRequest);
+
+        User buyer = serviceRequest.getUser();
+        User seller = serviceRequest.getExpertProfile().getUser();
+        BigDecimal amount = getServiceRequestAmount(serviceRequest);
+        String orderId = createOrderId("REQUEST", requestId, LocalDateTime.now());
+
+        Transaction transaction = prepareServiceRequestTransaction(
+                serviceRequest,
+                buyer,
+                seller,
+                orderId,
+                amount,
+                ZERO,
+                amount
+        );
+
+        Payment payment = prepareReadyPayment(
+                transaction,
+                buyer,
+                null,
+                request.getPaymentMethod(),
+                amount,
+                request.getPgProvider()
+        );
+
+        createServiceRequestPaymentMessage(serviceRequest, seller, amount, payment.getPaymentId());
+
+        return PaymentResponse.from(payment);
+    }
+
     // =========================================================================
     // Node.js 결제 전담 서버를 위한 내부 API (백엔드는 E2E 데이터를 모르고 통신)
     // =========================================================================
@@ -92,7 +132,7 @@ public class PaymentService {
             result.put("baseAmount", baseAmount);
             result.put("orderName", getOrderName(booking));
         } else if (TARGET_TYPE_SERVICE_REQUEST.equals(targetType)) {
-            ServiceRequest serviceRequest = findOwnedServiceRequest(user, targetId);
+            ServiceRequest serviceRequest = findRequesterServiceRequest(user, targetId);
             baseAmount = getServiceRequestAmount(serviceRequest);
             result.put("baseAmount", baseAmount);
             result.put("orderName", getOrderName(serviceRequest));
@@ -139,20 +179,10 @@ public class PaymentService {
             transaction = prepareBookingTransaction(booking, user, seller, orderId, finalAmount, BigDecimal.ZERO, finalAmount);
             payment = prepareReadyPayment(transaction, user, userCoupon, paymentMethod, finalAmount, pgProvider);
         } else if (TARGET_TYPE_SERVICE_REQUEST.equals(targetType)) {
-            ServiceRequest serviceRequest = findOwnedServiceRequest(user, targetId);
+            ServiceRequest serviceRequest = findRequesterServiceRequest(user, targetId);
             seller = serviceRequest.getExpertProfile().getUser();
             transaction = prepareServiceRequestTransaction(serviceRequest, user, seller, orderId, finalAmount, BigDecimal.ZERO, finalAmount);
             payment = prepareReadyPayment(transaction, user, userCoupon, paymentMethod, finalAmount, pgProvider);
-            
-            // =========================
-            // 결제 요청 채팅 메시지 생성 복원
-            // =========================
-            ChatRoom chatRoom = chatRoomRepository.findByServiceRequest_RequestId(serviceRequest.getRequestId()).orElse(null);
-            if (chatRoom != null) {
-                String paymentMessageContent = finalAmount.toPlainString() + "원 결제 요청";
-                ChatMessage chatMessage = ChatMessage.createPaymentMessage(chatRoom, seller, paymentMessageContent, payment.getPaymentId());
-                chatMessageRepository.save(chatMessage);
-            }
         } else {
             throw GeneralException.of(ErrorCode.PAYMENT_UNSUPPORTED_TARGET);
         }
@@ -189,7 +219,7 @@ public class PaymentService {
             transaction = prepareBookingTransaction(booking, user, seller, orderId, finalAmount, BigDecimal.ZERO, finalAmount);
             booking.confirmPayment();
         } else if (TARGET_TYPE_SERVICE_REQUEST.equals(targetType)) {
-            ServiceRequest serviceRequest = findOwnedServiceRequest(user, targetId);
+            ServiceRequest serviceRequest = findRequesterServiceRequest(user, targetId);
             seller = serviceRequest.getExpertProfile().getUser();
             transaction = prepareServiceRequestTransaction(serviceRequest, user, seller, orderId, finalAmount, BigDecimal.ZERO, finalAmount);
             serviceRequest.complete();
@@ -425,13 +455,61 @@ public class PaymentService {
         user.suspend();
     }
 
+    private ServiceRequest findServiceRequest(Long requestId) {
+        return serviceRequestRepository
+                .findByRequestIdAndDeletedAtIsNull(requestId)
+                .orElseThrow(() -> GeneralException.of(ErrorCode.NOT_FOUND));
+    }
+
+    private ServiceRequest findRequesterServiceRequest(
+            User user,
+            Long requestId
+    ) {
+        ServiceRequest serviceRequest = findServiceRequest(requestId);
+
+        if (!serviceRequest.getUser().getUserId().equals(user.getUserId())) {
+            throw GeneralException.of(ErrorCode.FORBIDDEN);
+        }
+
+        return serviceRequest;
+    }
+
+    private void validateServiceRequestExpert(
+            User user,
+            ServiceRequest serviceRequest
+    ) {
+        if (serviceRequest.getExpertProfile() == null
+                || serviceRequest.getExpertProfile().getUser() == null
+                || !serviceRequest.getExpertProfile().getUser().getUserId().equals(user.getUserId())) {
+            throw GeneralException.of(ErrorCode.FORBIDDEN);
+        }
+    }
+
+    private void createServiceRequestPaymentMessage(
+            ServiceRequest serviceRequest,
+            User seller,
+            BigDecimal finalAmount,
+            Long paymentId
+    ) {
+        ChatRoom chatRoom = chatRoomRepository
+                .findByServiceRequest_RequestId(serviceRequest.getRequestId())
+                .orElseThrow(() -> GeneralException.of(ErrorCode.NOT_FOUND));
+
+        String paymentMessageContent = finalAmount.toPlainString() + "원 결제 요청";
+        ChatMessage chatMessage = ChatMessage.createPaymentMessage(
+                chatRoom,
+                seller,
+                paymentMessageContent,
+                paymentId
+        );
+        chatMessageRepository.save(chatMessage);
+    }
+
     private ServiceRequest findOwnedServiceRequest(
             User user,
             Long requestId
     ) {
-        ServiceRequest serviceRequest = serviceRequestRepository
-                .findByRequestIdAndDeletedAtIsNull(requestId)
-                .orElseThrow(() -> GeneralException.of(ErrorCode.NOT_FOUND));
+        ServiceRequest serviceRequest = findServiceRequest(requestId);
 
         Long requesterId =
                 serviceRequest.getUser().getUserId();

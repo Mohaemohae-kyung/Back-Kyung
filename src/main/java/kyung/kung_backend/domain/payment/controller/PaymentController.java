@@ -138,6 +138,22 @@ public class PaymentController {
         }
     }
 
+    @Operation(
+            summary = "견적 요청 결제 요청 메시지 생성",
+            description = "고수/전문가가 고객에게 결제 요청 메시지를 보냅니다. 실제 결제 비밀번호 검증과 Toss 결제 준비는 고객이 결제할 때 수행합니다."
+    )
+    @PostMapping("/service-requests/{requestId}/request")
+    public ApiResponse<PaymentResponse> createServiceRequestPaymentRequest(
+            @AuthenticationPrincipal User user,
+            @PathVariable Long requestId,
+            @Valid @RequestBody ServiceRequestPaymentRequestCreateRequest request
+    ) {
+        return ApiResponse.onSuccess(
+                SuccessCode.CREATED,
+                paymentService.createServiceRequestPaymentRequest(user, requestId, request)
+        );
+    }
+
     // =========================================================================
     // Node.js 결제 서버 전용 Internal API (백엔드는 E2E 데이터를 모르고 이것만 제공)
     // =========================================================================
