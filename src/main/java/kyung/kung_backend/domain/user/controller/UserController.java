@@ -41,7 +41,7 @@ public class UserController {
     @PatchMapping("/me")
     public ApiResponse<UserProfileResponse> updateMyProfile(
             @AuthenticationPrincipal User user,
-            @RequestBody UserProfileUpdateRequest request
+            @Valid @RequestBody UserProfileUpdateRequest request
     ) {
         UserProfileResponse response = userService.updateMyProfile(user, request);
         return ApiResponse.onSuccess(SuccessCode.OK, response);

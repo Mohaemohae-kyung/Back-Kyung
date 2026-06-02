@@ -24,6 +24,8 @@ public class AuthService {
     public SignupResponse signup(SignupRequest request) {
         String email = request.getEmail().trim().toLowerCase();
         String phone = request.getPhone() == null ? null : request.getPhone().trim();
+        String residentRegistrationNumber = request.getResidentRegistrationNumber().trim();
+        String detailAddress = request.getDetailAddress().trim();
 
         if (userRepository.existsByEmail(email)) {
             throw GeneralException.of(ErrorCode.DUPLICATE_EMAIL);
@@ -40,7 +42,9 @@ public class AuthService {
                 encodedPassword,
                 request.getName().trim(),
                 request.getNickname(),
-                phone
+                phone,
+                residentRegistrationNumber,
+                detailAddress
         );
 
         User savedUser = userRepository.save(user);
