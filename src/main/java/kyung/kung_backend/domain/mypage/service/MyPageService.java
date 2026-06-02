@@ -7,6 +7,7 @@ import kyung.kung_backend.domain.request.enums.RequestStatus;
 import kyung.kung_backend.domain.request.repository.ServiceRequestRepository;
 import kyung.kung_backend.domain.user.entity.User;
 import kyung.kung_backend.domain.user.service.UserService;
+import kyung.kung_backend.global.util.MaskingUtils;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -44,6 +45,10 @@ public class MyPageService {
                 .name(user.getName())
                 .nickname(user.getNickname())
                 .profileImageUrl(user.getProfileImageUrl())
+                .residentRegistrationNumberMasked(
+                        MaskingUtils.maskResidentRegistrationNumber(user.getResidentRegistrationNumber())
+                )
+                .detailAddress(user.getDetailAddress())
                 .inProgressCount(inProgressCount)
                 .bookmarkExpertCount(bookmarkExpertCount)
                 .postCount(postCount)

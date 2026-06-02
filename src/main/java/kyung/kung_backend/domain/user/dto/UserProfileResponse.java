@@ -14,6 +14,8 @@ public class UserProfileResponse {
     private String nickname;
     private String role;
     private String profileImageUrl;
+    private String residentRegistrationNumberMasked;
+    private String detailAddress;
 
     // 고수 사용자인 경우에만 값 존재
     private Long expertProfileId;

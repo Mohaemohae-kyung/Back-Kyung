@@ -10,6 +10,7 @@ import kyung.kung_backend.domain.user.dto.UserProfileUpdateRequest;
 import kyung.kung_backend.domain.user.dto.UserWithdrawRequest;
 import kyung.kung_backend.domain.user.entity.User;
 import kyung.kung_backend.domain.user.repository.UserRepository;
+import kyung.kung_backend.global.util.MaskingUtils;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -52,6 +53,10 @@ public class UserService {
                 .nickname(user.getNickname())
                 .role(user.getRole())
                 .profileImageUrl(user.getProfileImageUrl())
+                .residentRegistrationNumberMasked(
+                        MaskingUtils.maskResidentRegistrationNumber(user.getResidentRegistrationNumber())
+                )
+                .detailAddress(user.getDetailAddress())
                 .expertProfileId(expertProfileId)
                 .hasPaymentPassword(user.getPaymentPasswordHash() != null)
                 .build();
@@ -78,7 +83,18 @@ public class UserService {
             file.updateTarget("USER_PROFILE", user.getUserId());
         }
 
-        user.updateProfile(request.getName(), request.getPhone(), request.getNickname(), newProfileImageUrl);
+        String detailAddress =
+                request.getDetailAddress() == null
+                        ? null
+                        : request.getDetailAddress().trim();
+
+        user.updateProfile(
+                request.getName(),
+                request.getPhone(),
+                request.getNickname(),
+                newProfileImageUrl,
+                detailAddress
+        );
         return getMyProfile(user);
     }
 

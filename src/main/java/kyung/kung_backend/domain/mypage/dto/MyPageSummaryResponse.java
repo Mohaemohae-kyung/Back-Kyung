@@ -9,6 +9,8 @@ public class MyPageSummaryResponse {
     private String name;
     private String nickname;
     private String profileImageUrl;
+    private String residentRegistrationNumberMasked;
+    private String detailAddress;
     private long inProgressCount;
     private long bookmarkExpertCount;
     private long postCount;
