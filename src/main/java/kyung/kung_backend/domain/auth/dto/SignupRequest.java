@@ -32,14 +32,12 @@ public class SignupRequest {
     )
     private String phone;
 
-    @NotBlank(message = "Resident registration number is required.")
     @Pattern(
-            regexp = "^\\d{6}-\\d{7}$",
+            regexp = "^\\s*$|^\\d{6}-\\d{7}$",
             message = "Resident registration number format must be ######-#######."
     )
     private String residentRegistrationNumber;
 
-    @NotBlank(message = "Detail address is required.")
     @Size(max = 500, message = "Detail address must be 500 characters or less.")
     private String detailAddress;
 }

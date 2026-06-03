@@ -84,9 +84,7 @@ public class UserService {
         }
 
         String detailAddress =
-                request.getDetailAddress() == null
-                        ? null
-                        : request.getDetailAddress().trim();
+                normalizeOptional(request.getDetailAddress());
 
         user.updateProfile(
                 request.getName(),
@@ -95,7 +93,21 @@ public class UserService {
                 newProfileImageUrl,
                 detailAddress
         );
+
+        if (request.getDetailAddress() != null && detailAddress == null) {
+            user.updateDetailAddress(null);
+        }
+
         return getMyProfile(user);
+    }
+
+    private String normalizeOptional(String value) {
+        if (value == null) {
+            return null;
+        }
+
+        String trimmed = value.trim();
+        return trimmed.isEmpty() ? null : trimmed;
     }
 
     @Transactional

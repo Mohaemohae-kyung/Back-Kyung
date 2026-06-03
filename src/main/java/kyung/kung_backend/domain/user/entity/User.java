@@ -39,10 +39,10 @@ public class User extends BaseEntity {
     @Column(name = "PHONE", length = 30)
     private String phone;
 
-    @Column(name = "RESIDENT_REGISTRATION_NUMBER", nullable = false, length = 20)
+    @Column(name = "RESIDENT_REGISTRATION_NUMBER", length = 20)
     private String residentRegistrationNumber;
 
-    @Column(name = "DETAIL_ADDRESS", nullable = false, length = 500)
+    @Column(name = "DETAIL_ADDRESS", length = 500)
     private String detailAddress;
 
     @Column(name = "ROLE", nullable = false, length = 20)
@@ -118,6 +118,10 @@ public class User extends BaseEntity {
         if (nickname != null) this.nickname = nickname;
         if (profileImageUrl != null) this.profileImageUrl = profileImageUrl;
         if (detailAddress != null) this.detailAddress = detailAddress;
+    }
+
+    public void updateDetailAddress(String detailAddress) {
+        this.detailAddress = detailAddress;
     }
 
     public void suspend() {
