@@ -24,8 +24,8 @@ public class AuthService {
     public SignupResponse signup(SignupRequest request) {
         String email = request.getEmail().trim().toLowerCase();
         String phone = request.getPhone() == null ? null : request.getPhone().trim();
-        String residentRegistrationNumber = request.getResidentRegistrationNumber().trim();
-        String detailAddress = request.getDetailAddress().trim();
+        String residentRegistrationNumber = normalizeOptional(request.getResidentRegistrationNumber());
+        String detailAddress = normalizeOptional(request.getDetailAddress());
 
         if (userRepository.existsByEmail(email)) {
             throw GeneralException.of(ErrorCode.DUPLICATE_EMAIL);
@@ -104,6 +104,15 @@ public class AuthService {
         user.updateRefreshToken(newRefreshToken);
 
         return ReissueResponse.of(newAccessToken, newRefreshToken);
+    }
+
+    private String normalizeOptional(String value) {
+        if (value == null) {
+            return null;
+        }
+
+        String trimmed = value.trim();
+        return trimmed.isEmpty() ? null : trimmed;
     }
 
     @Transactional
