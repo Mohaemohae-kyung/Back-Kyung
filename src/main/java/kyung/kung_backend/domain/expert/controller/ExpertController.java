@@ -4,30 +4,43 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import kyung.kung_backend.domain.expert.dto.ExpertDetailResponse;
 import kyung.kung_backend.domain.expert.dto.ExpertProfileCreateRequest;
+import kyung.kung_backend.domain.expert.dto.ExpertProfileImageUploadResponse;
 import kyung.kung_backend.domain.expert.dto.ExpertProfileUpdateRequest;
 import kyung.kung_backend.domain.expert.dto.ExpertSearchResponse;
+import kyung.kung_backend.domain.expert.service.ExpertProfileImageService;
 import kyung.kung_backend.domain.expert.service.ExpertService;
 import kyung.kung_backend.domain.user.entity.User;
 import kyung.kung_backend.global.response.ApiResponse;
 import kyung.kung_backend.global.response.SuccessCode;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RequestPart;
+import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 
-@Tag(name = "Expert", description = "고수 프로필 및 검색 관련 API")
+@Tag(name = "Expert", description = "Expert profile and search APIs")
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/api/experts")
 public class ExpertController {
 
     private final ExpertService expertService;
+    private final ExpertProfileImageService expertProfileImageService;
 
     @Operation(
-            summary = "고수 프로필 등록",
-            description = "로그인 사용자가 고수로 활동하기 위한 기본 프로필을 등록합니다."
+            summary = "Create expert profile",
+            description = "Creates the logged-in user's expert profile."
     )
     @PostMapping("/profile")
     public ApiResponse<Void> createProfile(
@@ -39,8 +52,8 @@ public class ExpertController {
     }
 
     @Operation(
-            summary = "고수 프로필 수정",
-            description = "로그인한 고수가 본인의 프로필 기본 정보를 수정합니다."
+            summary = "Update expert profile",
+            description = "Updates the logged-in expert's profile."
     )
     @PatchMapping("/profile")
     public ApiResponse<Void> updateProfile(
@@ -52,8 +65,26 @@ public class ExpertController {
     }
 
     @Operation(
-            summary = "고수 검색",
-            description = "카테고리, 지역, 키워드 조건으로 활동 중인 고수 목록을 조회합니다."
+            summary = "Upload expert profile image",
+            description = "Stores only expert profile images in the EC2 local upload directory."
+    )
+    @PostMapping(
+            value = "/profile/image",
+            consumes = MediaType.MULTIPART_FORM_DATA_VALUE
+    )
+    public ApiResponse<ExpertProfileImageUploadResponse> uploadProfileImage(
+            @AuthenticationPrincipal User user,
+            @RequestPart("file") MultipartFile file
+    ) {
+        ExpertProfileImageUploadResponse response =
+                expertProfileImageService.uploadProfileImage(user, file);
+
+        return ApiResponse.onSuccess(SuccessCode.CREATED, response);
+    }
+
+    @Operation(
+            summary = "Search experts",
+            description = "Searches active experts by category, location, and keyword."
     )
     @GetMapping("/search")
     public ApiResponse<List<ExpertSearchResponse>> searchExperts(
@@ -68,14 +99,13 @@ public class ExpertController {
     }
 
     @Operation(
-            summary = "고수 상세 조회",
-            description = "선택한 고수의 프로필 상세 정보를 조회합니다."
+            summary = "Get expert detail",
+            description = "Returns a selected expert profile detail."
     )
     @GetMapping("/{expertProfileId}")
     public ResponseEntity<ApiResponse<ExpertDetailResponse>> getExpertDetail(
             @PathVariable Long expertProfileId
     ) {
-
         ExpertDetailResponse response =
                 expertService.getExpertDetail(expertProfileId);
 

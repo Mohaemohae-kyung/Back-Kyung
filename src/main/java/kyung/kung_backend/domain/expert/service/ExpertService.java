@@ -35,6 +35,7 @@ public class ExpertService {
     private final ServiceCategoryRepository serviceCategoryRepository;
     private final LocationRepository locationRepository;
     private final UserRepository userRepository;
+    private final ExpertProfileImageStorage expertProfileImageStorage;
 
     @Transactional
     public void createProfile(
@@ -218,7 +219,10 @@ public class ExpertService {
                 .map(entry ->
                         ExpertSearchResponse.from(
                                 entry.getKey(),
-                                entry.getValue()
+                                entry.getValue(),
+                                expertProfileImageStorage.buildPublicUrl(
+                                        entry.getKey().getExpertProfileImageStoredName()
+                                )
                         )
                 )
                 .toList();
@@ -268,6 +272,9 @@ public class ExpertService {
                 expertProfile,
                 categoryIds,
                 categoryNames,
+                expertProfileImageStorage.buildPublicUrl(
+                        expertProfile.getExpertProfileImageStoredName()
+                ),
                 webViewUrl
         );
     }
