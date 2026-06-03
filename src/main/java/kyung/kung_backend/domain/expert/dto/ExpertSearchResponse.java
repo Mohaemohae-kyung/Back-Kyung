@@ -24,13 +24,15 @@ public class ExpertSearchResponse {
     private String verifiedYn;
     private String status;
 
-    private String profileImageUrl;
+    private String userProfileImageUrl;
+    private String expertProfileImageUrl;
 
     private String nickname;
 
     public static ExpertSearchResponse from(
             ExpertProfile expertProfile,
-            List<String> categoryNames
+            List<String> categoryNames,
+            String expertProfileImageUrl
     ) {
 
         return new ExpertSearchResponse(
@@ -53,6 +55,8 @@ public class ExpertSearchResponse {
                 expertProfile.getUser() != null
                         ? expertProfile.getUser().getProfileImageUrl()
                         : null,
+
+                expertProfileImageUrl,
 
                 expertProfile.getUser() != null
                         ? expertProfile.getUser().getNickname()

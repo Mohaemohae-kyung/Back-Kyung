@@ -67,6 +67,11 @@ file:
       - png
       - pdf
 
+expert-profile:
+  image:
+    upload-dir: ${EXPERT_PROFILE_IMAGE_UPLOAD_DIR:/opt/user-app/uploads/expert-profile}
+    public-base-url: ${EXPERT_PROFILE_IMAGE_PUBLIC_BASE_URL:https://can-fly.shop/uploads/expert-profile}
+
 logging:
   level:
     root: info

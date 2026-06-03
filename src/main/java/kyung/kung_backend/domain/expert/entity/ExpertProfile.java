@@ -52,6 +52,18 @@ public class ExpertProfile extends BaseEntity {
     @JoinColumn(name = "PROFILE_FILE_ID")
     private FileUpload profileFile;
 
+    @Column(name = "EXPERT_PROFILE_IMAGE_STORED_NAME", length = 500)
+    private String expertProfileImageStoredName;
+
+    @Column(name = "EXPERT_PROFILE_IMAGE_ORIGINAL_NAME", length = 255)
+    private String expertProfileImageOriginalName;
+
+    @Column(name = "EXPERT_PROFILE_IMAGE_CONTENT_TYPE", length = 100)
+    private String expertProfileImageContentType;
+
+    @Column(name = "EXPERT_PROFILE_IMAGE_SIZE")
+    private Long expertProfileImageSize;
+
     @Column(name = "VERIFIED_YN", nullable = false, length = 1)
     private String verifiedYn;
 
@@ -100,5 +112,17 @@ public class ExpertProfile extends BaseEntity {
 
     public void delete() {
         this.status = "DELETED";
+    }
+
+    public void updateExpertProfileImage(
+            String storedName,
+            String originalName,
+            String contentType,
+            Long size
+    ) {
+        this.expertProfileImageStoredName = storedName;
+        this.expertProfileImageOriginalName = originalName;
+        this.expertProfileImageContentType = contentType;
+        this.expertProfileImageSize = size;
     }
 }

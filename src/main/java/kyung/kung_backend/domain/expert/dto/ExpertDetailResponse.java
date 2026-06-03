@@ -26,7 +26,8 @@ public class ExpertDetailResponse {
 
     private String verifiedYn;
     private String status;
-    private String profileImageUrl;
+    private String userProfileImageUrl;
+    private String expertProfileImageUrl;
 
     // 포트폴리오 프록시 웹뷰 URL 필드 추가
     private String portfolioWebViewUrl;
@@ -35,6 +36,7 @@ public class ExpertDetailResponse {
             ExpertProfile expertProfile,
             List<Long> categoryIds,
             List<String> categoryNames,
+            String expertProfileImageUrl,
             String portfolioWebViewUrl
     ) {
 
@@ -66,6 +68,8 @@ public class ExpertDetailResponse {
                 expertProfile.getUser() != null
                         ? expertProfile.getUser().getProfileImageUrl()
                         : null,
+
+                expertProfileImageUrl,
 
                 portfolioWebViewUrl
         );
