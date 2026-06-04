@@ -15,6 +15,7 @@ import java.nio.file.Paths;
 
 @Configuration
 public class ExpertProfileUploadWebappResourceConfig {
+    // PR 올리기용
 
     private static final String WEBAPP_MOUNT_PATH = "/uploads/expert-profile";
 
