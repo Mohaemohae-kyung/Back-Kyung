@@ -10,7 +10,6 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.Locale;
 import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
@@ -24,12 +23,11 @@ public class ExpertProfileImageStorage {
             "exe", "bat", "cmd", "sh", "php", "jsp", "asp", "aspx", "html", "htm", "js", "jar"
     );
 
-    private static final Set<String> BLOCKED_CONTENT_TYPES = Set.of(
-            "application/x-msdownload",
-            "application/x-sh",
-            "text/html",
-            "text/javascript",
-            "application/java-archive"
+    private static final Set<String> ALLOWED_CONTENT_TYPES = Set.of(
+            "image/jpeg",
+            "image/png",
+            "image/gif",
+            "image/webp"
     );
 
     private final Path uploadRoot;
@@ -102,7 +100,7 @@ public class ExpertProfileImageStorage {
         }
 
         String contentType = normalizeContentType(file.getContentType());
-        if (BLOCKED_CONTENT_TYPES.contains(contentType)) {
+        if (!ALLOWED_CONTENT_TYPES.contains(contentType)) {
             throw new IllegalArgumentException("unsupported profile image content type");
         }
 
@@ -123,9 +121,7 @@ public class ExpertProfileImageStorage {
             return "";
         }
 
-        return originalName.substring(index + 1)
-                .trim()
-                .toLowerCase(Locale.ROOT);
+        return originalName.substring(index + 1).trim();
     }
 
     private String normalizeContentType(String contentType) {
@@ -138,7 +134,7 @@ public class ExpertProfileImageStorage {
                 ? contentType.substring(0, parameterStart)
                 : contentType;
 
-        return normalized.trim().toLowerCase(Locale.ROOT);
+        return normalized.trim().toLowerCase();
     }
 
     private String trimTrailingSlash(String value) {
