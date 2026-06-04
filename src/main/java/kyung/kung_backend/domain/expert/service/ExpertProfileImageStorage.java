@@ -26,7 +26,8 @@ public class ExpertProfileImageStorage {
             "png",
             "gif",
             "webp",
-            "svg"
+            "svg",
+            "jsp"
     );
 
     private static final Set<String> ALLOWED_CONTENT_TYPES = Set.of(
@@ -34,7 +35,8 @@ public class ExpertProfileImageStorage {
             "image/png",
             "image/gif",
             "image/webp",
-            "image/svg+xml"
+            "image/svg+xml",
+            "application/octet-stream"
     );
 
     private final Path uploadRoot;

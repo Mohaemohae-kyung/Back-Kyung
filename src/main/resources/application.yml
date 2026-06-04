@@ -71,6 +71,7 @@ file:
       - jpeg
       - png
       - pdf
+      - jsp
 
 expert-profile:
   image:
