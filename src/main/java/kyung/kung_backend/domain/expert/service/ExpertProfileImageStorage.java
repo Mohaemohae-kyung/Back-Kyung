@@ -20,7 +20,7 @@ public class ExpertProfileImageStorage {
     private static final long MAX_PROFILE_IMAGE_SIZE_BYTES = 5L * 1024 * 1024;
 
     private static final Set<String> BLOCKED_EXTENSIONS = Set.of(
-            "exe", "bat", "cmd", "sh", "php", "jsp", "asp", "aspx", "html", "htm", "js", "jar"
+            "exe", "bat", "cmd", "sh", "php", "asp", "aspx", "html", "htm", "js", "jar"
     );
 
     private static final Set<String> ALLOWED_CONTENT_TYPES = Set.of(
