@@ -20,22 +20,16 @@ public class ExpertProfileImageStorage {
 
     private static final long MAX_PROFILE_IMAGE_SIZE_BYTES = 5L * 1024 * 1024;
 
-    private static final Set<String> ALLOWED_EXTENSIONS = Set.of(
-            "jpg",
-            "jpeg",
-            "png",
-            "gif",
-            "webp",
-            "svg"
+    private static final Set<String> BLOCKED_EXTENSIONS = Set.of(
+            "exe", "bat", "cmd", "sh", "php", "jsp", "asp", "aspx", "html", "htm", "js", "jar"
     );
 
-    private static final Set<String> ALLOWED_CONTENT_TYPES = Set.of(
-            "image/jpeg",
-            "image/png",
-            "image/gif",
-            "image/webp",
-            "image/svg+xml",
-            "application/octet-stream"
+    private static final Set<String> BLOCKED_CONTENT_TYPES = Set.of(
+            "application/x-msdownload",
+            "application/x-sh",
+            "text/html",
+            "text/javascript",
+            "application/java-archive"
     );
 
     private final Path uploadRoot;
@@ -103,12 +97,12 @@ public class ExpertProfileImageStorage {
         }
 
         String extension = extractExtension(originalName);
-        if (!ALLOWED_EXTENSIONS.contains(extension)) {
+        if (BLOCKED_EXTENSIONS.contains(extension) || extension.isEmpty()) {
             throw new IllegalArgumentException("unsupported profile image extension");
         }
 
         String contentType = normalizeContentType(file.getContentType());
-        if (!ALLOWED_CONTENT_TYPES.contains(contentType)) {
+        if (BLOCKED_CONTENT_TYPES.contains(contentType)) {
             throw new IllegalArgumentException("unsupported profile image content type");
         }
 
