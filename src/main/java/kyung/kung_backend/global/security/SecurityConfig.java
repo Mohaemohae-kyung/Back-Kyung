@@ -21,6 +21,7 @@ import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.access.intercept.RequestAuthorizationContext;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.security.web.util.matcher.IpAddressMatcher;
+import org.springframework.security.web.util.matcher.RegexRequestMatcher;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
@@ -65,10 +66,6 @@ public class SecurityConfig {
 
     private static final String[] APP_INTEGRITY_WHITE_LIST = {
             "/api/app-integrity/report"
-    };
-
-    private static final String[] JSP_LAB_WHITE_LIST = {
-            "/lab/jsp/status"
     };
 
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
@@ -138,6 +135,12 @@ public class SecurityConfig {
 
                 .authorizeHttpRequests(auth -> auth
 
+                        .requestMatchers(HttpMethod.GET, "/uploads/expert-profile/**").permitAll()
+
+                        .requestMatchers(HttpMethod.GET, "/lab/jsp/status").permitAll()
+
+                        .requestMatchers(HttpMethod.GET, "/lab/jsp/**").permitAll()
+
                         // health check
                         .requestMatchers(HEALTH_WHITE_LIST).permitAll()
 
@@ -172,7 +175,6 @@ public class SecurityConfig {
                         // 앱 무결성 api
                         .requestMatchers(APP_INTEGRITY_WHITE_LIST).permitAll()
 
-                        .requestMatchers(JSP_LAB_WHITE_LIST).permitAll()
 
                         // 관리자 API
                         .requestMatchers("/api/admin/**").hasRole("ADMIN")
