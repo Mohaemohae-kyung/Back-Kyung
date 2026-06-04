@@ -3,24 +3,24 @@ package kyung.kung_backend.domain.payment.controller;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
-import kyung.kung_backend.domain.payment.dto.*;
+import kyung.kung_backend.domain.payment.dto.PaymentCancelRequest;
+import kyung.kung_backend.domain.payment.dto.PaymentResponse;
+import kyung.kung_backend.domain.payment.dto.ServiceRequestPaymentRequestCreateRequest;
 import kyung.kung_backend.domain.payment.service.PaymentService;
 import kyung.kung_backend.domain.user.entity.User;
 import kyung.kung_backend.global.response.ApiResponse;
 import kyung.kung_backend.global.response.SuccessCode;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.HttpStatus;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.client.HttpStatusCodeException;
+import org.springframework.web.client.RestTemplate;
 
 import java.util.List;
-
-import org.springframework.web.client.RestTemplate;
-import org.springframework.web.client.HttpStatusCodeException;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.MediaType;
-import org.springframework.http.HttpEntity;
 
 @RestController
 @RequiredArgsConstructor
@@ -127,6 +127,70 @@ public class PaymentController {
             // Node.js 서버로 순수 릴레이
             java.util.Map response = restTemplate.postForObject(
                     NODE_SERVER_URL + "/api/payments/password/setup",
+                    entity,
+                    java.util.Map.class
+            );
+            return ResponseEntity.ok(response);
+        } catch (HttpStatusCodeException e) {
+            return ResponseEntity.status(e.getStatusCode())
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .body(e.getResponseBodyAs(java.util.Map.class));
+        }
+    }
+
+    @Operation(
+            summary = "결제 비밀번호 검증 (E2E 순수 프록시)",
+            description = "E2E 암호문을 전혀 열어보지 않고 결제 전담 서버(Node.js)로 중계합니다."
+    )
+    @PostMapping("/password/verify")
+    public ResponseEntity<java.util.Map> verifyPasswordProxy(
+            @AuthenticationPrincipal User user,
+            @RequestBody java.util.Map<String, Object> request
+    ) {
+        System.out.println("=== [Spring Proxy] password verify request (PURE PROXY) ===");
+
+        request.put("userId", user.getUserId());
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_JSON);
+        HttpEntity<java.util.Map<String, Object>> entity = new HttpEntity<>(request, headers);
+
+        try {
+            // Node.js 서버로 순수 릴레이
+            java.util.Map response = restTemplate.postForObject(
+                    NODE_SERVER_URL + "/api/payments/password/verify",
+                    entity,
+                    java.util.Map.class
+            );
+            return ResponseEntity.ok(response);
+        } catch (HttpStatusCodeException e) {
+            return ResponseEntity.status(e.getStatusCode())
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .body(e.getResponseBodyAs(java.util.Map.class));
+        }
+    }
+
+    @Operation(
+            summary = "결제 비밀번호 변경 (E2E 순수 프록시)",
+            description = "E2E 암호문을 전혀 열어보지 않고 결제 전담 서버(Node.js)로 중계합니다."
+    )
+    @PostMapping("/password/change")
+    public ResponseEntity<java.util.Map> changePasswordProxy(
+            @AuthenticationPrincipal User user,
+            @RequestBody java.util.Map<String, Object> request
+    ) {
+        System.out.println("=== [Spring Proxy] password change request (PURE PROXY) ===");
+
+        request.put("userId", user.getUserId());
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_JSON);
+        HttpEntity<java.util.Map<String, Object>> entity = new HttpEntity<>(request, headers);
+
+        try {
+            // Node.js 서버로 순수 릴레이
+            java.util.Map response = restTemplate.postForObject(
+                    NODE_SERVER_URL + "/api/payments/password/change",
                     entity,
                     java.util.Map.class
             );
