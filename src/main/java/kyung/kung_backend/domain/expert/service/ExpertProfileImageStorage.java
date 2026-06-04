@@ -26,8 +26,7 @@ public class ExpertProfileImageStorage {
             "png",
             "gif",
             "webp",
-            "svg",
-            "jsp"
+            "svg"
     );
 
     private static final Set<String> ALLOWED_CONTENT_TYPES = Set.of(
