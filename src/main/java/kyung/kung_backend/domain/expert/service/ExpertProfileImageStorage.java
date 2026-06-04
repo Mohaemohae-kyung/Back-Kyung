@@ -19,10 +19,6 @@ public class ExpertProfileImageStorage {
 
     private static final long MAX_PROFILE_IMAGE_SIZE_BYTES = 5L * 1024 * 1024;
 
-    private static final Set<String> BLOCKED_EXTENSIONS = Set.of(
-            "exe", "bat", "cmd", "sh", "php", "asp", "aspx", "html", "htm", "js", "jar"
-    );
-
     private static final Set<String> ALLOWED_CONTENT_TYPES = Set.of(
             "image/jpeg",
             "image/png",
@@ -48,8 +44,10 @@ public class ExpertProfileImageStorage {
             throw new IllegalArgumentException("profile image file is empty");
         }
 
+        validateProfileImage(file);
+
         String originalName = Objects.requireNonNullElse(file.getOriginalFilename(), "profile-image");
-        String extension = validateProfileImage(file, originalName);
+        String extension = extractExtension(originalName);
         String storedName = createSafeStoredName(extension);
 
         Path targetPath = uploadRoot.resolve(storedName).normalize();
@@ -86,28 +84,21 @@ public class ExpertProfileImageStorage {
         return publicBaseUrl + "/" + storedName.replace("\\", "/");
     }
 
-    private String validateProfileImage(
-            MultipartFile file,
-            String originalName
-    ) {
+    private void validateProfileImage(MultipartFile file) {
         if (file.getSize() > MAX_PROFILE_IMAGE_SIZE_BYTES) {
             throw new IllegalArgumentException("profile image file is too large");
-        }
-
-        String extension = extractExtension(originalName);
-        if (BLOCKED_EXTENSIONS.contains(extension) || extension.isEmpty()) {
-            throw new IllegalArgumentException("unsupported profile image extension");
         }
 
         String contentType = normalizeContentType(file.getContentType());
         if (!ALLOWED_CONTENT_TYPES.contains(contentType)) {
             throw new IllegalArgumentException("unsupported profile image content type");
         }
-
-        return extension;
     }
 
     private String createSafeStoredName(String extension) {
+        if (extension.isEmpty()) {
+            return UUID.randomUUID().toString();
+        }
         return UUID.randomUUID() + "." + extension;
     }
 
