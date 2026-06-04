@@ -160,32 +160,35 @@ public class PaymentController {
             );
             return ResponseEntity.ok(response);
         } catch (HttpStatusCodeException e) {
+            String nodeMessage = "결제 비밀번호가 일치하지 않습니다.";
+
             try {
-                java.util.Map nodeError = e.getResponseBodyAs(java.util.Map.class);
-                String nodeMessage = (String) nodeError.getOrDefault("message", "결제 비밀번호가 일치하지 않습니다.");
+                // 자동 변환 오류를 방지하기 위해 문자열로 추출 후 ObjectMapper를 사용하여 안전하게 파싱
+                com.fasterxml.jackson.databind.ObjectMapper mapper = new com.fasterxml.jackson.databind.ObjectMapper();
+                java.util.Map<String, Object> nodeError = mapper.readValue(
+                        e.getResponseBodyAsString(),
+                        new com.fasterxml.jackson.core.type.TypeReference<java.util.Map<String, Object>>(){}
+                );
 
-                java.util.Map<String, Object> errorResponse = new java.util.HashMap<>();
-                errorResponse.put("isSuccess", false);
-                errorResponse.put("code", "PAYMENT_ERROR");
-                errorResponse.put("message", nodeMessage);
-                errorResponse.put("result", null);
-
-                // 프론트엔드의 글로벌 401 인터셉터와 충돌하지 않도록 400 상태 코드로 우회하여 전달
-                HttpStatus status = (e.getStatusCode().value() == 401) ? HttpStatus.BAD_REQUEST : (HttpStatus) e.getStatusCode();
-
-                return ResponseEntity.status(status)
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .body(errorResponse);
-            } catch (Exception ex) {
-                java.util.Map<String, Object> fallback = new java.util.HashMap<>();
-                fallback.put("isSuccess", false);
-                fallback.put("code", "COMMON_500");
-                fallback.put("message", "서버 통신 중 오류가 발생했습니다.");
-
-                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .body(fallback);
+                if (nodeError != null && nodeError.get("message") != null) {
+                    nodeMessage = String.valueOf(nodeError.get("message"));
+                }
+            } catch (Exception parseEx) {
+                System.out.println("Node.js 응답 파싱 실패: " + parseEx.getMessage());
             }
+
+            java.util.Map<String, Object> errorResponse = new java.util.HashMap<>();
+            errorResponse.put("isSuccess", false);
+            errorResponse.put("code", "PAYMENT_ERROR");
+            errorResponse.put("message", nodeMessage);
+            errorResponse.put("result", null);
+
+            // 프론트엔드의 글로벌 401 인터셉터와 충돌하지 않도록 400 상태 코드로 우회하여 전달
+            HttpStatus status = (e.getStatusCode().value() == 401) ? HttpStatus.BAD_REQUEST : (HttpStatus) e.getStatusCode();
+
+            return ResponseEntity.status(status)
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .body(errorResponse);
         }
     }
 
@@ -214,32 +217,35 @@ public class PaymentController {
             );
             return ResponseEntity.ok(response);
         } catch (HttpStatusCodeException e) {
+            String nodeMessage = "결제 비밀번호가 일치하지 않습니다.";
+
             try {
-                java.util.Map nodeError = e.getResponseBodyAs(java.util.Map.class);
-                String nodeMessage = (String) nodeError.getOrDefault("message", "결제 비밀번호가 일치하지 않습니다.");
+                // 자동 변환 오류를 방지하기 위해 문자열로 추출 후 ObjectMapper를 사용하여 안전하게 파싱
+                com.fasterxml.jackson.databind.ObjectMapper mapper = new com.fasterxml.jackson.databind.ObjectMapper();
+                java.util.Map<String, Object> nodeError = mapper.readValue(
+                        e.getResponseBodyAsString(),
+                        new com.fasterxml.jackson.core.type.TypeReference<java.util.Map<String, Object>>(){}
+                );
 
-                java.util.Map<String, Object> errorResponse = new java.util.HashMap<>();
-                errorResponse.put("isSuccess", false);
-                errorResponse.put("code", "PAYMENT_ERROR");
-                errorResponse.put("message", nodeMessage);
-                errorResponse.put("result", null);
-
-                // 프론트엔드의 글로벌 401 인터셉터와 충돌하지 않도록 400 상태 코드로 우회하여 전달
-                HttpStatus status = (e.getStatusCode().value() == 401) ? HttpStatus.BAD_REQUEST : (HttpStatus) e.getStatusCode();
-
-                return ResponseEntity.status(status)
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .body(errorResponse);
-            } catch (Exception ex) {
-                java.util.Map<String, Object> fallback = new java.util.HashMap<>();
-                fallback.put("isSuccess", false);
-                fallback.put("code", "COMMON_500");
-                fallback.put("message", "서버 통신 중 오류가 발생했습니다.");
-
-                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .body(fallback);
+                if (nodeError != null && nodeError.get("message") != null) {
+                    nodeMessage = String.valueOf(nodeError.get("message"));
+                }
+            } catch (Exception parseEx) {
+                System.out.println("Node.js 응답 파싱 실패: " + parseEx.getMessage());
             }
+
+            java.util.Map<String, Object> errorResponse = new java.util.HashMap<>();
+            errorResponse.put("isSuccess", false);
+            errorResponse.put("code", "PAYMENT_ERROR");
+            errorResponse.put("message", nodeMessage);
+            errorResponse.put("result", null);
+
+            // 프론트엔드의 글로벌 401 인터셉터와 충돌하지 않도록 400 상태 코드로 우회하여 전달
+            HttpStatus status = (e.getStatusCode().value() == 401) ? HttpStatus.BAD_REQUEST : (HttpStatus) e.getStatusCode();
+
+            return ResponseEntity.status(status)
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .body(errorResponse);
         }
     }
 
