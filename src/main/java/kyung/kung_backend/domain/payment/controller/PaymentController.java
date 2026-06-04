@@ -163,15 +163,23 @@ public class PaymentController {
             );
             return ResponseEntity.ok(response);
         } catch (HttpStatusCodeException e) {
-            // JSON 파싱 에러 방지를 위해 에러 응답을 문자열로 추출하여 수동 맵핑
-            java.util.Map<String, Object> errorResponse = new java.util.HashMap<>();
-            errorResponse.put("success", false);
-            errorResponse.put("message", "Node.js 서버 통신 중 오류가 발생했습니다.");
-            errorResponse.put("nodeErrorHtml", e.getResponseBodyAsString());
+            try {
+                // 1. Node.js가 정상적으로 반환한 400, 401, 403 등의 JSON 에러 메시지를 그대로 추출하여 프론트엔드에 전달
+                java.util.Map errorResponse = e.getResponseBodyAs(java.util.Map.class);
+                return ResponseEntity.status(e.getStatusCode())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .body(errorResponse);
+            } catch (Exception ex) {
+                // 2. 만약 JSON 파싱이 불가능한 예상치 못한 서버 에러(HTML 등)일 경우 방어
+                java.util.Map<String, Object> fallbackError = new java.util.HashMap<>();
+                fallbackError.put("success", false);
+                fallbackError.put("message", "Node.js 서버 통신 중 알 수 없는 오류가 발생했습니다.");
+                fallbackError.put("debugDetail", e.getResponseBodyAsString());
 
-            return ResponseEntity.status(e.getStatusCode())
-                    .contentType(MediaType.APPLICATION_JSON)
-                    .body(errorResponse);
+                return ResponseEntity.status(e.getStatusCode())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .body(fallbackError);
+            }
         }
     }
 
@@ -200,15 +208,23 @@ public class PaymentController {
             );
             return ResponseEntity.ok(response);
         } catch (HttpStatusCodeException e) {
-            // JSON 파싱 에러 방지를 위해 에러 응답을 문자열로 추출하여 수동 맵핑
-            java.util.Map<String, Object> errorResponse = new java.util.HashMap<>();
-            errorResponse.put("success", false);
-            errorResponse.put("message", "Node.js 서버 통신 중 오류가 발생했습니다.");
-            errorResponse.put("nodeErrorHtml", e.getResponseBodyAsString());
+            try {
+                // 1. Node.js가 정상적으로 반환한 400, 401, 403 등의 JSON 에러 메시지를 그대로 추출하여 프론트엔드에 전달
+                java.util.Map errorResponse = e.getResponseBodyAs(java.util.Map.class);
+                return ResponseEntity.status(e.getStatusCode())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .body(errorResponse);
+            } catch (Exception ex) {
+                // 2. 만약 JSON 파싱이 불가능한 예상치 못한 서버 에러(HTML 등)일 경우 방어
+                java.util.Map<String, Object> fallbackError = new java.util.HashMap<>();
+                fallbackError.put("success", false);
+                fallbackError.put("message", "Node.js 서버 통신 중 알 수 없는 오류가 발생했습니다.");
+                fallbackError.put("debugDetail", e.getResponseBodyAsString());
 
-            return ResponseEntity.status(e.getStatusCode())
-                    .contentType(MediaType.APPLICATION_JSON)
-                    .body(errorResponse);
+                return ResponseEntity.status(e.getStatusCode())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .body(fallbackError);
+            }
         }
     }
 
