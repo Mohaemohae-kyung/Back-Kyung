@@ -161,21 +161,30 @@ public class PaymentController {
             return ResponseEntity.ok(response);
         } catch (HttpStatusCodeException e) {
             try {
-                // 1. Node.js가 정상적으로 반환한 400, 401, 403 등의 JSON 에러 메시지를 그대로 추출하여 프론트엔드에 전달
-                java.util.Map errorResponse = e.getResponseBodyAs(java.util.Map.class);
-                return ResponseEntity.status(e.getStatusCode())
+                java.util.Map nodeError = e.getResponseBodyAs(java.util.Map.class);
+                String nodeMessage = (String) nodeError.getOrDefault("message", "결제 비밀번호가 일치하지 않습니다.");
+
+                java.util.Map<String, Object> errorResponse = new java.util.HashMap<>();
+                errorResponse.put("isSuccess", false);
+                errorResponse.put("code", "PAYMENT_ERROR");
+                errorResponse.put("message", nodeMessage);
+                errorResponse.put("result", null);
+
+                // 프론트엔드의 글로벌 401 인터셉터와 충돌하지 않도록 400 상태 코드로 우회하여 전달
+                HttpStatus status = (e.getStatusCode().value() == 401) ? HttpStatus.BAD_REQUEST : (HttpStatus) e.getStatusCode();
+
+                return ResponseEntity.status(status)
                         .contentType(MediaType.APPLICATION_JSON)
                         .body(errorResponse);
             } catch (Exception ex) {
-                // 2. 만약 JSON 파싱이 불가능한 예상치 못한 서버 에러(HTML 등)일 경우 방어
-                java.util.Map<String, Object> fallbackError = new java.util.HashMap<>();
-                fallbackError.put("success", false);
-                fallbackError.put("message", "Node.js 서버 통신 중 알 수 없는 오류가 발생했습니다.");
-                fallbackError.put("debugDetail", e.getResponseBodyAsString());
+                java.util.Map<String, Object> fallback = new java.util.HashMap<>();
+                fallback.put("isSuccess", false);
+                fallback.put("code", "COMMON_500");
+                fallback.put("message", "서버 통신 중 오류가 발생했습니다.");
 
-                return ResponseEntity.status(e.getStatusCode())
+                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                         .contentType(MediaType.APPLICATION_JSON)
-                        .body(fallbackError);
+                        .body(fallback);
             }
         }
     }
