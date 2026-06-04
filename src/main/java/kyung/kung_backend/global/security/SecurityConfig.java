@@ -135,7 +135,12 @@ public class SecurityConfig {
 
                 .authorizeHttpRequests(auth -> auth
 
-                        .dispatcherTypeMatchers(DispatcherType.FORWARD).permitAll()
+                        .dispatcherTypeMatchers(
+                                DispatcherType.FORWARD,
+                                DispatcherType.ERROR
+                        ).permitAll()
+
+                        .requestMatchers("/error").permitAll()
 
                         .requestMatchers(HttpMethod.GET, "/uploads/expert-profile/**").permitAll()
 
