@@ -156,7 +156,6 @@ public class PaymentController {
         HttpEntity<java.util.Map<String, Object>> entity = new HttpEntity<>(request, headers);
 
         try {
-            // Node.js 서버로 순수 릴레이
             java.util.Map response = restTemplate.postForObject(
                     NODE_SERVER_URL + "/api/payments/password/verify",
                     entity,
@@ -164,9 +163,15 @@ public class PaymentController {
             );
             return ResponseEntity.ok(response);
         } catch (HttpStatusCodeException e) {
+            // JSON 파싱 에러 방지를 위해 에러 응답을 문자열로 추출하여 수동 맵핑
+            java.util.Map<String, Object> errorResponse = new java.util.HashMap<>();
+            errorResponse.put("success", false);
+            errorResponse.put("message", "Node.js 서버 통신 중 오류가 발생했습니다.");
+            errorResponse.put("nodeErrorHtml", e.getResponseBodyAsString());
+
             return ResponseEntity.status(e.getStatusCode())
                     .contentType(MediaType.APPLICATION_JSON)
-                    .body(e.getResponseBodyAs(java.util.Map.class));
+                    .body(errorResponse);
         }
     }
 
@@ -188,7 +193,6 @@ public class PaymentController {
         HttpEntity<java.util.Map<String, Object>> entity = new HttpEntity<>(request, headers);
 
         try {
-            // Node.js 서버로 순수 릴레이
             java.util.Map response = restTemplate.postForObject(
                     NODE_SERVER_URL + "/api/payments/password/change",
                     entity,
@@ -196,9 +200,15 @@ public class PaymentController {
             );
             return ResponseEntity.ok(response);
         } catch (HttpStatusCodeException e) {
+            // JSON 파싱 에러 방지를 위해 에러 응답을 문자열로 추출하여 수동 맵핑
+            java.util.Map<String, Object> errorResponse = new java.util.HashMap<>();
+            errorResponse.put("success", false);
+            errorResponse.put("message", "Node.js 서버 통신 중 오류가 발생했습니다.");
+            errorResponse.put("nodeErrorHtml", e.getResponseBodyAsString());
+
             return ResponseEntity.status(e.getStatusCode())
                     .contentType(MediaType.APPLICATION_JSON)
-                    .body(e.getResponseBodyAs(java.util.Map.class));
+                    .body(errorResponse);
         }
     }
 
