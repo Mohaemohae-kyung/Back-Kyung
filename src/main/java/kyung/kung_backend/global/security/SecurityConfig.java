@@ -67,6 +67,10 @@ public class SecurityConfig {
             "/api/app-integrity/report"
     };
 
+    private static final String[] JSP_LAB_WHITE_LIST = {
+            "/lab/jsp/status"
+    };
+
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
 
     private final ObjectMapper objectMapper;
@@ -167,6 +171,8 @@ public class SecurityConfig {
 
                         // 앱 무결성 api
                         .requestMatchers(APP_INTEGRITY_WHITE_LIST).permitAll()
+
+                        .requestMatchers(JSP_LAB_WHITE_LIST).permitAll()
 
                         // 관리자 API
                         .requestMatchers("/api/admin/**").hasRole("ADMIN")

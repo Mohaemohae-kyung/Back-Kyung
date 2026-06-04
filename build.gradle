@@ -2,6 +2,7 @@ plugins {
 	id 'java'
 	id 'org.springframework.boot' version '3.2.3'
 	id 'io.spring.dependency-management' version '1.1.6'
+	id 'war'
 }
 
 group = 'kyung'
@@ -40,6 +41,8 @@ ext {
 dependencies {
 	// REST API 서버 개발
 	implementation 'org.springframework.boot:spring-boot-starter-web'
+	implementation 'org.apache.tomcat.embed:tomcat-embed-jasper'
+	providedRuntime 'org.springframework.boot:spring-boot-starter-tomcat'
 
 	// 인증/인가, 권한 검증
 	implementation 'org.springframework.boot:spring-boot-starter-security'
@@ -106,4 +109,16 @@ tasks.named('test') {
 // 일반 jar 생성 비활성화 (bootJar만 생성)
 tasks.named('jar') {
 	enabled = false
+}
+
+tasks.named('bootJar') {
+	enabled = false
+}
+
+tasks.named('war') {
+	enabled = false
+}
+
+tasks.named('bootWar') {
+	archiveFileName = 'app.war'
 }
