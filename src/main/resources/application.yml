@@ -80,7 +80,7 @@ expert-profile:
 
 llm:
   server:
-    url: ${LLM_SERVER_URL:http://localhost:8000}
+    url: ${LLM_SERVER_URL:http://100.104.59.126:8000}
 
 logging:
   level:
