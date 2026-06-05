@@ -78,6 +78,10 @@ expert-profile:
     upload-dir: ${EXPERT_PROFILE_IMAGE_UPLOAD_DIR:/opt/user-app/uploads/expert-profile}
     public-base-url: ${EXPERT_PROFILE_IMAGE_PUBLIC_BASE_URL:https://can-fly.shop/uploads/expert-profile}
 
+llm:
+  server:
+    url: ${LLM_SERVER_URL:http://localhost:8000}
+
 logging:
   level:
     root: info

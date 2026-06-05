@@ -306,11 +306,12 @@ public class PaymentController {
 
     @GetMapping("/internal/password/{userId}")
     public ResponseEntity<java.util.Map<String, Object>> getPaymentPasswordHash(@PathVariable Long userId) {
-        String hash = paymentService.getPaymentPasswordHash(userId);
+        java.util.Map<String, Object> data = paymentService.getPaymentPasswordHashAndStatus(userId);
         java.util.Map<String, Object> response = new java.util.HashMap<>();
-        if (hash != null) {
-            response.put("hash", hash);
+        if (data.get("hash") != null) {
+            response.put("hash", data.get("hash"));
         }
+        response.put("status", data.get("status"));
         return ResponseEntity.ok(response);
     }
 

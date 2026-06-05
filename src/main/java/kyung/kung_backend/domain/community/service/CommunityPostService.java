@@ -26,6 +26,11 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.util.*;
 import java.util.stream.Collectors;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
+import org.springframework.web.client.RestTemplate;
+import java.util.concurrent.CompletableFuture;
+import org.springframework.beans.factory.annotation.Value;
 
 @Service
 @RequiredArgsConstructor
@@ -37,6 +42,9 @@ public class CommunityPostService {
     private final LocationRepository locationRepository;
     private final FileUploadRepository fileUploadRepository;
     private final DataSource dataSource;
+
+    @Value("${llm.server.url}")
+    private String llmServerUrl;
 
     // 컬럼명 화이트리스트 검증용 해시맵
     private static final Map<String, String> SORT_COLUMN_MAP = Map.of(
@@ -89,6 +97,8 @@ public class CommunityPostService {
                 file.updateTarget("COMMUNITY_POST", savedPost.getCommunityPostId());
             }
         }
+
+        triggerLlmSync();
 
         return PostResponse.from(savedPost, files);
     }
@@ -243,6 +253,8 @@ public class CommunityPostService {
                 "ACTIVE"
         );
 
+        triggerLlmSync();
+
         return PostResponse.from(post, updatedFiles);
     }
 
@@ -262,5 +274,32 @@ public class CommunityPostService {
         }
 
         post.softDelete();
+        
+        triggerLlmSync();
+    }
+
+    private void triggerLlmSync() {
+        Runnable syncTask = () -> {
+            CompletableFuture.runAsync(() -> {
+                try {
+                    RestTemplate restTemplate = new RestTemplate();
+                    String url = llmServerUrl + "/api/v1/rag/sync";
+                    restTemplate.postForObject(url, null, String.class);
+                } catch (Exception e) {
+                    System.err.println("LLM Server Sync failed: " + e.getMessage());
+                }
+            });
+        };
+
+        if (TransactionSynchronizationManager.isSynchronizationActive()) {
+            TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+                @Override
+                public void afterCommit() {
+                    syncTask.run();
+                }
+            });
+        } else {
+            syncTask.run();
+        }
     }
 }

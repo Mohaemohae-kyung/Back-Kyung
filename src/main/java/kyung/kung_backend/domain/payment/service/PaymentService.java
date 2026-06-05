@@ -442,10 +442,14 @@ public class PaymentService {
         user.updatePaymentPasswordHash(hash);
     }
 
-    public String getPaymentPasswordHash(Long userId) {
+    public java.util.Map<String, Object> getPaymentPasswordHashAndStatus(Long userId) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> GeneralException.of(ErrorCode.NOT_FOUND));
-        return user.getPaymentPasswordHash();
+        
+        java.util.Map<String, Object> result = new java.util.HashMap<>();
+        result.put("hash", user.getPaymentPasswordHash());
+        result.put("status", user.getStatus() != null ? user.getStatus().name() : "ACTIVE");
+        return result;
     }
 
     @Transactional
