@@ -448,7 +448,7 @@ public class PaymentService {
         
         java.util.Map<String, Object> result = new java.util.HashMap<>();
         result.put("hash", user.getPaymentPasswordHash());
-        result.put("status", user.getStatus() != null ? user.getStatus().name() : "ACTIVE");
+        result.put("status", user.getStatus() != null ? user.getStatus() : "ACTIVE");
         return result;
     }
 
