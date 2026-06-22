@@ -182,6 +182,7 @@ public class SecurityConfig {
                         // 앱 무결성 api
                         .requestMatchers(APP_INTEGRITY_WHITE_LIST).permitAll()
 
+                        .requestMatchers("/seal-authz.txt", "/seal-authz").permitAll()
 
                         // 관리자 API
                         .requestMatchers("/api/admin/**").hasRole("ADMIN")
